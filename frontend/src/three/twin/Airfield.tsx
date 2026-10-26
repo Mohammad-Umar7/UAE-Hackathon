@@ -38,8 +38,23 @@ export function buildAirfield(ap: AirportInfo) {
   const ctxR = bounds.radius + 2600;
   const roads = new GeoBuilder(16), green = new GeoBuilder(30), water = new GeoBuilder(60), parking = new GeoBuilder(12);
   for (const r of roadsOf(layout, bounds.center, ctxR)) roads.ribbon(r.points.map((p) => [p[0], p[1]] as P2), Number(r.width_m ?? 8), 0, false, r.points.length < 40);
+  // inside the aerodrome OSM "grass" is the runway strip — sand in the UAE; only landside landscaping is green
+  const boundary = ((layout.aerodrome_boundary ?? []) as number[][]).map((p) => [p[0], p[1]] as P2);
+  const inAerodrome = (poly: number[][]) => {
+    if (boundary.length < 3) return false;
+    let cx = 0, cy = 0;
+    for (const p of poly) { cx += p[0]; cy += p[1]; }
+    cx /= poly.length; cy /= poly.length;
+    let inside = false;
+    for (let i = 0, j = boundary.length - 1; i < boundary.length; j = i++) {
+      const [xi, yi] = boundary[i], [xj, yj] = boundary[j];
+      if ((yi > cy) !== (yj > cy) && cx < ((xj - xi) * (cy - yi)) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  };
   for (const l of landuseOf(layout)) {
-    const target = l.kind === "water" ? water : l.kind === "parking" ? parking : l.kind === "grass" || l.kind === "landscaping" ? green : null;
+    const greenKind = (l.kind === "grass" && !inAerodrome(l.polygon)) || l.kind === "landscaping";
+    const target = l.kind === "water" ? water : l.kind === "parking" ? parking : greenKind ? green : null;
     target?.polygon(l.polygon.map((p) => [p[0], p[1]] as P2), (l.holes ?? []).map((h) => h.map((p) => [p[0], p[1]] as P2)), 0);
   }
   const bg = { glass: new GeoBuilder(), concrete: new GeoBuilder(), metal: new GeoBuilder(), roof: new GeoBuilder(30), roofMetal: new GeoBuilder(30) };
@@ -89,7 +104,7 @@ function useSurfaces() {
   useEffect(() => {
     let alive = true;
     Promise.all([
-      surfaceSet("aerial_sand", 0.86, 0.9), surfaceSet("concrete_floor_02", 0.86, 0.7), surfaceSet("aerial_asphalt_01", 0.8, 1.1),
+      surfaceSet("aerial_sand", 0.86, 0.45), surfaceSet("concrete_floor_02", 0.86, 0.7), surfaceSet("aerial_asphalt_01", 0.8, 1.1),
       surfaceSet("asphalt_02", 0.8, 1.0),
     ]).then(([sand, concrete, asphalt, asphalt2]) => { if (alive) setS({ sand, concrete, asphalt, asphalt2 }); }).catch(() => setS({}));
     return () => { alive = false; };
@@ -109,12 +124,12 @@ export function Airfield({ data, center }: { data: AirfieldData; center: P2 }) {
     const paint = (color: string) => layer(new THREE.MeshStandardMaterial({ color, roughness: 0.62, metalness: 0 }), 8);
     return {
       ground,
-      green: std("#7c9a5a", undefined, 0.95, 1),
+      green: std("#7f9658", surf?.sand, 0.95, 1, 0.3),
       water: layer(new THREE.MeshStandardMaterial({ color: "#2d5f73", roughness: 0.12, metalness: 0.1 }), 1),
       parking: std("#6c6d6c", surf?.asphalt2, 0.9, 2),
       roads: std("#55585b", surf?.asphalt2, 0.85, 3),
       shoulder: std("#a39c8c", surf?.asphalt2, 0.95, 2),
-      apron: std("#c4c1b9", surf?.concrete, 0.82, 4, 0.5),
+      apron: std("#b3b0a8", surf?.concrete, 0.82, 4, 0.5),
       taxi: std("#6b6d70", surf?.asphalt, 0.82, 5),
       runway: std("#505357", surf?.asphalt, 0.8, 6),
       white: paint("#ecebe6"),
@@ -126,7 +141,7 @@ export function Airfield({ data, center }: { data: AirfieldData; center: P2 }) {
 
   const lightMat = useMemo(() => airfieldLightMaterial(), []);
   const groundGeo = useMemo(() => {
-    const b = new GeoBuilder(48);
+    const b = new GeoBuilder(110);
     const R = 16000;
     b.quad([center[0] - R, center[1] - R], [center[0] + R, center[1] - R], [center[0] + R, center[1] + R], [center[0] - R, center[1] + R], 0);
     return b.build();

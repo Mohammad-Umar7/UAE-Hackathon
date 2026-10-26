@@ -60,24 +60,44 @@ function Land() {
     <group>
       <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[900, 900]} />
-        <meshStandardMaterial color="#0b1a2a" roughness={0.9} metalness={0.05} />
+        <meshStandardMaterial color="#071322" roughness={0.9} metalness={0.05} />
       </mesh>
       {geom ? (
-        <mesh geometry={geom} position={[0, 0.6, 0]}>
-          <meshStandardMaterial color="#1b2633" roughness={0.95} />
-        </mesh>
+        <>
+          <mesh geometry={geom} position={[0, 0.6, 0]}>
+            <meshStandardMaterial color="#26313d" roughness={0.95} />
+          </mesh>
+          <OuterLand />
+        </>
       ) : (
         <FallbackCoast />
       )}
       {urbanGeom && (
         <mesh geometry={urbanGeom} position={[0, 0.62, 0]}>
-          <meshBasicMaterial color="#2a3a4c" transparent opacity={0.85} />
+          <meshBasicMaterial color="#33465b" transparent opacity={0.85} side={THREE.DoubleSide} />
         </mesh>
       )}
       <Roads />
       <gridHelper args={[800, 40, "#1e3247", "#14263a"]} position={[0, 0.66, 0]} />
     </group>
   );
+}
+
+/**
+ * The OSM land layer is clipped to lon 54–56°E, lat 23.9–25.7°N. Beyond its east and south edges (and the
+ * south-west, below the Abu Dhabi coast) the region is land, so extend it there instead of showing sea.
+ */
+function OuterLand() {
+  const geom = useMemo(() => {
+    const boxes: [number, number, number, number][] = [[50, 18, 62, 23.9], [56, 23.9, 62, 30], [50, 23.9, 54, 24.12]];
+    const shapes = boxes.map(([lo0, la0, lo1, la1]) => new THREE.Shape([
+      new THREE.Vector2(...project(la0, lo0)), new THREE.Vector2(...project(la0, lo1)), new THREE.Vector2(...project(la1, lo1)), new THREE.Vector2(...project(la1, lo0)),
+    ]));
+    const g = new THREE.ShapeGeometry(shapes);
+    g.rotateX(Math.PI / 2);
+    return g;
+  }, []);
+  return <mesh geometry={geom} position={[0, 0.59, 0]}><meshStandardMaterial color="#26313d" roughness={0.95} side={THREE.DoubleSide} /></mesh>;
 }
 
 /** Used only if the regional basemap file is missing: a neutral land mass so the map still reads. */
@@ -247,6 +267,9 @@ function Arcs({ rt }: { rt: Runtime }) {
   );
 }
 
+/** Dubai and Sharjah are 15 km apart: push their labels to opposite sides so they never overlap. */
+const LABEL_SHIFT: Record<string, string> = { OMDB: "translate(-58%, 34px)", OMSJ: "translate(58%, -58px)", OMAA: "translateY(-46px)" };
+
 const CITIES: [string, number, number][] = [["Abu Dhabi", 24.4539, 54.3773], ["Dubai", 25.2048, 55.2708], ["Sharjah", 25.3463, 55.4209], ["Ajman", 25.4052, 55.5136], ["Al Ain", 24.2075, 55.7447]];
 
 /** DOM labels for airports, cities and coordination arcs (positioned by the AnchorProjector). */
@@ -266,7 +289,8 @@ function MapLabels({ rt, anchors }: { rt: Runtime; anchors: AnchorSet }) {
         const color = STATUS_COLOR[sum.status];
         return (
           <Anchor key={icao} set={anchors} id={`ap:${icao}`} pos={[x, 1.8, z]}>
-            <button onClick={() => { setAirport(icao); setView("twin"); }} className="hud pointer-events-auto whitespace-nowrap px-2.5 py-1.5 text-left" style={{ transform: "translateY(-46px)" }}>
+            <button onClick={() => { setAirport(icao); setView("twin"); }} className="hud pointer-events-auto whitespace-nowrap px-2.5 py-1.5 text-left"
+              style={{ transform: LABEL_SHIFT[icao] ?? "translateY(-46px)" }}>
               <div className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full" style={{ background: color }} />
                 <span className="text-[12px] font-semibold">{p.iata}</span>

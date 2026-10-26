@@ -31,7 +31,7 @@ export function TopBar() {
         <Logo size={28} />
         <div className="leading-tight">
           <div className="text-[13.5px] font-semibold tracking-tight">SKYPACT</div>
-          <div className="text-[10.5px] text-muted">Disruption Recovery &amp; Coordination</div>
+          <div className="whitespace-nowrap text-[10.5px] text-muted">Disruption Recovery &amp; Coordination</div>
         </div>
       </div>
       <div className="h-7 w-px bg-line" />
@@ -45,7 +45,7 @@ export function TopBar() {
       <div className="mx-auto flex items-center gap-2">
         <div className="flex items-baseline gap-1.5 rounded-lg border border-line bg-panel-2 px-3 py-1">
           <span className="mono text-[17px] font-semibold tracking-tight">{fmtTime(w.now, true)}</span>
-          <span className="text-[10.5px] text-muted">GST · synthetic day</span>
+          <span className="whitespace-nowrap text-[10.5px] text-muted">GST · synthetic day</span>
         </div>
         <div className="flex items-center gap-1">
           <button className="btn h-8 w-8 justify-center p-0" onClick={() => rt.setRunning(!rt.running)} title={rt.running ? "Pause" : "Run"}>
