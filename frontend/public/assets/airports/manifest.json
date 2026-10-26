@@ -1,0 +1,2326 @@
+{
+  "generator": "pipeline/blender/airports/build_airports.py",
+  "generator_version": "1.0.0",
+  "blender": "5.1.2",
+  "generated": "2026-10-27",
+  "conventions": "docs/CONVENTIONS.md sections 2-4",
+  "frame": "Each GLB is modelled in its airport ENU frame (aeqd about the ARP; x east, y north, z up, metres; ground = airfield datum z 0) and exported +Y up, so three.js gets (x east, y up, z = -north). Place every GLB at the origin with an identity transform. bbox_enu is in ENU.",
+  "replaces_note": "replaces = layout.json building ids that the model supersedes: hide those extrusions when the GLB is shown.",
+  "hierarchy": "<name> (root empty, extras: icao, title, replaces) -> LOD0 / LOD1 / LOD2 -> mesh nodes (LOD1/LOD2 node names carry a _LOD1/_LOD2 suffix); one primitive per material",
+  "materials": {
+    "M_Glass": "dark reflective blue-grey glazing (metallic 0.3, roughness 0.1)",
+    "M_GlassLit": "same glazing on large lit glazed areas (facades, skylights, tower cabs): make it emissive at night (warm white); not emissive in the GLB",
+    "M_Roof": "white / silver metal roof",
+    "M_Structure": "white / light-grey steel arches, ribs, mullions, soffits, canopies",
+    "M_Concrete": "warm light concrete / stone",
+    "M_Accent": "per-asset accent, see material_values (OMSJ: blue ceramic lattice screens, baked texture T_Lattice.png)",
+    "M_Dark": "soffits in shadow, recesses, louvres, apron-level bands",
+    "M_Lights": "aviation obstruction lights (red), emissive in the GLB (strength 4)"
+  },
+  "uv": "UVMap: box projection in metres x per-material scale (glass 0.25 /m, roof 0.1 /m, M_Accent 0.4 /m for the lattice texture), relative to each mesh node origin",
+  "per_airport": {
+    "OMAA": {
+      "assets": [
+        "OMAA_terminal_a",
+        "OMAA_tower"
+      ],
+      "LOD0": 55074,
+      "LOD1": 18160,
+      "LOD2": 4806,
+      "LOD0_budget": 250000,
+      "LOD0_within_budget": true
+    },
+    "OMDB": {
+      "assets": [
+        "OMDB_concourse_a",
+        "OMDB_concourse_b",
+        "OMDB_concourse_c",
+        "OMDB_concourse_d",
+        "OMDB_terminal_1",
+        "OMDB_terminal_2",
+        "OMDB_terminal_3",
+        "OMDB_tower"
+      ],
+      "LOD0": 120687,
+      "LOD1": 41009,
+      "LOD2": 8171,
+      "LOD0_budget": 250000,
+      "LOD0_within_budget": true
+    },
+    "OMSJ": {
+      "assets": [
+        "OMSJ_terminal",
+        "OMSJ_tower"
+      ],
+      "LOD0": 98820,
+      "LOD1": 21805,
+      "LOD2": 4596,
+      "LOD0_budget": 250000,
+      "LOD0_within_budget": true
+    }
+  },
+  "assets": [
+    {
+      "name": "OMAA_terminal_a",
+      "icao": "OMAA",
+      "file": "pipeline/build/raw/airports/OMAA_terminal_a.glb",
+      "title": "Zayed International Terminal A (midfield, X plan, dune roof)",
+      "replaces": [
+        "osm-r20328079-rest",
+        "osm-w1246109131",
+        "osm-w1246109130"
+      ],
+      "bbox_enu": {
+        "min": [
+          -1536.2,
+          1239.2,
+          0.0
+        ],
+        "max": [
+          -133.0,
+          2662.6,
+          53.27
+        ]
+      },
+      "triangles": {
+        "LOD0": 51630,
+        "LOD1": 16748,
+        "LOD2": 4400
+      },
+      "lod_ratios": {
+        "LOD0": 1.0,
+        "LOD1": 0.324,
+        "LOD2": 0.085
+      },
+      "materials": [
+        "M_Roof",
+        "M_Structure",
+        "M_Dark",
+        "M_GlassLit",
+        "M_Lights",
+        "M_Glass",
+        "M_Concrete"
+      ],
+      "material_values": {
+        "M_Roof": {
+          "color": "#D3D7DA",
+          "metal": 0.55,
+          "rough": 0.32
+        },
+        "M_Structure": {
+          "color": "#E4E6E8",
+          "metal": 0.15,
+          "rough": 0.45
+        },
+        "M_Dark": {
+          "color": "#16191C",
+          "metal": 0.1,
+          "rough": 0.6
+        },
+        "M_GlassLit": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        },
+        "M_Lights": {
+          "color": "#FF2A1A",
+          "metal": 0.0,
+          "rough": 0.3,
+          "emit": 4.0,
+          "emit_color": "#FF2010"
+        },
+        "M_Glass": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        },
+        "M_Concrete": {
+          "color": "#D9CFBE",
+          "metal": 0.0,
+          "rough": 0.82
+        }
+      },
+      "nodes": [
+        {
+          "name": "TerminalA_Building",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 25838,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "TerminalA_Lights",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 336,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "TerminalA_Links",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 5824,
+          "materials": [
+            "M_Concrete",
+            "M_Glass",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "TerminalA_Skylights",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 2864,
+          "materials": [
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "TerminalA_Structure",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 16768,
+          "materials": [
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD0",
+          "type": "empty",
+          "parent": "OMAA_terminal_a"
+        },
+        {
+          "name": "TerminalA_Building_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 8870,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "TerminalA_Lights_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 336,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "TerminalA_Links_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 2116,
+          "materials": [
+            "M_Concrete",
+            "M_Glass",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "TerminalA_Skylights_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 1502,
+          "materials": [
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "TerminalA_Structure_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 3924,
+          "materials": [
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD1",
+          "type": "empty",
+          "parent": "OMAA_terminal_a"
+        },
+        {
+          "name": "TerminalA_Building_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 3436,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "TerminalA_Links_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 964,
+          "materials": [
+            "M_Glass",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD2",
+          "type": "empty",
+          "parent": "OMAA_terminal_a"
+        },
+        {
+          "name": "OMAA_terminal_a",
+          "type": "empty",
+          "parent": null
+        }
+      ],
+      "file_size_bytes": 3062460,
+      "notes": ""
+    },
+    {
+      "name": "OMAA_tower",
+      "icao": "OMAA",
+      "file": "pipeline/build/raw/airports/OMAA_tower.glb",
+      "title": "Zayed International ATCC tower (crescent sail shaft) and base building",
+      "replaces": [
+        "osm-w396942818",
+        "osm-w313959148-rest"
+      ],
+      "bbox_enu": {
+        "min": [
+          374.14,
+          927.64,
+          0.0
+        ],
+        "max": [
+          435.76,
+          988.26,
+          115.75
+        ]
+      },
+      "triangles": {
+        "LOD0": 3444,
+        "LOD1": 1412,
+        "LOD2": 406
+      },
+      "lod_ratios": {
+        "LOD0": 1.0,
+        "LOD1": 0.41,
+        "LOD2": 0.118
+      },
+      "materials": [
+        "M_Structure",
+        "M_Dark",
+        "M_GlassLit",
+        "M_Lights",
+        "M_Concrete",
+        "M_Roof"
+      ],
+      "material_values": {
+        "M_Structure": {
+          "color": "#E4E6E8",
+          "metal": 0.15,
+          "rough": 0.45
+        },
+        "M_Dark": {
+          "color": "#16191C",
+          "metal": 0.1,
+          "rough": 0.6
+        },
+        "M_GlassLit": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        },
+        "M_Lights": {
+          "color": "#FF2A1A",
+          "metal": 0.0,
+          "rough": 0.3,
+          "emit": 4.0,
+          "emit_color": "#FF2010"
+        },
+        "M_Concrete": {
+          "color": "#D9CFBE",
+          "metal": 0.0,
+          "rough": 0.82
+        },
+        "M_Roof": {
+          "color": "#D3D7DA",
+          "metal": 0.55,
+          "rough": 0.32
+        }
+      },
+      "nodes": [
+        {
+          "name": "ATCC_Details",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 330,
+          "materials": [
+            "M_Dark",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ATCC_Glazing",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 126,
+          "materials": [
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "ATCC_Lights",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 240,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "ATCC_Tower",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 2748,
+          "materials": [
+            "M_Concrete",
+            "M_Dark",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD0",
+          "type": "empty",
+          "parent": "OMAA_tower"
+        },
+        {
+          "name": "ATCC_Details_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 174,
+          "materials": [
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ATCC_Glazing_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 86,
+          "materials": [
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "ATCC_Lights_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 240,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "ATCC_Tower_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 912,
+          "materials": [
+            "M_Concrete",
+            "M_Dark",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD1",
+          "type": "empty",
+          "parent": "OMAA_tower"
+        },
+        {
+          "name": "ATCC_Glazing_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 20,
+          "materials": [
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "ATCC_Tower_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 386,
+          "materials": [
+            "M_Concrete",
+            "M_Dark",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD2",
+          "type": "empty",
+          "parent": "OMAA_tower"
+        },
+        {
+          "name": "OMAA_tower",
+          "type": "empty",
+          "parent": null
+        }
+      ],
+      "file_size_bytes": 228924,
+      "notes": ""
+    },
+    {
+      "name": "OMDB_concourse_a",
+      "icao": "OMDB",
+      "file": "pipeline/build/raw/airports/OMDB_concourse_a.glb",
+      "title": "Dubai International Concourse A (vaulted roof, A380 concourse)",
+      "replaces": [
+        "osm-w231888210"
+      ],
+      "bbox_enu": {
+        "min": [
+          491.4,
+          -1283.2,
+          0.0
+        ],
+        "max": [
+          1099.1,
+          -853.9,
+          44.06
+        ]
+      },
+      "triangles": {
+        "LOD0": 18728,
+        "LOD1": 6755,
+        "LOD2": 996
+      },
+      "lod_ratios": {
+        "LOD0": 1.0,
+        "LOD1": 0.361,
+        "LOD2": 0.053
+      },
+      "materials": [
+        "M_Roof",
+        "M_Structure",
+        "M_Dark",
+        "M_GlassLit",
+        "M_Lights",
+        "M_Glass"
+      ],
+      "material_values": {
+        "M_Roof": {
+          "color": "#D3D7DA",
+          "metal": 0.55,
+          "rough": 0.32
+        },
+        "M_Structure": {
+          "color": "#E4E6E8",
+          "metal": 0.15,
+          "rough": 0.45
+        },
+        "M_Dark": {
+          "color": "#16191C",
+          "metal": 0.1,
+          "rough": 0.6
+        },
+        "M_GlassLit": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        },
+        "M_Lights": {
+          "color": "#FF2A1A",
+          "metal": 0.0,
+          "rough": 0.3,
+          "emit": 4.0,
+          "emit_color": "#FF2010"
+        },
+        "M_Glass": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        }
+      },
+      "nodes": [
+        {
+          "name": "ConcourseA_Building",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 7722,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ConcourseA_Lights",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 144,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "ConcourseA_Skylights",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 884,
+          "materials": [
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "ConcourseA_Structure",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 9978,
+          "materials": [
+            "M_Glass",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD0",
+          "type": "empty",
+          "parent": "OMDB_concourse_a"
+        },
+        {
+          "name": "ConcourseA_Building_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 2619,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ConcourseA_Lights_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 144,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "ConcourseA_Skylights_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 442,
+          "materials": [
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "ConcourseA_Structure_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 3550,
+          "materials": [
+            "M_Glass",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD1",
+          "type": "empty",
+          "parent": "OMDB_concourse_a"
+        },
+        {
+          "name": "ConcourseA_Building_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 996,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD2",
+          "type": "empty",
+          "parent": "OMDB_concourse_a"
+        },
+        {
+          "name": "OMDB_concourse_a",
+          "type": "empty",
+          "parent": null
+        }
+      ],
+      "file_size_bytes": 1090928,
+      "notes": ""
+    },
+    {
+      "name": "OMDB_concourse_b",
+      "icao": "OMDB",
+      "file": "pipeline/build/raw/airports/OMDB_concourse_b.glb",
+      "title": "Dubai International Concourse B (924 m vaulted concourse, T3)",
+      "replaces": [
+        "osm-w87185819",
+        "osm-w742271052"
+      ],
+      "bbox_enu": {
+        "min": [
+          -684.1,
+          -758.3,
+          0.0
+        ],
+        "max": [
+          138.0,
+          -216.5,
+          41.62
+        ]
+      },
+      "triangles": {
+        "LOD0": 24894,
+        "LOD1": 8719,
+        "LOD2": 1470
+      },
+      "lod_ratios": {
+        "LOD0": 1.0,
+        "LOD1": 0.35,
+        "LOD2": 0.059
+      },
+      "materials": [
+        "M_Roof",
+        "M_Structure",
+        "M_Concrete",
+        "M_GlassLit",
+        "M_Dark",
+        "M_Lights",
+        "M_Glass"
+      ],
+      "material_values": {
+        "M_Roof": {
+          "color": "#D3D7DA",
+          "metal": 0.55,
+          "rough": 0.32
+        },
+        "M_Structure": {
+          "color": "#E4E6E8",
+          "metal": 0.15,
+          "rough": 0.45
+        },
+        "M_Concrete": {
+          "color": "#D9CFBE",
+          "metal": 0.0,
+          "rough": 0.82
+        },
+        "M_GlassLit": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        },
+        "M_Dark": {
+          "color": "#16191C",
+          "metal": 0.1,
+          "rough": 0.6
+        },
+        "M_Lights": {
+          "color": "#FF2A1A",
+          "metal": 0.0,
+          "rough": 0.3,
+          "emit": 4.0,
+          "emit_color": "#FF2010"
+        },
+        "M_Glass": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        }
+      },
+      "nodes": [
+        {
+          "name": "ConcourseB_Annex",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 1686,
+          "materials": [
+            "M_Concrete",
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ConcourseB_Building",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 9738,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ConcourseB_Lights",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 144,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "ConcourseB_Skylights",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 1156,
+          "materials": [
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "ConcourseB_Structure",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 12170,
+          "materials": [
+            "M_Glass",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD0",
+          "type": "empty",
+          "parent": "OMDB_concourse_b"
+        },
+        {
+          "name": "ConcourseB_Annex_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 459,
+          "materials": [
+            "M_Concrete",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ConcourseB_Building_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 3336,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ConcourseB_Lights_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 144,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "ConcourseB_Skylights_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 680,
+          "materials": [
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "ConcourseB_Structure_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 4100,
+          "materials": [
+            "M_Glass",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD1",
+          "type": "empty",
+          "parent": "OMDB_concourse_b"
+        },
+        {
+          "name": "ConcourseB_Annex_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 196,
+          "materials": [
+            "M_Concrete",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ConcourseB_Building_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 1274,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD2",
+          "type": "empty",
+          "parent": "OMDB_concourse_b"
+        },
+        {
+          "name": "OMDB_concourse_b",
+          "type": "empty",
+          "parent": null
+        }
+      ],
+      "file_size_bytes": 1483292,
+      "notes": ""
+    },
+    {
+      "name": "OMDB_concourse_c",
+      "icao": "OMDB",
+      "file": "pipeline/build/raw/airports/OMDB_concourse_c.glb",
+      "title": "Dubai International Concourse C (Sheikh Rashid Terminal concourse)",
+      "replaces": [
+        "osm-w10315513"
+      ],
+      "bbox_enu": {
+        "min": [
+          -1403.7,
+          -247.22,
+          0.0
+        ],
+        "max": [
+          -698.7,
+          219.3,
+          23.6
+        ]
+      },
+      "triangles": {
+        "LOD0": 11627,
+        "LOD1": 3873,
+        "LOD2": 928
+      },
+      "lod_ratios": {
+        "LOD0": 1.0,
+        "LOD1": 0.333,
+        "LOD2": 0.08
+      },
+      "materials": [
+        "M_Roof",
+        "M_Structure",
+        "M_Dark",
+        "M_GlassLit",
+        "M_Lights",
+        "M_Glass"
+      ],
+      "material_values": {
+        "M_Roof": {
+          "color": "#D3D7DA",
+          "metal": 0.55,
+          "rough": 0.32
+        },
+        "M_Structure": {
+          "color": "#E4E6E8",
+          "metal": 0.15,
+          "rough": 0.45
+        },
+        "M_Dark": {
+          "color": "#16191C",
+          "metal": 0.1,
+          "rough": 0.6
+        },
+        "M_GlassLit": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        },
+        "M_Lights": {
+          "color": "#FF2A1A",
+          "metal": 0.0,
+          "rough": 0.3,
+          "emit": 4.0,
+          "emit_color": "#FF2010"
+        },
+        "M_Glass": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        }
+      },
+      "nodes": [
+        {
+          "name": "ConcourseC_Building",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 5625,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ConcourseC_Lights",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 144,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "ConcourseC_Structure",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 5858,
+          "materials": [
+            "M_Dark",
+            "M_Glass",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD0",
+          "type": "empty",
+          "parent": "OMDB_concourse_c"
+        },
+        {
+          "name": "ConcourseC_Building_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 2187,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ConcourseC_Lights_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 144,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "ConcourseC_Structure_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 1542,
+          "materials": [
+            "M_Glass",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD1",
+          "type": "empty",
+          "parent": "OMDB_concourse_c"
+        },
+        {
+          "name": "ConcourseC_Building_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 928,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD2",
+          "type": "empty",
+          "parent": "OMDB_concourse_c"
+        },
+        {
+          "name": "OMDB_concourse_c",
+          "type": "empty",
+          "parent": null
+        }
+      ],
+      "file_size_bytes": 735120,
+      "notes": ""
+    },
+    {
+      "name": "OMDB_concourse_d",
+      "icao": "OMDB",
+      "file": "pipeline/build/raw/airports/OMDB_concourse_d.glb",
+      "title": "Dubai International Concourse D (2016, central atrium)",
+      "replaces": [
+        "osm-w302538629"
+      ],
+      "bbox_enu": {
+        "min": [
+          -2373.8,
+          331.3,
+          0.0
+        ],
+        "max": [
+          -1720.1,
+          791.1,
+          25.12
+        ]
+      },
+      "triangles": {
+        "LOD0": 16622,
+        "LOD1": 5561,
+        "LOD2": 1196
+      },
+      "lod_ratios": {
+        "LOD0": 1.0,
+        "LOD1": 0.335,
+        "LOD2": 0.072
+      },
+      "materials": [
+        "M_Roof",
+        "M_Structure",
+        "M_Dark",
+        "M_GlassLit",
+        "M_Glass"
+      ],
+      "material_values": {
+        "M_Roof": {
+          "color": "#D3D7DA",
+          "metal": 0.55,
+          "rough": 0.32
+        },
+        "M_Structure": {
+          "color": "#E4E6E8",
+          "metal": 0.15,
+          "rough": 0.45
+        },
+        "M_Dark": {
+          "color": "#16191C",
+          "metal": 0.1,
+          "rough": 0.6
+        },
+        "M_GlassLit": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        },
+        "M_Glass": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        }
+      },
+      "nodes": [
+        {
+          "name": "ConcourseD_Building",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 8774,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ConcourseD_Skylights",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 430,
+          "materials": [
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "ConcourseD_Structure",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 7418,
+          "materials": [
+            "M_Dark",
+            "M_Glass",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD0",
+          "type": "empty",
+          "parent": "OMDB_concourse_d"
+        },
+        {
+          "name": "ConcourseD_Building_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 3061,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ConcourseD_Skylights_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 430,
+          "materials": [
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "ConcourseD_Structure_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 2070,
+          "materials": [
+            "M_Glass",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD1",
+          "type": "empty",
+          "parent": "OMDB_concourse_d"
+        },
+        {
+          "name": "ConcourseD_Building_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 1196,
+          "materials": [
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD2",
+          "type": "empty",
+          "parent": "OMDB_concourse_d"
+        },
+        {
+          "name": "OMDB_concourse_d",
+          "type": "empty",
+          "parent": null
+        }
+      ],
+      "file_size_bytes": 978804,
+      "notes": ""
+    },
+    {
+      "name": "OMDB_terminal_1",
+      "icao": "OMDB",
+      "file": "pipeline/build/raw/airports/OMDB_terminal_1.glb",
+      "title": "Dubai International Terminal 1 (landside processor)",
+      "replaces": [
+        "osm-w98425196"
+      ],
+      "bbox_enu": {
+        "min": [
+          -1465.07,
+          -632.41,
+          0.0
+        ],
+        "max": [
+          -836.82,
+          -190.58,
+          25.33
+        ]
+      },
+      "triangles": {
+        "LOD0": 23180,
+        "LOD1": 6556,
+        "LOD2": 1180
+      },
+      "lod_ratios": {
+        "LOD0": 1.0,
+        "LOD1": 0.283,
+        "LOD2": 0.051
+      },
+      "materials": [
+        "M_Roof",
+        "M_Structure",
+        "M_Concrete",
+        "M_GlassLit",
+        "M_Dark"
+      ],
+      "material_values": {
+        "M_Roof": {
+          "color": "#D3D7DA",
+          "metal": 0.55,
+          "rough": 0.32
+        },
+        "M_Structure": {
+          "color": "#E4E6E8",
+          "metal": 0.15,
+          "rough": 0.45
+        },
+        "M_Concrete": {
+          "color": "#D9CFBE",
+          "metal": 0.0,
+          "rough": 0.82
+        },
+        "M_GlassLit": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        },
+        "M_Dark": {
+          "color": "#16191C",
+          "metal": 0.1,
+          "rough": 0.6
+        }
+      },
+      "nodes": [
+        {
+          "name": "Terminal1_Building",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 3772,
+          "materials": [
+            "M_Concrete",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal1_Structure",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 19408,
+          "materials": [
+            "M_Dark",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD0",
+          "type": "empty",
+          "parent": "OMDB_terminal_1"
+        },
+        {
+          "name": "Terminal1_Building_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 1702,
+          "materials": [
+            "M_Concrete",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal1_Structure_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 4854,
+          "materials": [
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD1",
+          "type": "empty",
+          "parent": "OMDB_terminal_1"
+        },
+        {
+          "name": "Terminal1_Building_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 808,
+          "materials": [
+            "M_Concrete",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal1_Structure_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 372,
+          "materials": [
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD2",
+          "type": "empty",
+          "parent": "OMDB_terminal_1"
+        },
+        {
+          "name": "OMDB_terminal_1",
+          "type": "empty",
+          "parent": null
+        }
+      ],
+      "file_size_bytes": 1534804,
+      "notes": ""
+    },
+    {
+      "name": "OMDB_terminal_2",
+      "icao": "OMDB",
+      "file": "pipeline/build/raw/airports/OMDB_terminal_2.glb",
+      "title": "Dubai International Terminal 2 (low terminal, north side)",
+      "replaces": [
+        "osm-w98425234"
+      ],
+      "bbox_enu": {
+        "min": [
+          -1069.9,
+          1239.29,
+          0.0
+        ],
+        "max": [
+          -413.7,
+          1695.4,
+          16.98
+        ]
+      },
+      "triangles": {
+        "LOD0": 15395,
+        "LOD1": 6075,
+        "LOD2": 1174
+      },
+      "lod_ratios": {
+        "LOD0": 1.0,
+        "LOD1": 0.395,
+        "LOD2": 0.076
+      },
+      "materials": [
+        "M_Roof",
+        "M_Structure",
+        "M_Concrete",
+        "M_GlassLit",
+        "M_Dark"
+      ],
+      "material_values": {
+        "M_Roof": {
+          "color": "#D3D7DA",
+          "metal": 0.55,
+          "rough": 0.32
+        },
+        "M_Structure": {
+          "color": "#E4E6E8",
+          "metal": 0.15,
+          "rough": 0.45
+        },
+        "M_Concrete": {
+          "color": "#D9CFBE",
+          "metal": 0.0,
+          "rough": 0.82
+        },
+        "M_GlassLit": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        },
+        "M_Dark": {
+          "color": "#16191C",
+          "metal": 0.1,
+          "rough": 0.6
+        }
+      },
+      "nodes": [
+        {
+          "name": "Terminal2_Building",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 3831,
+          "materials": [
+            "M_Concrete",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal2_Structure",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 11564,
+          "materials": [
+            "M_Dark",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD0",
+          "type": "empty",
+          "parent": "OMDB_terminal_2"
+        },
+        {
+          "name": "Terminal2_Building_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 1737,
+          "materials": [
+            "M_Concrete",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal2_Structure_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 4338,
+          "materials": [
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD1",
+          "type": "empty",
+          "parent": "OMDB_terminal_2"
+        },
+        {
+          "name": "Terminal2_Building_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 826,
+          "materials": [
+            "M_Concrete",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal2_Structure_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 348,
+          "materials": [
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD2",
+          "type": "empty",
+          "parent": "OMDB_terminal_2"
+        },
+        {
+          "name": "OMDB_terminal_2",
+          "type": "empty",
+          "parent": null
+        }
+      ],
+      "file_size_bytes": 1027068,
+      "notes": ""
+    },
+    {
+      "name": "OMDB_terminal_3",
+      "icao": "OMDB",
+      "file": "pipeline/build/raw/airports/OMDB_terminal_3.glb",
+      "title": "Dubai International Terminal 3 (above-ground landside hall)",
+      "replaces": [
+        "osm-w98425182"
+      ],
+      "bbox_enu": {
+        "min": [
+          -585.74,
+          -891.93,
+          0.0
+        ],
+        "max": [
+          -298.77,
+          -701.7,
+          18.6
+        ]
+      },
+      "triangles": {
+        "LOD0": 4840,
+        "LOD1": 1472,
+        "LOD2": 457
+      },
+      "lod_ratios": {
+        "LOD0": 1.0,
+        "LOD1": 0.304,
+        "LOD2": 0.094
+      },
+      "materials": [
+        "M_Roof",
+        "M_Structure",
+        "M_GlassLit"
+      ],
+      "material_values": {
+        "M_Roof": {
+          "color": "#D3D7DA",
+          "metal": 0.55,
+          "rough": 0.32
+        },
+        "M_Structure": {
+          "color": "#E4E6E8",
+          "metal": 0.15,
+          "rough": 0.45
+        },
+        "M_GlassLit": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        }
+      },
+      "nodes": [
+        {
+          "name": "Terminal3_Building",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 1444,
+          "materials": [
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal3_Structure",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 3396,
+          "materials": [
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD0",
+          "type": "empty",
+          "parent": "OMDB_terminal_3"
+        },
+        {
+          "name": "Terminal3_Building_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 612,
+          "materials": [
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal3_Structure_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 860,
+          "materials": [
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD1",
+          "type": "empty",
+          "parent": "OMDB_terminal_3"
+        },
+        {
+          "name": "Terminal3_Building_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 285,
+          "materials": [
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal3_Structure_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 172,
+          "materials": [
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD2",
+          "type": "empty",
+          "parent": "OMDB_terminal_3"
+        },
+        {
+          "name": "OMDB_terminal_3",
+          "type": "empty",
+          "parent": null
+        }
+      ],
+      "file_size_bytes": 365916,
+      "notes": ""
+    },
+    {
+      "name": "OMDB_tower",
+      "icao": "OMDB",
+      "file": "pipeline/build/raw/airports/OMDB_tower.glb",
+      "title": "Dubai International ATC tower (buttressed column, arched wings) and B-C junction",
+      "replaces": [
+        "osm-n4481230343",
+        "osm-w385965965",
+        "osm-w264966382"
+      ],
+      "bbox_enu": {
+        "min": [
+          -727.3,
+          -274.1,
+          0.0
+        ],
+        "max": [
+          -538.7,
+          -114.1,
+          89.65
+        ]
+      },
+      "triangles": {
+        "LOD0": 5401,
+        "LOD1": 1998,
+        "LOD2": 770
+      },
+      "lod_ratios": {
+        "LOD0": 1.0,
+        "LOD1": 0.37,
+        "LOD2": 0.143
+      },
+      "materials": [
+        "M_Structure",
+        "M_Dark",
+        "M_Glass",
+        "M_GlassLit",
+        "M_Lights",
+        "M_Roof",
+        "M_Concrete"
+      ],
+      "material_values": {
+        "M_Structure": {
+          "color": "#E4E6E8",
+          "metal": 0.15,
+          "rough": 0.45
+        },
+        "M_Dark": {
+          "color": "#16191C",
+          "metal": 0.1,
+          "rough": 0.6
+        },
+        "M_Glass": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        },
+        "M_GlassLit": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        },
+        "M_Lights": {
+          "color": "#FF2A1A",
+          "metal": 0.0,
+          "rough": 0.3,
+          "emit": 4.0,
+          "emit_color": "#FF2010"
+        },
+        "M_Roof": {
+          "color": "#D3D7DA",
+          "metal": 0.55,
+          "rough": 0.32
+        },
+        "M_Concrete": {
+          "color": "#D9CFBE",
+          "metal": 0.0,
+          "rough": 0.82
+        }
+      },
+      "nodes": [
+        {
+          "name": "ATC_Details",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 2228,
+          "materials": [
+            "M_Dark",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ATC_Glazing",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 160,
+          "materials": [
+            "M_Glass",
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "ATC_Lights",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 240,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "ATC_Tower",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 2773,
+          "materials": [
+            "M_Concrete",
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD0",
+          "type": "empty",
+          "parent": "OMDB_tower"
+        },
+        {
+          "name": "ATC_Details_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 294,
+          "materials": [
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "ATC_Glazing_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 80,
+          "materials": [
+            "M_Glass",
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "ATC_Lights_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 240,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "ATC_Tower_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 1384,
+          "materials": [
+            "M_Concrete",
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD1",
+          "type": "empty",
+          "parent": "OMDB_tower"
+        },
+        {
+          "name": "ATC_Glazing_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 40,
+          "materials": [
+            "M_Glass",
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "ATC_Tower_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 730,
+          "materials": [
+            "M_Concrete",
+            "M_Dark",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD2",
+          "type": "empty",
+          "parent": "OMDB_tower"
+        },
+        {
+          "name": "OMDB_tower",
+          "type": "empty",
+          "parent": null
+        }
+      ],
+      "file_size_bytes": 418272,
+      "notes": ""
+    },
+    {
+      "name": "OMSJ_terminal",
+      "icao": "OMSJ",
+      "file": "pipeline/build/raw/airports/OMSJ_terminal.glb",
+      "title": "Sharjah International passenger terminal (domes, pointed arches, blue ceramic screens)",
+      "replaces": [
+        "osm-w182512055",
+        "osm-w182512051",
+        "osm-w182601738",
+        "osm-w203760511",
+        "osm-w182601954"
+      ],
+      "bbox_enu": {
+        "min": [
+          259.4,
+          -1137.25,
+          0.0
+        ],
+        "max": [
+          939.6,
+          -652.1,
+          48.9
+        ]
+      },
+      "triangles": {
+        "LOD0": 94574,
+        "LOD1": 20199,
+        "LOD2": 4054
+      },
+      "lod_ratios": {
+        "LOD0": 1.0,
+        "LOD1": 0.214,
+        "LOD2": 0.043
+      },
+      "materials": [
+        "M_Concrete",
+        "M_Structure",
+        "M_Roof",
+        "M_GlassLit",
+        "M_Accent",
+        "M_Lights"
+      ],
+      "material_values": {
+        "M_Concrete": {
+          "color": "#D9CFBE",
+          "metal": 0.0,
+          "rough": 0.82
+        },
+        "M_Structure": {
+          "color": "#E4E6E8",
+          "metal": 0.15,
+          "rough": 0.45
+        },
+        "M_Roof": {
+          "color": "#ECEBE6",
+          "metal": 0.05,
+          "rough": 0.38
+        },
+        "M_GlassLit": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        },
+        "M_Accent": {
+          "color": "#3A7CC4",
+          "metal": 0.0,
+          "rough": 0.3,
+          "tex": "T_Lattice.png"
+        },
+        "M_Lights": {
+          "color": "#FF2A1A",
+          "metal": 0.0,
+          "rough": 0.3,
+          "emit": 4.0,
+          "emit_color": "#FF2010"
+        }
+      },
+      "nodes": [
+        {
+          "name": "Terminal_Building",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 4749,
+          "materials": [
+            "M_Concrete",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal_Details",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 62263,
+          "materials": [
+            "M_Accent",
+            "M_Concrete",
+            "M_GlassLit",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal_Domes",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 27514,
+          "materials": [
+            "M_Concrete",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal_Lights",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 48,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "LOD0",
+          "type": "empty",
+          "parent": "OMSJ_terminal"
+        },
+        {
+          "name": "Terminal_Building_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 2518,
+          "materials": [
+            "M_Concrete",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal_Details_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 11052,
+          "materials": [
+            "M_Accent",
+            "M_Concrete",
+            "M_GlassLit",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal_Domes_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 6581,
+          "materials": [
+            "M_Concrete",
+            "M_GlassLit",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal_Lights_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 48,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "LOD1",
+          "type": "empty",
+          "parent": "OMSJ_terminal"
+        },
+        {
+          "name": "Terminal_Building_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 2518,
+          "materials": [
+            "M_Concrete",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Terminal_Domes_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 1536,
+          "materials": [
+            "M_Concrete",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD2",
+          "type": "empty",
+          "parent": "OMSJ_terminal"
+        },
+        {
+          "name": "OMSJ_terminal",
+          "type": "empty",
+          "parent": null
+        }
+      ],
+      "file_size_bytes": 5384908,
+      "notes": ""
+    },
+    {
+      "name": "OMSJ_tower",
+      "icao": "OMSJ",
+      "file": "pipeline/build/raw/airports/OMSJ_tower.glb",
+      "title": "Sharjah International minaret-like control tower",
+      "replaces": [
+        "osm-n11146938928"
+      ],
+      "bbox_enu": {
+        "min": [
+          574.73,
+          -859.17,
+          0.0
+        ],
+        "max": [
+          591.24,
+          -842.66,
+          44.45
+        ]
+      },
+      "triangles": {
+        "LOD0": 4246,
+        "LOD1": 1606,
+        "LOD2": 542
+      },
+      "lod_ratios": {
+        "LOD0": 1.0,
+        "LOD1": 0.378,
+        "LOD2": 0.128
+      },
+      "materials": [
+        "M_Accent",
+        "M_Concrete",
+        "M_Structure",
+        "M_GlassLit",
+        "M_Lights",
+        "M_Roof"
+      ],
+      "material_values": {
+        "M_Accent": {
+          "color": "#3A7CC4",
+          "metal": 0.0,
+          "rough": 0.3,
+          "tex": "T_Lattice.png"
+        },
+        "M_Concrete": {
+          "color": "#D9CFBE",
+          "metal": 0.0,
+          "rough": 0.82
+        },
+        "M_Structure": {
+          "color": "#E4E6E8",
+          "metal": 0.15,
+          "rough": 0.45
+        },
+        "M_GlassLit": {
+          "color": "#26323C",
+          "metal": 0.3,
+          "rough": 0.1
+        },
+        "M_Lights": {
+          "color": "#FF2A1A",
+          "metal": 0.0,
+          "rough": 0.3,
+          "emit": 4.0,
+          "emit_color": "#FF2010"
+        },
+        "M_Roof": {
+          "color": "#ECEBE6",
+          "metal": 0.05,
+          "rough": 0.38
+        }
+      },
+      "nodes": [
+        {
+          "name": "Tower_Details",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 1256,
+          "materials": [
+            "M_Accent",
+            "M_Concrete",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Tower_Glazing",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 88,
+          "materials": [
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "Tower_Lights",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 240,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "Tower_Minaret",
+          "type": "mesh",
+          "parent": "LOD0",
+          "triangles": 2662,
+          "materials": [
+            "M_Accent",
+            "M_Concrete",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD0",
+          "type": "empty",
+          "parent": "OMSJ_tower"
+        },
+        {
+          "name": "Tower_Details_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 128,
+          "materials": [
+            "M_Accent",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "Tower_Glazing_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 56,
+          "materials": [
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "Tower_Lights_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 240,
+          "materials": [
+            "M_Lights"
+          ]
+        },
+        {
+          "name": "Tower_Minaret_LOD1",
+          "type": "mesh",
+          "parent": "LOD1",
+          "triangles": 1182,
+          "materials": [
+            "M_Accent",
+            "M_Concrete",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD1",
+          "type": "empty",
+          "parent": "OMSJ_tower"
+        },
+        {
+          "name": "Tower_Glazing_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 16,
+          "materials": [
+            "M_GlassLit"
+          ]
+        },
+        {
+          "name": "Tower_Minaret_LOD2",
+          "type": "mesh",
+          "parent": "LOD2",
+          "triangles": 526,
+          "materials": [
+            "M_Accent",
+            "M_Concrete",
+            "M_Roof",
+            "M_Structure"
+          ]
+        },
+        {
+          "name": "LOD2",
+          "type": "empty",
+          "parent": "OMSJ_tower"
+        },
+        {
+          "name": "OMSJ_tower",
+          "type": "empty",
+          "parent": null
+        }
+      ],
+      "file_size_bytes": 408984,
+      "notes": ""
+    }
+  ]
+}
