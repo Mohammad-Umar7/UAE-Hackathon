@@ -64,8 +64,8 @@ const STEPS: Step[] = [
   },
   {
     id: "local", title: "Local knowledge changes the plan", view: "agents", speed: 60,
-    until: (rt) => hasMessage(rt, "LocalInformationShared") || Object.values(rt.proposals).some((p) => p.version > 1),
-    waiting: "Waiting for the stakeholders to respond…", done: "Local information shared, plan revised.",
+    until: (rt) => hasMessage(rt, "LocalInformationShared"),
+    waiting: "Waiting for the stakeholders to respond…", done: "Local information shared — the agents are re-planning.",
     body: "Stakeholders answer from their own knowledge. Sharjah's controller knows something the network does not: an ambulift and wide-body handling teams are out of service. The rejection reveals it, the information is shared, and the agents re-plan around it.",
   },
   {

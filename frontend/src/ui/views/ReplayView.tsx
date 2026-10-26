@@ -7,12 +7,12 @@ import { useOps, useRuntime } from "@/store/ops";
 import { participantColor, participantLabel } from "../agents/CoordinationLog";
 
 const PHASES: { key: string; label: string; match: (type: string, summary: string) => boolean }[] = [
-  { key: "incident", label: "Incident activation", match: (t, s) => t === "DisruptionNotice" && !s.includes("trend watch") },
-  { key: "investigation", label: "Agent investigation", match: (t) => t === "ImpactAssessment" },
-  { key: "proposal", label: "Proposed recovery", match: (t) => t === "PlanCandidates" },
+  { key: "incident", label: "Incident", match: (t, s) => t === "DisruptionNotice" && !s.includes("trend watch") },
+  { key: "investigation", label: "Investigation", match: (t) => t === "ImpactAssessment" },
+  { key: "proposal", label: "Proposal", match: (t) => t === "PlanCandidates" },
   { key: "coordination", label: "Coordination", match: (t) => t === "CoordinationRequest" },
   { key: "rejection", label: "Rejection / invalidation", match: (t) => t === "PlanInvalidated" || t === "LocalInformationShared" },
-  { key: "approval", label: "Approval & commit", match: (t) => t === "PlanCommitted" },
+  { key: "approval", label: "Commit", match: (t) => t === "PlanCommitted" },
 ];
 
 export default function ReplayView() {
@@ -31,6 +31,16 @@ export default function ReplayView() {
     }
     return out;
   }, [msgs.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  // phases that happen within moments of each other share one marker (labels would collide)
+  const clusters = useMemo(() => {
+    const out: { t: number; items: typeof markers }[] = [];
+    for (const m of [...markers].sort((a, b) => a.t - b.t)) {
+      const last = out[out.length - 1];
+      if (last && (m.t - last.t) / (end - start) < 0.08) last.items.push(m);
+      else out.push({ t: m.t, items: [m] });
+    }
+    return out;
+  }, [markers, start, end]);
   const shown = msgs.filter((m) => m.t <= at);
   const x = (t: number) => `${(100 * (t - start)) / (end - start)}%`;
   const incidents = Object.values(rt.world.incidents).filter((i) => i.start <= end);
@@ -55,13 +65,17 @@ export default function ReplayView() {
             <div key={i.id} className="absolute top-[52px] h-2 rounded bg-[color-mix(in_oklab,var(--red)_35%,transparent)]" title={i.title}
               style={{ left: x(Math.max(start, i.start)), width: `calc(${x(Math.min(end, i.end))} - ${x(Math.max(start, i.start))})` }} />
           ))}
-          {markers.map((m, k) => (
-            <button key={m.phase} onClick={() => { setCursor(m.t); setInspect({ kind: "message", id: m.id }); }} className="absolute -translate-x-1/2 text-center" style={{ left: x(m.t), top: k % 2 ? 58 : 0 }}>
-              <div className={`mx-auto h-3 w-3 rounded-full border-2 border-white shadow ${m.phase === "rejection" ? "bg-[var(--red)]" : m.phase === "approval" ? "bg-[var(--teal)]" : "bg-navy"}`} style={{ marginTop: k % 2 ? 0 : 34 }} />
-              <div className="mt-0.5 whitespace-nowrap text-[10.5px] font-semibold">{m.label}</div>
-              <div className="mono text-[10px] text-muted">{fmtTime(m.t)}</div>
-            </button>
-          ))}
+          {clusters.map((c, k) => {
+            const phase = c.items.some((m) => m.phase === "rejection") ? "rejection" : c.items.some((m) => m.phase === "approval") ? "approval" : "other";
+            return (
+              <button key={c.items[0].phase} onClick={() => { setCursor(c.t); setInspect({ kind: "message", id: c.items[0].id }); }}
+                className="absolute -translate-x-1/2 text-center" style={{ left: x(c.t), top: k % 2 ? 58 : 0 }}>
+                <div className={`mx-auto h-3 w-3 rounded-full border-2 border-white shadow ${phase === "rejection" ? "bg-[var(--red)]" : phase === "approval" ? "bg-[var(--teal)]" : "bg-navy"}`} style={{ marginTop: k % 2 ? 0 : 34 }} />
+                <div className="mt-0.5 whitespace-nowrap text-[10.5px] font-semibold">{c.items.map((m) => m.label).join(" → ")}</div>
+                <div className="mono text-[10px] text-muted">{fmtTime(c.t)}</div>
+              </button>
+            );
+          })}
           <input type="range" min={start} max={end} value={at} onChange={(e) => setCursor(Number(e.target.value))} className="absolute left-0 right-0 top-[34px] w-full opacity-0" />
         </div>
         <div className="mt-6 flex items-center gap-3 text-[12px]">
