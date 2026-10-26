@@ -7,7 +7,7 @@
  */
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import * as THREE from "three";
 import { loadKit, type Kit } from "./assets";
 import { twinState } from "./state";
