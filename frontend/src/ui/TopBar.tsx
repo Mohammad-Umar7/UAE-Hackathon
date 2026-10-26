@@ -56,7 +56,7 @@ export function TopBar() {
           </button>
           <div className="flex h-8 items-center rounded-[7px] border border-line-2 bg-panel-2 p-0.5">
             {SPEEDS.map((s) => (
-              <button key={s} onClick={() => { rt.speed = s; rt.notify(); }}
+              <button key={s} onClick={() => rt.setSpeed(s)}
                 className={`mono h-[26px] rounded-[5px] px-1.5 text-[11px] ${rt.speed === s ? "bg-navy text-white" : "text-muted hover:text-ink"}`}>
                 {s}×
               </button>

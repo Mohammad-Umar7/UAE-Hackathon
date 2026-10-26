@@ -151,6 +151,11 @@ export class Runtime {
     this.notify();
   }
 
+  setSpeed(x: number): void {
+    this.speed = x;
+    this.notify();
+  }
+
   notify() {
     this.version++;
     for (const fn of this.listeners) fn();

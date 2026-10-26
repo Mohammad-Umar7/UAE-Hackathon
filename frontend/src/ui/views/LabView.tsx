@@ -54,7 +54,7 @@ export default function LabView() {
               <p className="mt-1.5 flex-1 text-[12px] leading-snug text-muted">{s.summary}</p>
               <div className="mt-2 flex items-center gap-2 text-[11px] text-faint">
                 <span className="mono">{fmtTime(s.start)} start</span> · <span>{s.focus.map((f) => PROFILES[f].iata).join(" · ")}</span>
-                <button className="btn btn-sm ml-auto" onClick={() => { rt.running = false; rt.speed = speed; rt.load(s.id, rt.seed); rt.running = true; toast(`Loaded ${s.title}`, "ok"); setView("command"); }}>
+                <button className="btn btn-sm ml-auto" onClick={() => { rt.setRunning(false); rt.setSpeed(speed); rt.load(s.id, rt.seed); rt.setRunning(true); toast(`Loaded ${s.title}`, "ok"); setView("command"); }}>
                   <Play size={12} /> Launch
                 </button>
               </div>
@@ -114,7 +114,7 @@ export default function LabView() {
           {spec.type === "ACCESSIBILITY_REQUIREMENT" && <Field label="Passengers needing full assistance"><Num v={spec.prm ?? 3} set={(x) => setSpec({ ...spec, prm: x })} min={1} max={10} /></Field>}
           {spec.type === "STAND_CLOSURE" && <Field label="Stands to close"><Num v={spec.count ?? 3} set={(x) => setSpec({ ...spec, count: x })} min={1} max={10} /></Field>}
           <Field label="Simulation speed after inject">
-            <div className="flex gap-1">{[10, 30, 60, 120].map((s) => <button key={s} className={`btn btn-sm flex-1 justify-center ${speed === s ? "btn-primary" : ""}`} onClick={() => { setSpeed(s); rt.speed = s; rt.notify(); }}>{s}×</button>)}</div>
+            <div className="flex gap-1">{[10, 30, 60, 120].map((s) => <button key={s} className={`btn btn-sm flex-1 justify-center ${speed === s ? "btn-primary" : ""}`} onClick={() => { setSpeed(s); rt.setSpeed(s); }}>{s}×</button>)}</div>
           </Field>
           {batch.length > 0 && (
             <div className="rounded-lg border border-line p-2">
