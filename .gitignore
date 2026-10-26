@@ -1,0 +1,17 @@
+# dependencies / builds
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# pipeline intermediates
+pipeline/build/raw/
+pipeline/.venv/
+**/__pycache__/
+*.pyc
+*.blend1
+
+# local
+.DS_Store
+Thumbs.db
+.env*
