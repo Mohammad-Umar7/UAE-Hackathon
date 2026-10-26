@@ -1,0 +1,19 @@
+[project]
+name = "skypact-pipeline"
+version = "0.1.0"
+description = "SKYPACT geodata pipeline: OpenStreetMap airport layouts (OMAA/OMDB/OMSJ), regional basemap, validation"
+requires-python = ">=3.11"
+dependencies = [
+    "shapely>=2.0",
+    "pyproj>=3.6",
+    "numpy>=1.26",
+    "networkx>=3.2",
+    "matplotlib>=3.8",
+    "requests>=2.31",
+    "pyshp>=2.3",
+    "pillow>=10.0",
+    "osmium>=4.0",
+]
+
+[tool.uv]
+package = false

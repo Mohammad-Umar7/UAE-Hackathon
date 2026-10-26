@@ -1,0 +1,3 @@
+# large downloads (Geofabrik PBF, Natural Earth zips, Sentinel-2 tiles) and intermediate caches
+cache/
+__pycache__/
