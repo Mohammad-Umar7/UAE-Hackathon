@@ -113,14 +113,18 @@ export function facadeTextures(kind: "glass" | "concrete" | "metal"): { map: THR
       g.fillRect(x + 3, 0, 2, S);
     }
   } else {
+    // two window cells per 4 m module; only some cells are lit at night (deterministic pattern)
     g.fillStyle = "#d8d2c6";
     g.fillRect(0, 0, S, S);
-    g.fillStyle = "#3a4652";
-    g.fillRect(S * 0.12, S * 0.3, S * 0.76, S * 0.42);
     g.fillStyle = "#c7c0b2";
     g.fillRect(0, 0, S, 8);
-    ge.fillStyle = "#b8904f";
-    ge.fillRect(S * 0.12, S * 0.3, S * 0.76, S * 0.42);
+    const cells: [number, number][] = [[S * 0.08, S * 0.3], [S * 0.56, S * 0.3]];
+    cells.forEach(([x, y], i) => {
+      g.fillStyle = "#3a4652";
+      g.fillRect(x, y, S * 0.36, S * 0.4);
+      ge.fillStyle = i === 0 ? "#d9c7a3" : "#000000";
+      ge.fillRect(x + 4, y + 4, S * 0.36 - 8, S * 0.4 - 8);
+    });
   }
   const out = { map: finish(new THREE.CanvasTexture(c), true), emissive: finish(new THREE.CanvasTexture(ce), true) };
   facadeCache.set(key, out);

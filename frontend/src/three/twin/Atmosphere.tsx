@@ -16,7 +16,7 @@ installHeightFog();
 
 const LIGHTING_TIME: Record<string, number> = { day: 13 * 3600, dusk: 17.82 * 3600, night: 21.5 * 3600 };
 const C = (h: string) => new THREE.Color(h);
-const FOG_DAY = C("#d3d6d6"), FOG_DUSK = C("#c7b39f"), FOG_NIGHT = C("#252c36"), FOG_GLOW = C("#6d6458");
+const FOG_DAY = C("#d3d6d6"), FOG_DUSK = C("#c7b39f"), FOG_NIGHT = C("#252c36"), FOG_GLOW = C("#5a5f66");
 const SUN_LOW = C("#ffad66"), SUN_HIGH = C("#fff4e6");
 const SKY_DAY = C("#bcd3ee"), SKY_NIGHT = C("#2c3a55"), GROUND_DAY = C("#cdb48c"), GROUND_NIGHT = C("#2a2622");
 
