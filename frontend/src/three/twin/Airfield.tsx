@@ -14,7 +14,7 @@ import { facadeTextures, poolTexture, surfaceSet, type SurfaceSet } from "./text
 import { twinState } from "./state";
 
 /** Everything static about one airport's airfield, built once per layout. */
-export function buildAirfield(ap: AirportInfo) {
+export function buildAirfield(ap: AirportInfo, replaced: Set<string> = new Set()) {
   const layout = ap.layout;
   const stands = Object.values(ap.stands);
   const rws = runwaysOf(layout);
@@ -58,7 +58,8 @@ export function buildAirfield(ap: AirportInfo) {
     target?.polygon(l.polygon.map((p) => [p[0], p[1]] as P2), (l.holes ?? []).map((h) => h.map((p) => [p[0], p[1]] as P2)), 0);
   }
   const bg = { glass: new GeoBuilder(), concrete: new GeoBuilder(), metal: new GeoBuilder(), roof: new GeoBuilder(30), roofMetal: new GeoBuilder(30) };
-  buildBuildings(buildingsOf(layout, stands), bg);
+  // signature landmark models stand in for these footprints (see Landmarks.tsx)
+  buildBuildings(buildingsOf(layout, stands).filter((b) => !replaced.has(b.id ?? "")), bg);
   const ctx = { glass: new GeoBuilder(), concrete: new GeoBuilder(), metal: new GeoBuilder(), roof: new GeoBuilder(30), roofMetal: new GeoBuilder(30) };
   const context = contextOf(layout, bounds.center, ctxR, 9000).map((c) => ({ kind: "context", footprint: c.footprint, height_m: c.height_m }));
   buildBuildings(context, ctx, 4);

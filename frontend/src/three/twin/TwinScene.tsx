@@ -14,18 +14,21 @@ import { Fleet } from "./Fleet";
 import { FogBanks } from "./FogBanks";
 import { layoutBounds } from "./geometry";
 import { Labels, Picker } from "./Labels";
+import { Landmarks, useReplacedBuildings } from "./Landmarks";
 import { PlanPreview, Routes, RunwayClosures, SelectionRing, StandStatus } from "./Overlays";
 import { twinState } from "./state";
 
 function SceneContent({ rt, icao, labels }: { rt: Runtime; icao: string; labels: React.RefObject<HTMLCanvasElement | null> }) {
   const ap = rt.airports[icao];
-  const data = useMemo(() => buildAirfield(ap), [ap]);
+  const replaced = useReplacedBuildings(icao);
+  const data = useMemo(() => (replaced ? buildAirfield(ap, replaced) : null), [ap, replaced]);
   const bounds = useMemo(() => layoutBounds(ap.layout, ap), [ap]);
   return (
     <>
       <Atmosphere rt={rt} icao={icao} />
-      <Airfield data={data} center={bounds.center} />
-      <RunwayClosures rws={data.rws} />
+      {data && <Airfield data={data} center={bounds.center} />}
+      {data && <RunwayClosures rws={data.rws} />}
+      <Landmarks icao={icao} />
       <StandStatus rt={rt} ap={ap} />
       <Routes ap={ap} />
       <Fleet rt={rt} ap={ap} />
