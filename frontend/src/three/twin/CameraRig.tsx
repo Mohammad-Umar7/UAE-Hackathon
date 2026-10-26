@@ -24,12 +24,19 @@ export function CameraRig({ ap, center, radius }: { ap: AirportInfo; center: P2;
 
   const rwHeading = ap.runwayEnds[ap.arrivalEnd]?.heading ?? 0;
 
-  // presets
+  // presets (a freshly opened airport always starts from its strategic overview)
+  const fresh = useRef(true);
   useEffect(() => {
     const c = ref.current;
     if (!c) return;
     const tx = center[0], tz = -center[1];
-    if (mode === "strategic") {
+    const first = fresh.current;
+    fresh.current = false;
+    if (first && (mode === "inspect" || mode === "follow") && !useOps.getState().selectedVisit) {
+      setCamera("strategic");
+      return;
+    }
+    if (mode === "strategic" || (first && mode !== "topdown" && mode !== "cinematic")) {
       const az = ((rwHeading + 145) * Math.PI) / 180;
       const d = radius * 1.55;
       c.setLookAt(tx + Math.sin(az) * d * 0.75, d * 0.62, tz - Math.cos(az) * d * 0.75, tx, 0, tz, true);
@@ -42,33 +49,36 @@ export function CameraRig({ ap, center, radius }: { ap: AirportInfo; center: P2;
     }
   }, [mode, center, radius, rwHeading, ap.icao]);
 
-  // fly to a newly selected aircraft or stand (inspect), or lock on (follow)
+  // fly to a newly selected aircraft or stand; aircraft may appear a few frames later (assets loading)
+  const pending = useRef<{ visit: string | null; stand: string | null } | null>(null);
   useEffect(() => {
-    const c = ref.current;
-    if (!c) return;
-    let p: THREE.Vector3 | null = null;
-    let span = 60;
-    if (selected) {
-      const e = fleetIndex.get(selected);
-      if (e) { p = new THREE.Vector3(e.pose.x, e.pose.z, -e.pose.y); span = e.kit.bbox.max.x * 2; }
-    } else if (selectedStand) {
-      const st = ap.stands[selectedStand];
-      if (st) { p = new THREE.Vector3(st.x, 0, -st.y); span = st.maxWingspan; }
-    }
-    if (!p) return;
-    if (mode !== "follow") {
-      const d = Math.max(90, span * 2.4);
-      const dir = new THREE.Vector3().subVectors(camera.position, p).setY(0).normalize();
-      if (!Number.isFinite(dir.x) || dir.lengthSq() < 0.5) dir.set(0.7, 0, 0.7);
-      c.setLookAt(p.x + dir.x * d, p.y + d * 0.55, p.z + dir.z * d, p.x, p.y + 4, p.z, true);
-      if (mode !== "inspect") setCamera("inspect");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (selected || selectedStand) pending.current = { visit: selected, stand: selectedStand };
   }, [selected, selectedStand]);
+
+  const flyTo = (c: Controls, p: THREE.Vector3, span: number) => {
+    const d = Math.max(90, span * 2.4);
+    const dir = new THREE.Vector3().subVectors(camera.position, p).setY(0).normalize();
+    if (!Number.isFinite(dir.x) || dir.lengthSq() < 0.5) dir.set(0.7, 0, 0.7);
+    c.setLookAt(p.x + dir.x * d, p.y + d * 0.55, p.z + dir.z * d, p.x, p.y + 4, p.z, true);
+  };
 
   useFrame((_, dt) => {
     const c = ref.current;
     if (!c) return;
+    const want = pending.current;
+    if (want) {
+      if (want.visit) {
+        const e = fleetIndex.get(want.visit);
+        if (e) {
+          pending.current = null;
+          if (mode !== "follow") { flyTo(c, new THREE.Vector3(e.pose.x, e.pose.z, -e.pose.y), e.kit.bbox.max.x * 2); if (mode !== "inspect") setCamera("inspect"); }
+        }
+      } else if (want.stand) {
+        pending.current = null;
+        const st = ap.stands[want.stand];
+        if (st) { flyTo(c, new THREE.Vector3(st.x, 0, -st.y), st.maxWingspan); if (mode !== "inspect" && mode !== "follow") setCamera("inspect"); }
+      }
+    }
     if (mode === "follow" && selected) {
       const e = fleetIndex.get(selected);
       if (e) c.moveTo(e.pose.x, e.pose.z + 4, -e.pose.y, true);
