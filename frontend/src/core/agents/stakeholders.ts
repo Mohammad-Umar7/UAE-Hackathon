@@ -62,17 +62,34 @@ function airportController(icao: string, p: Proposal, w: World, ap: Registry): S
       localOutages.filter((r) => r.params.pool === "ambulift").forEach((r) => reveal.add(r.id));
     }
   }
-  // wide-body handling teams (local roster)
-  const wbIn = diversionsIn.filter((d) => AIRCRAFT[d.type as keyof typeof AIRCRAFT]?.widebody);
-  if (wbIn.length) {
-    const t0 = Math.min(...wbIn.map((d) => d.eldt!));
-    const avail = resourceAvailable(w, icao, "wb_handling", t0, t0 + 3600, false);
-    const busy = Object.values(w.visits).filter((v) => v.airport === icao && AIRCRAFT[v.type].widebody && v.phase === "ON_STAND"
-      && v.readyAt !== null && v.readyAt > t0).length;
-    const free = Math.max(0, avail - busy);
-    if (wbIn.length > free) {
-      const excess = wbIn.slice(free);
-      problems.push(`Only ${free} wide-body handling team${free === 1 ? "" : "s"} free (local roster: ${avail} on duty, ${busy} on active turnarounds); cannot accept ${excess.map((d) => d.callsign).join(", ")}.`);
+  // wide-body handling teams (local roster), checked over time like the optimiser's resource model:
+  // a turnaround holds a team from on-block (diversions: 50 min, own arrivals: minimum turnaround)
+  const spans: { d: (typeof diversionsIn)[number] | null; s: number; e: number }[] = [];
+  for (const r of p.plan.rows) {
+    const t = AIRCRAFT[r.type as keyof typeof AIRCRAFT];
+    if (!t?.widebody) continue;
+    if (r.option === "home" && r.home === icao && r.onBlock !== undefined) {
+      spans.push({ d: null, s: p.t0 + r.onBlock * 60, e: p.t0 + (r.onBlock + t.minTurnaroundMin) * 60 });
+    } else if (r.option === "divert" && r.to === icao && r.L !== undefined) {
+      const d = diversionsIn.find((x) => x.visit === r.visit);
+      const on = p.t0 + r.L * 60 + (ap[icao].stands[r.stand ?? ""]?.taxiIn ?? 420);
+      if (d) spans.push({ d, s: on, e: on + 50 * 60 });
+    }
+  }
+  if (spans.some((x) => x.d)) {
+    const turning = Object.values(w.visits).filter((v) => v.airport === icao && AIRCRAFT[v.type].widebody && v.phase === "ON_STAND"
+      && v.readyAt !== null && v.readyAt > w.now).map((v) => v.readyAt!);
+    spans.sort((a, b) => a.s - b.s);
+    const accepted: { s: number; e: number }[] = [];
+    const excess: (typeof diversionsIn)[number][] = [];
+    let worst = { avail: 0, busy: 0 };
+    for (const sp of spans) {
+      const avail = resourceAvailable(w, icao, "wb_handling", sp.s, sp.s + 60, false);
+      const busy = turning.filter((ready) => ready > sp.s).length + accepted.filter((a) => a.s <= sp.s && sp.s < a.e).length;
+      if (sp.d && busy + 1 > avail) { excess.push(sp.d); worst = { avail, busy }; } else accepted.push(sp);
+    }
+    if (excess.length) {
+      problems.push(`Only ${Math.max(0, worst.avail - worst.busy)} wide-body handling team${worst.avail - worst.busy === 1 ? "" : "s"} free when needed (local roster: ${worst.avail} on duty, ${worst.busy} on turnarounds); cannot accept ${excess.map((d) => d.callsign).join(", ")}.`);
       codes.add("HANDLING_CAPACITY");
       excess.forEach((d) => forbid.push({ visit: d.visit, airport: icao, stand: null }));
       localOutages.filter((r) => r.params.pool === "wb_handling").forEach((r) => reveal.add(r.id));
