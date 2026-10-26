@@ -1,0 +1,25 @@
+[
+ {
+  "runway": "12/30",
+  "osm_length_m": 4060.4,
+  "aip_length_m": 4060,
+  "osm_width_m": 60.0,
+  "aip_width_m": 60,
+  "ends": [
+   {
+    "designator": "12",
+    "displaced_threshold_m_aip": 300.0,
+    "aip_threshold_cross_track_m": 0.8,
+    "osm_end_to_aip_threshold_m": 301.1,
+    "osm_end_vs_aip_end_m": 1.7
+   },
+   {
+    "designator": "30",
+    "displaced_threshold_m_aip": 300.0,
+    "aip_threshold_cross_track_m": 0.1,
+    "osm_end_to_aip_threshold_m": 298.9,
+    "osm_end_vs_aip_end_m": 0.8
+   }
+  ]
+ }
+]

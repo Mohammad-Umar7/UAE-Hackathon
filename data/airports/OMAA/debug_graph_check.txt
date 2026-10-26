@@ -1,0 +1,30 @@
+airport: OMAA / AUH Zayed International Airport
+nodes: 931  edges: 1259  components: 1
+  edges runway        54  total     8.20 km
+  edges stand_link   203  total    18.61 km
+  edges taxilane     115  total     8.85 km
+  edges taxiway      887  total    77.75 km
+largest component: 931 nodes (100.0%)
+dead-end nodes (degree 1): 220 (of which stand stop nodes: 203)
+junction nodes (degree >= 3): 684
+topology fixes: crossings added 48, endpoint snaps (<=3 m) 12, endpoint extensions 0, nodes merged 6, gap bridges 0, dropped fragments 1 (290 m)
+   - dropped fragment: 2 nodes, 290 m, refs [], gap 54 m, around x=-507 y=1830
+runway end 13L (13L/31R): threshold node 155 in main=True, end node 155 in main=True
+runway end 31R (13L/31R): threshold node 882 in main=True, end node 882 in main=True
+runway end 13R (13R/31L): threshold node 72 in main=True, end node 72 in main=True
+runway end 31L (13R/31L): threshold node 829 in main=True, end node 829 in main=True
+runway exits: 54, in main component: 54
+  landing 13L: 11 exits, rapid 4; first at 665 m
+  landing 31R: 10 exits, rapid 4; first at 657 m
+  landing 13R: 16 exits, rapid 6; first at 280 m
+  landing 31L: 17 exits, rapid 4; first at 741 m
+stands: 203, stop node in main component: 203 (100.0%)
+stand x runway-end pairs unreachable: 0
+taxi distance threshold 13L -> stands: min 1773 m, median 5592 m, max 7576 m
+stands by kind: {'ga': 13, 'remote': 110, 'contact': 72, 'cargo': 8}
+stands by size code: {'A': 6, 'B': 12, 'C': 29, 'D': 47, 'E': 29, 'F': 80}
+stands by source: {'osm': 187, 'derived': 16}
+
+OSM vs AIP runway cross-check:
+{"runway": "13L/31R", "osm_length_m": 4098.9, "aip_length_m": 4100, "osm_width_m": 60.0, "aip_width_m": 60, "ends": [{"designator": "13L", "displaced_threshold_m_aip": 0.0, "aip_threshold_cross_track_m": 0.2, "osm_end_vs_aip_threshold_along_m": 3.6}, {"designator": "31R", "displaced_threshold_m_aip": 0.0, "aip_threshold_cross_track_m": 4.8, "osm_end_vs_aip_threshold_along_m": -0.0}]}
+{"runway": "13R/31L", "osm_length_m": 4102.7, "aip_length_m": 4106, "osm_width_m": 60.0, "aip_width_m": 60, "ends": [{"designator": "13R", "displaced_threshold_m_aip": 0.0, "aip_threshold_cross_track_m": 0.5, "osm_end_vs_aip_threshold_along_m": 0.0}, {"designator": "31L", "displaced_threshold_m_aip": 0.0, "aip_threshold_cross_track_m": 2.6, "osm_end_vs_aip_threshold_along_m": -0.0}]}

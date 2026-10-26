@@ -1,0 +1,25 @@
+airport: OMSJ / SHJ Sharjah International Airport
+nodes: 312  edges: 394  components: 1
+  edges runway        16  total     4.06 km
+  edges stand_link    68  total     4.83 km
+  edges taxiway      310  total    23.00 km
+largest component: 312 nodes (100.0%)
+dead-end nodes (degree 1): 87 (of which stand stop nodes: 68)
+junction nodes (degree >= 3): 181
+topology fixes: crossings added 0, endpoint snaps (<=3 m) 0, endpoint extensions 1, nodes merged 1, gap bridges 0, dropped fragments 1 (1082 m)
+   - extended taxiway osm:way/945400077 (no ref) by 5.5 m to taxiway osm:way/945400078 (no ref)
+   - dropped fragment: 30 nodes, 1082 m, refs [], gap 57 m, around x=519 y=-638
+runway end 12 (12/30): threshold node 68 in main=True, end node 52 in main=True
+runway end 30 (12/30): threshold node 298 in main=True, end node 311 in main=True
+runway exits: 12, in main component: 12
+  landing 12: 6 exits, rapid 2; first at 720 m
+  landing 30: 6 exits, rapid 2; first at 688 m
+stands: 68, stop node in main component: 68 (100.0%)
+stand x runway-end pairs unreachable: 0
+taxi distance threshold 12 -> stands: min 1073 m, median 2208 m, max 3371 m
+stands by kind: {'contact': 5, 'remote': 49, 'cargo': 14}
+stands by size code: {'C': 10, 'D': 29, 'E': 18, 'F': 11}
+stands by source: {'osm': 62, 'derived': 6}
+
+OSM vs AIP runway cross-check:
+{"runway": "12/30", "osm_length_m": 4060.4, "aip_length_m": 4060, "osm_width_m": 60.0, "aip_width_m": 60, "ends": [{"designator": "12", "displaced_threshold_m_aip": 300.0, "aip_threshold_cross_track_m": 0.8, "osm_end_to_aip_threshold_m": 301.1, "osm_end_vs_aip_end_m": 1.7}, {"designator": "30", "displaced_threshold_m_aip": 300.0, "aip_threshold_cross_track_m": 0.1, "osm_end_to_aip_threshold_m": 298.9, "osm_end_vs_aip_end_m": 0.8}]}

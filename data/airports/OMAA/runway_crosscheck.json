@@ -1,0 +1,44 @@
+[
+ {
+  "runway": "13L/31R",
+  "osm_length_m": 4098.9,
+  "aip_length_m": 4100,
+  "osm_width_m": 60.0,
+  "aip_width_m": 60,
+  "ends": [
+   {
+    "designator": "13L",
+    "displaced_threshold_m_aip": 0.0,
+    "aip_threshold_cross_track_m": 0.2,
+    "osm_end_vs_aip_threshold_along_m": 3.6
+   },
+   {
+    "designator": "31R",
+    "displaced_threshold_m_aip": 0.0,
+    "aip_threshold_cross_track_m": 4.8,
+    "osm_end_vs_aip_threshold_along_m": -0.0
+   }
+  ]
+ },
+ {
+  "runway": "13R/31L",
+  "osm_length_m": 4102.7,
+  "aip_length_m": 4106,
+  "osm_width_m": 60.0,
+  "aip_width_m": 60,
+  "ends": [
+   {
+    "designator": "13R",
+    "displaced_threshold_m_aip": 0.0,
+    "aip_threshold_cross_track_m": 0.5,
+    "osm_end_vs_aip_threshold_along_m": 0.0
+   },
+   {
+    "designator": "31L",
+    "displaced_threshold_m_aip": 0.0,
+    "aip_threshold_cross_track_m": 2.6,
+    "osm_end_vs_aip_threshold_along_m": -0.0
+   }
+  ]
+ }
+]

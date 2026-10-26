@@ -1,0 +1,48 @@
+[
+ {
+  "runway": "12L/30R",
+  "osm_length_m": 4345.1,
+  "aip_length_m": 4351,
+  "osm_width_m": 60.0,
+  "aip_width_m": 60,
+  "ends": [
+   {
+    "designator": "12L",
+    "displaced_threshold_m_aip": 450.0,
+    "aip_threshold_cross_track_m": 1.0,
+    "osm_end_to_aip_threshold_m": 447.8,
+    "osm_end_vs_aip_end_m": 3.0
+   },
+   {
+    "designator": "30R",
+    "displaced_threshold_m_aip": 300.0,
+    "aip_threshold_cross_track_m": 1.8,
+    "osm_end_to_aip_threshold_m": 297.4,
+    "osm_end_vs_aip_end_m": 3.4
+   }
+  ]
+ },
+ {
+  "runway": "12R/30L",
+  "osm_length_m": 4434.9,
+  "aip_length_m": 4447,
+  "osm_width_m": 60.0,
+  "aip_width_m": 60,
+  "ends": [
+   {
+    "designator": "12R",
+    "displaced_threshold_m_aip": 715.0,
+    "aip_threshold_cross_track_m": 1.0,
+    "osm_end_to_aip_threshold_m": 716.9,
+    "osm_end_vs_aip_end_m": 1.8
+   },
+   {
+    "designator": "30L",
+    "displaced_threshold_m_aip": 132.0,
+    "aip_threshold_cross_track_m": 1.5,
+    "osm_end_to_aip_threshold_m": 118.3,
+    "osm_end_vs_aip_end_m": 14.3
+   }
+  ]
+ }
+]

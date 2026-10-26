@@ -1,0 +1,29 @@
+airport: OMDB / DXB Dubai International Airport
+nodes: 1132  edges: 1600  components: 1
+  edges runway        75  total     8.78 km
+  edges stand_link   245  total    29.81 km
+  edges taxilane       3  total     0.30 km
+  edges taxiway     1277  total    95.42 km
+largest component: 1132 nodes (100.0%)
+dead-end nodes (degree 1): 253 (of which stand stop nodes: 245)
+junction nodes (degree >= 3): 864
+topology fixes: crossings added 14, endpoint snaps (<=3 m) 4, endpoint extensions 0, nodes merged 2, gap bridges 0, dropped fragments 0 (0 m)
+runway end 12L (12L/30R): threshold node 204 in main=True, end node 129 in main=True
+runway end 30R (12L/30R): threshold node 882 in main=True, end node 945 in main=True
+runway end 12R (12R/30L): threshold node 521 in main=True, end node 372 in main=True
+runway end 30L (12R/30L): threshold node 1071 in main=True, end node 1090 in main=True
+runway exits: 79, in main component: 79
+  landing 12L: 19 exits, rapid 8; first at 310 m
+  landing 30R: 18 exits, rapid 7; first at 163 m
+  landing 12R: 19 exits, rapid 9; first at 683 m
+  landing 30L: 23 exits, rapid 10; first at 959 m
+stands: 245, stop node in main component: 245 (100.0%)
+stand x runway-end pairs unreachable: 0
+taxi distance threshold 12L -> stands: min 559 m, median 2604 m, max 6268 m
+stands by kind: {'contact': 83, 'remote': 135, 'cargo': 6, 'ga': 21}
+stands by size code: {'A': 1, 'B': 1, 'C': 18, 'D': 46, 'E': 63, 'F': 116}
+stands by source: {'osm': 238, 'derived': 7}
+
+OSM vs AIP runway cross-check:
+{"runway": "12L/30R", "osm_length_m": 4345.1, "aip_length_m": 4351, "osm_width_m": 60.0, "aip_width_m": 60, "ends": [{"designator": "12L", "displaced_threshold_m_aip": 450.0, "aip_threshold_cross_track_m": 1.0, "osm_end_to_aip_threshold_m": 447.8, "osm_end_vs_aip_end_m": 3.0}, {"designator": "30R", "displaced_threshold_m_aip": 300.0, "aip_threshold_cross_track_m": 1.8, "osm_end_to_aip_threshold_m": 297.4, "osm_end_vs_aip_end_m": 3.4}]}
+{"runway": "12R/30L", "osm_length_m": 4434.9, "aip_length_m": 4447, "osm_width_m": 60.0, "aip_width_m": 60, "ends": [{"designator": "12R", "displaced_threshold_m_aip": 715.0, "aip_threshold_cross_track_m": 1.0, "osm_end_to_aip_threshold_m": 716.9, "osm_end_vs_aip_end_m": 1.8}, {"designator": "30L", "displaced_threshold_m_aip": 132.0, "aip_threshold_cross_track_m": 1.5, "osm_end_to_aip_threshold_m": 118.3, "osm_end_vs_aip_end_m": 14.3}]}

@@ -16,3 +16,9 @@ pipeline/.venv/
 Thumbs.db
 .env*
 frontend/.claude/
+
+# large generated artefacts (regenerable): raw OSM extracts, full-size PNG previews
+data/airports/*/osm_raw.json
+data/airports/*/osm_context_raw.json
+data/airports/*/debug_layout.png
+pipeline/previews/**/*.png
