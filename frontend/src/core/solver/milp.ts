@@ -7,7 +7,7 @@
  *
  * Hard constraints:
  *   - exactly one option per flight
- *   - stand exclusivity: clique constraints at every interval start point (strong formulation);
+ *   - stand exclusivity and handling/ambulift capacity: constraints at every interval start point (strong formulation);
  *     options overlapping fixed occupancies or closures are removed before solving
  *   - runway arrival capacity per 15-minute bucket (restricted airports and alternates)
  *   - diversion acceptance per alternate per rolling hour
@@ -368,7 +368,11 @@ export function buildModel(pb: Problem, variant: VariantId, exclude: Set<string>
     cols.forEach((c, i) => { if (c[span]) { if (!byAp.has(c.airport)) byAp.set(c.airport, []); byAp.get(c.airport)!.push(i); } });
     for (const [icao, ids] of byAp) {
       let prevKey = "";
-      for (let tau = 0; tau < endRel + 300; tau += 5) {
+      // overlaps peak at interval starts (and capacity drops at outage starts): check exactly there, not on a
+      // grid — a grid can miss a two-minute overlap between consecutive turnarounds
+      const outStarts = span === "wbSpan" ? pb.wb[icao]?.out.map(([s0]) => s0) ?? [] : pb.ambulift[icao]?.out.map(([s0]) => s0) ?? [];
+      const taus = [...new Set([...ids.map((i) => cols[i][span]![0]), ...outStarts])].sort((a, b) => a - b);
+      for (const tau of taus) {
         const active = ids.filter((i) => cols[i][span]![0] <= tau && tau < cols[i][span]![1]);
         if (!active.length) continue;
         const cap = Math.max(0, capOf(icao, tau));

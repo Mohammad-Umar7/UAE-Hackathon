@@ -11,6 +11,7 @@ import { AIRCRAFT } from "../aircraft";
 import type { Registry } from "../airports/registry";
 import { RESOURCE_LABELS } from "../airports/profiles";
 import type { ApprovalSlot, Decision4, Proposal } from "../approvals/workflow";
+import { wideBodyTurnarounds } from "../resources";
 import type { World } from "../types";
 import { fmtTime, resourceAvailable } from "../world";
 
@@ -72,20 +73,20 @@ function airportController(icao: string, p: Proposal, w: World, ap: Registry): S
       spans.push({ d: null, s: p.t0 + r.onBlock * 60, e: p.t0 + (r.onBlock + t.minTurnaroundMin) * 60 });
     } else if (r.option === "divert" && r.to === icao && r.L !== undefined) {
       const d = diversionsIn.find((x) => x.visit === r.visit);
-      const on = p.t0 + r.L * 60 + (ap[icao].stands[r.stand ?? ""]?.taxiIn ?? 420);
+      // whole-minute taxi time, exactly as the optimiser and the validator compute on-block
+      const on = p.t0 + (r.L + Math.ceil((ap[icao].stands[r.stand ?? ""]?.taxiIn ?? 420) / 60)) * 60;
       if (d) spans.push({ d, s: on, e: on + 50 * 60 });
     }
   }
   if (spans.some((x) => x.d)) {
-    const turning = Object.values(w.visits).filter((v) => v.airport === icao && AIRCRAFT[v.type].widebody && v.phase === "ON_STAND"
-      && v.readyAt !== null && v.readyAt > w.now).map((v) => v.readyAt!);
+    const committed = wideBodyTurnarounds(w, ap, icao, new Set(p.plan.rows.filter((r) => r.option !== "unresolved").map((r) => r.visit)));
     spans.sort((a, b) => a.s - b.s);
     const accepted: { s: number; e: number }[] = [];
     const excess: (typeof diversionsIn)[number][] = [];
     let worst = { avail: 0, busy: 0 };
     for (const sp of spans) {
       const avail = resourceAvailable(w, icao, "wb_handling", sp.s, sp.s + 60, false);
-      const busy = turning.filter((ready) => ready > sp.s).length + accepted.filter((a) => a.s <= sp.s && sp.s < a.e).length;
+      const busy = committed.filter(([s0, e0]) => s0 <= sp.s && sp.s < e0).length + accepted.filter((a) => a.s <= sp.s && sp.s < a.e).length;
       if (sp.d && busy + 1 > avail) { excess.push(sp.d); worst = { avail, busy }; } else accepted.push(sp);
     }
     if (excess.length) {

@@ -12,6 +12,7 @@ import { diversionMinutes } from "../airports/profiles";
 import { standAccepts, type Registry } from "../airports/registry";
 import { BUCKET_S, bucketCapacity, bucketOf } from "../sim/capacity";
 import type { Decision } from "../sim/engine";
+import { wideBodyTurnarounds } from "../resources";
 import type { Visit, World } from "../types";
 import { callsignOf, fmtTime, resourceAvailable } from "../world";
 import { airportEligible, standEligible } from "./eligibility";
@@ -32,6 +33,7 @@ export const CONSTRAINT_CATALOGUE: [string, string][] = [
   ["DIVERSION_ELIGIBILITY", "Alternate accepts aircraft size, runway and handling arrangement"],
   ["DIVERSION_ACCEPTANCE", "Diversions per hour within the alternate's modelled limit"],
   ["ACCESSIBILITY", "Passengers needing assistance keep accessible boarding (bridge or ambulift)"],
+  ["HANDLING", "Wide-body turnarounds within the available handling teams at every moment"],
   ["PHASE", "Decision still executable in the aircraft's current phase"],
   ["AUTHORISATION", "Commit only with every required approval recorded"],
 ];
@@ -229,6 +231,31 @@ export function validatePlan(w: World, ap: Registry, decisions: Decision[], rows
       checks.ARRIVAL_CAPACITY++;
       if (n > c) violations.push({ code: "ARRIVAL_CAPACITY", visit: null, callsign: null,
         detail: `${icao} ${fmtTime(b * BUCKET_S)}–${fmtTime((b + 1) * BUCKET_S)}: ${n} landings > modelled capacity ${c}` });
+    }
+  }
+
+  // ---- 3. wide-body handling teams over time (a turnaround holds a team from on-block) -----------
+  if (rows.length) {
+    const spans: { icao: string; s: number; e: number; d: { visit?: string; callsign?: string } }[] = [];
+    for (const r of rows) {
+      const t = AIRCRAFT[r.type as keyof typeof AIRCRAFT];
+      if (!t?.widebody || r.option === "unresolved") continue;
+      if (r.option === "home" && r.onBlock !== undefined) {
+        spans.push({ icao: r.home, s: base + r.onBlock * 60, e: base + (r.onBlock + t.minTurnaroundMin) * 60, d: r });
+      } else if (r.option === "divert" && r.L !== undefined && r.to) {
+        const on = base + r.L * 60 + Math.ceil((ap[r.to]?.stands[r.stand ?? ""]?.taxiIn ?? 420) / 60) * 60;
+        spans.push({ icao: r.to, s: on, e: on + 50 * 60, d: r });
+      }
+    }
+    for (const icao of new Set(spans.map((x) => x.icao))) {
+      const mine = spans.filter((x) => x.icao === icao).sort((a, b) => a.s - b.s);
+      const committed = wideBodyTurnarounds(w, ap, icao, planVisits);
+      for (const sp of mine) {
+        checks.HANDLING++;
+        const busy = committed.filter(([s0, e0]) => s0 <= sp.s && sp.s < e0).length + mine.filter((o) => o.s <= sp.s && sp.s < o.e).length;
+        const avail = resourceAvailable(w, icao, "wb_handling", sp.s, sp.s + 60, sharedOnly);
+        if (busy > avail) add("HANDLING", sp.d, `${icao} ${fmtTime(sp.s)}: ${busy} wide-body turnarounds for ${avail} handling team${avail === 1 ? "" : "s"}`);
+      }
     }
   }
   return { valid: violations.length === 0, violations, checks, t: now };

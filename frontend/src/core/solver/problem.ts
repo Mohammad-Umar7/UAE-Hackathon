@@ -12,6 +12,7 @@ import { AIRCRAFT, approachDuration } from "../aircraft";
 import { diversionMinutes } from "../airports/profiles";
 import type { Registry } from "../airports/registry";
 import { bucketCapacities, bucketOf, BUCKET_S } from "../sim/capacity";
+import { wideBodyTurnarounds } from "../resources";
 import { ACTIVATION_LEAD_S } from "../sim/engine";
 import type { Visit, World } from "../types";
 import { callsignOf, resourceAvailable, restrictionsOverlapping } from "../world";
@@ -375,7 +376,10 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
     const homeOpts = [...opts.filter(([, o]) => o.current).map(([, o]) => o),
       ...opts.filter(([, o]) => !o.current).slice(0, nHome + (isWait ? 4 : 0)).map(([, o]) => o)];
     const divOpts: DivOpt[] = [];
-    if (!isWait && (restricted || (v.requirements.includes("DIVERSION") && !homeOpts.length))) {
+    // a flight that will be on final approach before the plan can be approved can no longer be diverted by it
+    // (holding flights' ETA is in the past, so use the sequenced landing time)
+    const divertible = !isWait && !(v.phase !== "SCHEDULED" && (v.eldt ?? v.eta ?? now) < now + APPROVAL_LEAD_S);
+    if (divertible && (restricted || (v.requirements.includes("DIVERSION") && !homeOpts.length))) {
       for (const [icao, alt] of Object.entries(airports)) {
         if (icao === v.airport) continue;
         const chk = airportEligible(w, v, t, alt, so);
@@ -425,6 +429,7 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
 
   // ---- resources -------------------------------------------------------------------------------
   const ambulift: Problem["ambulift"] = {}, wb: Problem["wb"] = {}, divLimit: Problem["divLimit"] = {};
+  const movableIds = new Set(flights.map((f) => f.visit));
   for (const [icao, ap] of Object.entries(airports)) {
     divLimit[icao] = ap.profile.maxDiversionsPerHour;
     ambulift[icao] = { cap: w.resources[icao]?.ambulift ?? 0, out: [] };
@@ -436,10 +441,9 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
       if (r.params.pool === "ambulift") ambulift[icao].out.push([s, e, Number(r.params.units ?? 0)]);
       if (r.params.pool === "wb_handling") wb[icao].out.push([s, e, Number(r.params.units ?? 0)]);
     }
-    for (const v of Object.values(w.visits)) {
-      if (v.airport === icao && AIRCRAFT[v.type].widebody && v.phase === "ON_STAND" && v.readyAt !== null && v.readyAt > now && v.aibt !== null) {
-        wb[icao].fixed.push([0, Math.max(1, rel(v.readyAt, t0))]);
-      }
+    // turnarounds already committed (on stand, or arriving and not part of this problem) hold teams too
+    for (const [s0, e0] of wideBodyTurnarounds(w, airports, icao, movableIds)) {
+      wb[icao].fixed.push([Math.max(0, Math.floor((s0 - t0) / 60)), Math.max(1, rel(e0, t0))]);
     }
   }
   const snapshot: Snapshot = {
