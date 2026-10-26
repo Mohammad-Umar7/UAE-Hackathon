@@ -30,9 +30,11 @@ its models are simplified, so results are read in the right light.
 
 ## Optimisation and agents
 
-* The recovery model is a **time-indexed MILP** with 5-minute landing slots, discrete ground-wait steps and a
-  3-hour planning horizon. The branch-and-bound search is bounded by a node limit for determinism; plans are
-  high-quality but not always proven optimal (the gap is reported).
+* The recovery model is a **time-indexed MILP** with landing slots every 5 minutes near the earliest feasible time
+  and every 10–15 minutes further out, discrete ground-wait steps, a one-hour window for stand changes combined with
+  holding, and a 3-hour planning horizon. The branch-and-bound search is bounded by a node limit for determinism. Each candidate
+  shows its solver status: “Optimal” means proven within a 0.5 % relative gap for this model; otherwise the
+  node limit stopped the search first and the plan is not proven optimal.
 * Agents are **deterministic programs** with explicit tools, permissions and message contracts. The optional local
   language model only writes the plan briefing, and every number it mentions is checked against the plan; it never
   makes or changes a decision.

@@ -3,7 +3,7 @@
 import { Award, CopyCheck } from "lucide-react";
 import type { Proposal } from "@/core/approvals/workflow";
 import type { Projection } from "@/core/solver/evaluate";
-import type { PlanResult } from "@/core/solver/milp";
+import { MIP_REL_GAP, type PlanResult } from "@/core/solver/milp";
 import { num } from "../common/format";
 
 interface Col {
@@ -27,8 +27,8 @@ const ROWS: { label: string; get: (c: Col) => number | string; better: "low" | "
   { label: "Stand changes", get: (c) => c.plan?.kpis.standChanges ?? "—", better: "none" },
   { label: "Cross-airport requests", get: (c) => c.plan?.kpis.coordinationRequests ?? "—", better: "none" },
   { label: "Unresolved flights", get: (c) => c.plan?.kpis.unresolved ?? "—", better: "low" },
-  { label: "Optimality gap (HiGHS)", get: (c) => (!c.plan || c.plan.mipGap === null ? "—" : `${(Math.max(0, c.plan.mipGap) * 100).toFixed(2)} %`), better: "none",
-    hint: "relative MIP gap when the node-limited search stopped; 0 % = proven optimal for this model" },
+  { label: "Optimality (HiGHS)", get: (c) => (!c.plan ? "—" : c.plan.status === "Optimal" ? `≤ ${(MIP_REL_GAP * 100).toFixed(1)} % gap` : "not proven"), better: "none",
+    hint: "“Optimal” = proven within the relative gap for this model; otherwise the node-limited search stopped first" },
 ];
 
 export function PlanComparison({ p }: { p: Proposal }) {
