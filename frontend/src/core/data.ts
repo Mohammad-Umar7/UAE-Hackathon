@@ -11,19 +11,22 @@ export interface LoadedLayouts {
 }
 
 export async function loadLayouts(): Promise<LoadedLayouts> {
-  const layouts: Record<string, Layout> = {};
+  const got: Record<string, Layout> = {};
   const sources: Record<string, "osm" | "fixture"> = {};
   await Promise.all(ICAOS.map(async (icao) => {
     try {
       const res = await fetch(`/data/airports/${icao}.layout.json`, { cache: "force-cache" });
       if (!res.ok) throw new Error(String(res.status));
-      layouts[icao] = (await res.json()) as Layout;
+      got[icao] = (await res.json()) as Layout;
       sources[icao] = "osm";
     } catch {
       const sizes: Record<string, [number, number, number]> = { OMAA: [14, 10, 3], OMDB: [20, 14, 3], OMSJ: [8, 8, 5] };
-      layouts[icao] = { ...makeLayout(...sizes[icao]), icao };
+      got[icao] = { ...makeLayout(...sizes[icao]), icao };
       sources[icao] = "fixture";
     }
   }));
+  // fixed key order (fetches complete in any order; the engine iterates airports in key order)
+  const layouts: Record<string, Layout> = {};
+  for (const icao of ICAOS) layouts[icao] = got[icao];
   return { layouts, sources };
 }

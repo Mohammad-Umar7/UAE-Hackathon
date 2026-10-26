@@ -237,7 +237,7 @@ export type Registry = Record<string, AirportInfo>;
 
 export function buildRegistry(layouts: Record<string, Layout>, profiles = PROFILES): Registry {
   const out: Registry = {};
-  for (const [icao, layout] of Object.entries(layouts)) out[icao] = buildAirport(profiles[icao], layout);
+  for (const icao of Object.keys(layouts).sort()) out[icao] = buildAirport(profiles[icao], layouts[icao]);
   return out;
 }
 
