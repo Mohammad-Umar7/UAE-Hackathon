@@ -80,6 +80,9 @@ export class Runtime {
   private lastStale = 0;
   private lastSample = 0;
   private replayQueue: InputRecord[] = [];
+  stopAt: number | null = null;
+  private restore: { speed: number; pacing: number } | null = null;
+  replaying = false;
 
   constructor(airports: Registry, compute: ComputeClient) {
     this.airports = airports;
@@ -123,6 +126,19 @@ export class Runtime {
     const id = this.scenario.id;
     this.running = false;
     this.load(id === "lab" ? "baseline" : id, this.seed, this.lab, inputs);
+    this.replaying = true;
+  }
+
+  /** Deterministic seek: re-run from the start with the recorded inputs at high speed, pause at `t`. */
+  replayTo(t: number) {
+    const keep = { speed: this.speed, pacing: this.pacingMs };
+    this.replay();
+    this.restore = keep;
+    this.speed = 900;
+    this.pacingMs = 0;
+    this.stopAt = t;
+    this.running = true;
+    this.notify();
   }
 
   subscribe(fn: () => void): () => void {
@@ -164,6 +180,13 @@ export class Runtime {
 
   // ================================================================ clock
   tick(dtReal: number) {
+    if (this.stopAt !== null && this.world.now >= this.stopAt) {
+      this.running = false;
+      this.stopAt = null;
+      if (this.restore) { this.speed = this.restore.speed; this.pacingMs = this.restore.pacing; this.restore = null; }
+      this.notify();
+      return;
+    }
     if (!this.running || this.held) return;
     // clamp large gaps (background tabs) so the simulation never leaps more than 2 s of wall time
     this.advance(this.world.now + Math.min(dtReal, 2) * this.speed);
