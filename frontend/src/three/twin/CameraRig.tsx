@@ -47,7 +47,7 @@ export function CameraRig({ ap, center, radius }: { ap: AirportInfo; center: P2;
       const d = radius * 0.8;
       c.setLookAt(tx + Math.sin(az) * d, radius * 0.18, tz - Math.cos(az) * d, tx, 20, tz, true);
     }
-  }, [mode, center, radius, rwHeading, ap.icao]);
+  }, [mode, center, radius, rwHeading, ap.icao, setCamera]);
 
   // fly to a newly selected aircraft or stand; aircraft may appear a few frames later (assets loading)
   const pending = useRef<{ visit: string | null; stand: string | null } | null>(null);

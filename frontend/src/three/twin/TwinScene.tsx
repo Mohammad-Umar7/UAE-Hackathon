@@ -7,6 +7,7 @@ import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { Runtime } from "@/core/runtime";
 import { Airfield, buildAirfield } from "./Airfield";
+import { Apron } from "./Apron";
 import { Atmosphere } from "./Atmosphere";
 import { CameraRig } from "./CameraRig";
 import { Fleet } from "./Fleet";
@@ -28,6 +29,7 @@ function SceneContent({ rt, icao, labels }: { rt: Runtime; icao: string; labels:
       <StandStatus rt={rt} ap={ap} />
       <Routes ap={ap} />
       <Fleet rt={rt} ap={ap} />
+      <Apron rt={rt} ap={ap} />
       <FogBanks rt={rt} icao={icao} center={bounds.center} radius={bounds.radius} />
       <SelectionRing />
       <PlanPreview rt={rt} ap={ap} />
