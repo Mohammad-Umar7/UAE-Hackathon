@@ -27,7 +27,7 @@ import { legT1, legsEnd, planArrival, planDeparture, planTaxiFromHold, planTow }
 import { positionAt } from "./movementEval";
 
 const HOLD_FIX_LEAD_S = 600;
-const ACTIVATION_LEAD_S = 5400;
+export const ACTIVATION_LEAD_S = 5400;
 const AMAN_TICK_S = 300;
 export const PRM_AMBULIFT_S = 25 * 60;
 
@@ -1037,6 +1037,12 @@ export class Engine {
         log.push(`${cs}: stand → ${d.stand}`);
       } else if (d.action === "landing_slot") {
         if (v.phase === "SCHEDULED" || v.phase === "INBOUND" || v.phase === "HOLDING") {
+          if (v.phase === "SCHEDULED" && v.eta !== null && d.eldt! > v.eta + 300) {
+            // still at its origin: the slot is a ground delay — it departs later instead of holding airborne
+            v.eta = d.eldt! - 120;
+            this.bump(v);
+            this.scheduleVisit(v, Math.max(this.w.now, v.eta - ACTIVATION_LEAD_S), "activate", {}, 3);
+          }
           v.eldt = d.eldt!;
           v.slotFixed = true;
           v.planRefs.push(planId);
