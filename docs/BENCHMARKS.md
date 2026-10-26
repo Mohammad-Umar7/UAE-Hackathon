@@ -32,12 +32,14 @@ rendering.
 
 | Metric | No coordinated action | Recommended plan |
 |---|---|---|
-| Total delay (arrival + departure) | 12,118 min | 11,500 min |
-| Airborne holding | 5,443 min | 3,061 min |
-| Projected stand conflicts | 15 | 6 |
-| Uncoordinated fuel diversions (crew decisions) | 36 | 5 |
+| Total delay (arrival + departure) | 12,602 min | 11,814 min |
+| Airborne holding | 5,443 min | 3,128 min |
+| Projected stand conflicts | 15 | 5 |
+| Uncoordinated fuel diversions (crew decisions) | 36 | 6 |
 
-These are simulation outcomes on synthetic traffic, not forecasts for the real airports.
+These are simulation outcomes on synthetic traffic, not forecasts for the real airports. Delay counts a diverted
+flight's arrival when it is back at its destination and its outbound departure when it leaves again (both censored
+at the end of the look-ahead), so baselines with many crew diversions are not flattered.
 
 ## Optimisation history (same scenario and time)
 
