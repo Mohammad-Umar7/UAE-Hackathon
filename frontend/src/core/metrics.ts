@@ -4,7 +4,8 @@
  * Delay definitions (A-CDM style): arrival delay = max(0, AIBT − SIBT) for arrivals scheduled in
  * the window; departure delay = max(0, AOBT − SOBT). Flights that have not reached the milestone
  * by the end of the window are censored at the window end. A diverted arrival is measured at its
- * recovery leg's AIBT back at the original destination.
+ * recovery leg's AIBT back at the original destination, and its outbound departure at the return visit's
+ * AOBT (censored while the aircraft has not come back).
  */
 
 import type { World } from "./types";
@@ -57,8 +58,11 @@ export function outcomeMetrics(w: World, tFrom: number, tTo: number, airports?: 
       arr.push([Math.max(0, end - s), v.pax]);
     }
     const d = v.dep?.sched;
-    if (d !== undefined && d >= from && d <= tTo && v.phase !== "DIVERTED") {
-      dep.push([Math.max(0, (v.aobt ?? now) - d), v.dep!.pax]);
+    if (d !== undefined && d >= from && d <= tTo) {
+      // a diverted aircraft's outbound flight is measured on its return visit; until that visit exists
+      // the departure is still pending (censored at the window end) — never silently dropped
+      if (v.phase !== "DIVERTED") dep.push([Math.max(0, (v.aobt ?? now) - d), v.dep!.pax]);
+      else if (!w.visits[`${v.id}<R`]) dep.push([Math.max(0, now - d), v.dep!.pax]);
     }
   }
   const arrTotal = arr.reduce((s, [x]) => s + x, 0) / 60;
