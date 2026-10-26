@@ -1,0 +1,102 @@
+{
+  "image": "s2_mosaic.jpg",
+  "width_px": 3072,
+  "height_px": 3072,
+  "crs": "EPSG:3857",
+  "bounds_3857": {
+    "min_x": 6007338.926988572,
+    "min_y": 2739503.093740716,
+    "max_x": 6242153.477880635,
+    "max_y": 2974317.644632779
+  },
+  "bounds_lonlat": {
+    "west": 53.96484375,
+    "south": 23.88583769986199,
+    "east": 56.07421875000002,
+    "north": 25.799891182088334
+  },
+  "note": "Pixels are square in EPSG:3857 (Web Mercator); latitude is NOT linear in pixel rows. Row r (0 = top) centre: my = max_y - (r + 0.5) * (max_y - min_y) / height_px; lat = degrees(2*atan(exp(my/6378137)) - pi/2).",
+  "requested_bbox_lonlat": [
+    54.0,
+    23.9,
+    56.0,
+    25.7
+  ],
+  "zoom": 11,
+  "tiles": {
+    "x": [
+      1331,
+      1342
+    ],
+    "y": [
+      872,
+      883
+    ]
+  },
+  "pixel_size_m_3857": 76.4370282851769,
+  "nodata_tiles": {
+    "count": 11,
+    "xy": [
+      [
+        1331,
+        873
+      ],
+      [
+        1331,
+        874
+      ],
+      [
+        1332,
+        874
+      ],
+      [
+        1333,
+        874
+      ],
+      [
+        1334,
+        874
+      ],
+      [
+        1331,
+        875
+      ],
+      [
+        1332,
+        875
+      ],
+      [
+        1333,
+        875
+      ],
+      [
+        1331,
+        876
+      ],
+      [
+        1332,
+        876
+      ],
+      [
+        1331,
+        877
+      ]
+    ],
+    "fill_rgb": [
+      47,
+      66,
+      78
+    ],
+    "recoloured_nodata_pixels": 622234,
+    "note": "tiles without imagery in the layer (open sea) and EOX's navy no-data pixels inside partially covered sea tiles are filled with one flat sea colour"
+  },
+  "source": {
+    "layer": "s2cloudless_3857",
+    "title": "(cached)",
+    "wmts": "https://tiles.maps.eox.at/wmts/1.0.0/WMTSCapabilities.xml",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Sentinel-2 cloudless - https://s2maps.eu by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016)",
+    "retrieved": "2026-10-26"
+  }
+}

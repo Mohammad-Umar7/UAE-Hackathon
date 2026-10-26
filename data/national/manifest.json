@@ -1,0 +1,36 @@
+{
+  "bbox_lonlat": [
+    54.0,
+    23.9,
+    56.0,
+    25.7
+  ],
+  "crs": "EPSG:4326 (lon, lat), coordinates rounded to 1e-5 deg",
+  "files": {
+    "land.geojson": {
+      "bytes": 468243
+    },
+    "roads.geojson": {
+      "bytes": 346773
+    },
+    "urban_areas.geojson": {
+      "bytes": 4644
+    },
+    "emirates.geojson": {
+      "bytes": 16327
+    },
+    "places.geojson": {
+      "bytes": 106732
+    },
+    "airports.geojson": {
+      "bytes": 23511
+    }
+  },
+  "total_geojson_mb": 0.97,
+  "optional_raster": "s2_mosaic.jpg + s2_mosaic.json (EOX Sentinel-2 cloudless 2016, CC BY 4.0, EPSG:3857)",
+  "sources": {
+    "osm": "Geofabrik gcc-states-261025.osm.pbf, OSM data up to 2026-10-25T21:21:21Z, ODbL 1.0",
+    "natural_earth": "Natural Earth 10m cultural vectors (urban areas, admin-1), public domain"
+  },
+  "generator": "pipeline/osm/build_national.py"
+}
