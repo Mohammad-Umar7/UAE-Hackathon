@@ -47,7 +47,6 @@ describe("recovery optimiser (HiGHS)", () => {
     const plan = solveVariant(highs, pb, "min_delay");
     const base = project(world, aps, "no_action", 4 * 3600);
     const withPlan = project(world, aps, "live", 4 * 3600, plan.decisions);
-    // eslint-disable-next-line no-console
     console.log("no_action", base.totalDelayMin, base.airborneHoldingMin, base.groundWaitMin, base.standConflicts, base.fuelDiversions,
       "| plan", withPlan.totalDelayMin, withPlan.airborneHoldingMin, withPlan.groundWaitMin, withPlan.standConflicts, withPlan.fuelDiversions,
       "| kpis", JSON.stringify(plan.kpis), plan.solveMs.toFixed(0), "ms", plan.numVars, "vars", plan.numRows, "rows");

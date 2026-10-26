@@ -34,8 +34,7 @@ export default function LabView() {
         const inc = rt.injectIncident(s, role);
         toast(inc ? `Injected: ${inc.title} (starts ${fmtTime(inc.start)})` : "Nothing to inject (no matching flight)", inc ? "ok" : "warn");
       }
-      rt.running = true;
-      rt.notify();
+      rt.setRunning(true);
     } catch (e) { toast((e as Error).message, "bad"); }
   };
   return (
@@ -131,7 +130,7 @@ export default function LabView() {
           )}
         </div>
         <div className="space-y-2 border-t border-line p-3">
-          {!allowed && <div className="text-[11.5px] text-[var(--amber)]">{roleOf(role).title} cannot inject incidents at {PROFILES[spec.airport].iata}. Switch to the National Supervisor or that airport's controller.</div>}
+          {!allowed && <div className="text-[11.5px] text-[var(--amber)]">{roleOf(role).title} cannot inject incidents at {PROFILES[spec.airport].iata}. Switch to the National Supervisor or that airport&apos;s controller.</div>}
           <div className="flex gap-2">
             <button className="btn flex-1 justify-center" onClick={() => setBatch([...batch, spec])}><Plus size={13} /> Add to simultaneous set</button>
             <button className="btn btn-primary flex-1 justify-center" disabled={!allowed} onClick={() => { inject(batch.length ? [...batch, spec] : [spec]); setBatch([]); }}>

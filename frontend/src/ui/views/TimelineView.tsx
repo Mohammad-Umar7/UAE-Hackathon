@@ -75,7 +75,6 @@ export default function TimelineView() {
   const ticks: number[] = [];
   for (let t = Math.ceil(t0 / 1800) * 1800; t <= t1; t += 1800) ticks.push(t);
   const conflicts = rows.reduce((s, r) => s + r.bars.filter((b) => b.conflict).length, 0);
-  let lastGroup = "";
   return (
     <div className="flex h-full flex-col gap-3 p-3">
       <div className="flex items-center gap-3">
@@ -110,8 +109,7 @@ export default function TimelineView() {
             {rows.map(({ s, bars }, i) => {
               const y = 30 + i * ROW_H;
               const group = `${s.kind} · ${s.zone}`;
-              const showGroup = group !== lastGroup;
-              lastGroup = group;
+              const showGroup = i === 0 || group !== `${rows[i - 1].s.kind} · ${rows[i - 1].s.zone}`;
               return (
                 <g key={s.id}>
                   {i % 2 === 0 && <rect x={0} y={y} width={W} height={ROW_H} fill="var(--bg-2)" opacity={0.35} />}

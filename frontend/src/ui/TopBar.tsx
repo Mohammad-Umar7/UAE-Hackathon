@@ -48,7 +48,7 @@ export function TopBar() {
           <span className="text-[10.5px] text-muted">GST · synthetic day</span>
         </div>
         <div className="flex items-center gap-1">
-          <button className="btn h-8 w-8 justify-center p-0" onClick={() => { rt.running = !rt.running; rt.notify(); }} title={rt.running ? "Pause" : "Run"}>
+          <button className="btn h-8 w-8 justify-center p-0" onClick={() => rt.setRunning(!rt.running)} title={rt.running ? "Pause" : "Run"}>
             {rt.running ? <Pause size={15} /> : <Play size={15} />}
           </button>
           <button className="btn h-8 w-8 justify-center p-0" onClick={() => rt.step(60)} title="Step one minute" disabled={rt.held}>

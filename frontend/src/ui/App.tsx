@@ -30,7 +30,8 @@ export default function App() {
         const rt = new Runtime(registry, compute);
         rt.load("nightfall", 7);
         useOps.getState().attach(rt, sources);
-        (window as unknown as { skypact: Runtime }).skypact = rt;
+        (window as unknown as { skypact: Runtime; skypactUi: typeof useOps }).skypact = rt;
+        (window as unknown as { skypactUi: typeof useOps }).skypactUi = useOps; // inspection handle for demos/tests
         void detectLlm().then((s) => { rt.llm = s; rt.notify(); });
       } catch (e) {
         setState({ phase: "Failed to start", error: (e as Error).message });

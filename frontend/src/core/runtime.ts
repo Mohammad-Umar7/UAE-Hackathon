@@ -146,6 +146,11 @@ export class Runtime {
     return () => this.listeners.delete(fn);
   }
 
+  setRunning(on: boolean): void {
+    this.running = on;
+    this.notify();
+  }
+
   notify() {
     this.version++;
     for (const fn of this.listeners) fn();

@@ -14,7 +14,7 @@ const NationalMap = dynamic(() => import("@/three/NationalMap").then((m) => m.Na
 
 export default function CommandView() {
   const rt = useRuntime();
-  const { setView, setAirport, select } = useOps();
+  const { setView, select } = useOps();
   const pending = Object.entries(rt.proposals).filter(([, p]) => isOpen(p));
   const incidents = Object.values(rt.world.incidents).filter((i) => i.shared && i.status === "active");
   return (

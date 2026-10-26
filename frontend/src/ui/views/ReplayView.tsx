@@ -43,7 +43,7 @@ export default function ReplayView() {
         </div>
         <div className="ml-auto flex items-center gap-2">
           <span className="text-[12px] text-muted">{rt.inputs.length} recorded input{rt.inputs.length === 1 ? "" : "s"}</span>
-          <button className="btn" onClick={() => { rt.replay(); rt.running = true; rt.notify(); }}><Rewind size={13} /> Replay from start</button>
+          <button className="btn" onClick={() => { rt.replay(); rt.setRunning(true); }}><Rewind size={13} /> Replay from start</button>
           <button className="btn btn-primary" disabled={cursor === null} onClick={() => { if (cursor !== null) rt.replayTo(cursor); }}><SkipForward size={13} /> Re-simulate to {cursor !== null ? fmtTime(cursor) : "…"}</button>
         </div>
       </div>

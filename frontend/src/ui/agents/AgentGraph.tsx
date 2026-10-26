@@ -35,17 +35,21 @@ function pointOn(a: NodeId, b: NodeId, t: number): [number, number] {
 export function AgentGraph({ thread }: { thread: string | null }) {
   const rt = useRuntime();
   const setInspect = useOps((s) => s.setInspect);
-  const [, setFrame] = useState(0);
+  const [now, setNow] = useState(0);
   const msgs = rt.orchestrator.messages;
-  const now = Date.now();
-  const inFlight = msgs.filter((m) => now - m.wall < FLIGHT_MS && (!thread || m.thread === thread));
+  const lastWall = msgs.length ? msgs[msgs.length - 1].wall : 0;
+  const inFlight = msgs.filter((m) => now >= m.wall && now - m.wall < FLIGHT_MS && (!thread || m.thread === thread));
   useEffect(() => {
-    if (!inFlight.length) return;
+    // animate packets while the newest message is still in flight
     let raf = 0;
-    const tick = () => { setFrame((f) => f + 1); raf = requestAnimationFrame(tick); };
+    const tick = () => {
+      const t = Date.now();
+      setNow(t);
+      if (t - lastWall < FLIGHT_MS + 100) raf = requestAnimationFrame(tick);
+    };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [inFlight.length]);
+  }, [lastWall]);
   const comp = rt.orchestrator.computing;
   const open: Proposal | undefined = Object.values(rt.proposals).filter(isOpen).sort((a, b) => b.createdAt - a.createdAt)[0];
   const slotState = useMemo(() => {

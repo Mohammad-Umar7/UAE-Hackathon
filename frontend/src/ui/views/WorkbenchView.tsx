@@ -28,7 +28,7 @@ export default function WorkbenchView() {
             <div>
               <div className="text-[15px] font-semibold">No recovery proposal yet</div>
               <p className="mt-1 max-w-md text-muted">Run the clock. When a disruption is detected, the agents assess its impact, invoke the optimiser and prepare a proposal here for human approval.</p>
-              <button className="btn btn-primary mt-4" onClick={() => { rt.running = true; rt.notify(); }}>Run simulation</button>
+              <button className="btn btn-primary mt-4" onClick={() => rt.setRunning(true)}>Run simulation</button>
             </div>
           </div>
         ) : (
