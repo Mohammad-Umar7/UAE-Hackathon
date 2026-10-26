@@ -32,6 +32,14 @@ npm run dev
 Open <http://localhost:3000>. The app boots into **Operation Nightfall** (17:20 local, paused). Press ▶ in the top bar,
 or click **Present** for the guided nine-step demonstration.
 
+For the smoothest live demo, run the production build instead of the dev server:
+
+```bash
+cd frontend
+npm run build
+npm start
+```
+
 Optional — local language model for the plan briefings (offline, no API key): install [Ollama](https://ollama.com),
 run `ollama pull qwen2.5:3b`, and keep Ollama running. SKYPACT detects it automatically; without it, briefings fall
 back to deterministic templates. Every number in an LLM briefing is checked against the plan before it is shown.
