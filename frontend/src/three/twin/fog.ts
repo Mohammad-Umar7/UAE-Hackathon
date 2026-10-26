@@ -12,7 +12,7 @@
 import * as THREE from "three";
 
 /** e-folding height of the fog layer in metres. */
-export const FOG_LAYER_M = 42;
+export const FOG_LAYER_M = 28;
 
 let installed = false;
 
@@ -73,10 +73,14 @@ export function installHeightFog(): void {
  */
 export function groundFogDensity(visibility: number, fog: number): number {
   if (fog <= 0.01 && visibility >= 8000) return 0;
-  return Math.min(0.03, 2.6 / Math.max(80, visibility)) * Math.min(1, 0.35 + fog);
+  return Math.min(0.035, 3.0 / Math.max(80, visibility)) * Math.min(1, 0.3 + fog);
 }
 
-/** Background haze grows slightly with humidity/precipitation so distant city blocks recede. */
-export function hazeDensity(visibility: number): number {
-  return 0.9 / Math.max(6000, Math.min(60000, visibility * 4));
+/**
+ * Background haze. Radiation fog is shallow, so above the layer the air stays fairly clear:
+ * haze only follows the reported visibility when there is no ground fog to explain it.
+ */
+export function hazeDensity(visibility: number, fog: number): number {
+  const v = fog > 0.4 ? 9000 : visibility;
+  return 0.9 / Math.max(6000, Math.min(60000, v * 4));
 }

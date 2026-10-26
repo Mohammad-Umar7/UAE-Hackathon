@@ -481,7 +481,7 @@ export function floodMasts(stands: StandInfo[], L: LightSet): { at: P2; heading:
     const at = add(add([s.x, s.y], mul(d, 14)), mul(n, s.maxWingspan / 2 + 5));
     if (out.some((m) => len(sub(m.at, at)) < 45)) continue;
     out.push({ at, heading: (s.heading + 180) % 360 });
-    for (const k of [-1.2, 0, 1.2]) light(L, add(at, mul(n, k)), 29, s.kind === "remote" || s.kind === "cargo" ? C.warm : C.cool, 4.5, "apron");
+    for (const k of [-1.2, 0, 1.2]) light(L, add(at, mul(n, k)), 29, s.kind === "remote" || s.kind === "cargo" ? C.warm : C.cool, 2.4, "apron");
   }
   return out;
 }

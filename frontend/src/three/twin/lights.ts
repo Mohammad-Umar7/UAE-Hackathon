@@ -12,6 +12,7 @@ const vertexCommon = /* glsl */ `
   attribute float size;
   uniform float uScale;
   uniform float uMinPx;
+  uniform float uScatter;
   varying vec3 vColor;
   varying float vGain;
   #include <common>
@@ -19,6 +20,7 @@ const vertexCommon = /* glsl */ `
 `;
 
 const fragment = /* glsl */ `
+  uniform float uScatter;
   varying vec3 vColor;
   varying float vGain;
   #include <common>
@@ -27,20 +29,22 @@ const fragment = /* glsl */ `
     vec2 c = gl_PointCoord * 2.0 - 1.0;
     float r2 = dot( c, c );
     if ( r2 > 1.0 || vGain <= 0.001 ) discard;
-    float core = exp( - r2 * 18.0 );
-    float halo = exp( - r2 * 3.2 ) * 0.35;
+    // sprites are enlarged by uScatter in fog: keep the core small, widen the halo (Mie scattering look)
+    float coreK = 18.0 * ( 1.0 + uScatter * 6.0 );
+    float core = exp( - r2 * coreK );
+    float halo = exp( - r2 * mix( 3.2, 1.6, uScatter ) ) * mix( 0.35, 0.55, uScatter );
     vec3 lit = vColor * vGain * ( core * 2.2 + halo );
     gl_FragColor = vec4( lit, 1.0 );
     // additive sprites: fog only attenuates them (mixing toward the fog colour would paint discs)
     #ifdef USE_FOG
       #include <fog_fragment>
-      gl_FragColor.rgb = lit * ( 1.0 - fogFactor * 0.9 );
+      gl_FragColor.rgb = lit * ( 1.0 - fogFactor * mix( 0.9, 0.55, uScatter ) );
     #endif
   }
 `;
 
 function baseUniforms() {
-  return THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uScale: { value: 800 }, uMinPx: { value: 1.6 }, uTime: { value: 0 } }]);
+  return THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uScale: { value: 800 }, uMinPx: { value: 2 }, uTime: { value: 0 }, uScatter: { value: 0 } }]);
 }
 
 /** Static airfield lights; gain per group and flashing computed on the GPU. */
@@ -71,8 +75,8 @@ export function airfieldLightMaterial(): THREE.ShaderMaterial {
         vGain = gain;
         vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
         gl_Position = projectionMatrix * mvPosition;
-        gl_PointSize = max( uMinPx, size * uScale / max( 1.0, - mvPosition.z ) );
-        gl_PointSize = min( gl_PointSize, 48.0 );
+        gl_PointSize = max( uMinPx, size * ( 1.0 + 2.5 * uScatter ) * uScale / max( 1.0, - mvPosition.z ) );
+        gl_PointSize = min( gl_PointSize, 64.0 );
         #include <fog_vertex>
       }
     `,
@@ -125,7 +129,7 @@ export class DynamicLights {
           vGain = gain;
           vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
           gl_Position = projectionMatrix * mvPosition;
-          gl_PointSize = clamp( size * uScale / max( 1.0, - mvPosition.z ), uMinPx, 56.0 );
+          gl_PointSize = clamp( size * ( 1.0 + 2.0 * uScatter ) * uScale / max( 1.0, - mvPosition.z ), uMinPx, 64.0 );
           #include <fog_vertex>
         }
       `,

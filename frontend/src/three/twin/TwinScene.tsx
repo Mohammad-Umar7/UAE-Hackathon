@@ -10,6 +10,7 @@ import { Airfield, buildAirfield } from "./Airfield";
 import { Atmosphere } from "./Atmosphere";
 import { CameraRig } from "./CameraRig";
 import { Fleet } from "./Fleet";
+import { FogBanks } from "./FogBanks";
 import { layoutBounds } from "./geometry";
 import { Labels, Picker } from "./Labels";
 import { PlanPreview, Routes, RunwayClosures, SelectionRing, StandStatus } from "./Overlays";
@@ -27,6 +28,7 @@ function SceneContent({ rt, icao, labels }: { rt: Runtime; icao: string; labels:
       <StandStatus rt={rt} ap={ap} />
       <Routes ap={ap} />
       <Fleet rt={rt} ap={ap} />
+      <FogBanks rt={rt} icao={icao} center={bounds.center} radius={bounds.radius} />
       <SelectionRing />
       <PlanPreview rt={rt} ap={ap} />
       <CameraRig ap={ap} center={bounds.center} radius={bounds.radius} />

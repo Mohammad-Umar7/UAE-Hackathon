@@ -161,6 +161,7 @@ export function Fleet({ rt, ap }: { rt: Runtime; ap: AirportInfo }) {
     rig.lights.commit();
     const u = rig.lights.material.uniforms;
     u.uScale.value = pointScale(camera, size.height);
+    u.uScatter.value = twinState.scatter;
     for (const m of fleetLook.lights) m.emissiveIntensity = 0.4 + 2.6 * night;
     for (const m of fleetLook.windows) m.emissiveIntensity = (m.name.startsWith("M_Window") ? 0.9 : 0.25) * night;
   });

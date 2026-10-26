@@ -16,7 +16,7 @@ installHeightFog();
 
 const LIGHTING_TIME: Record<string, number> = { day: 13 * 3600, dusk: 17.82 * 3600, night: 21.5 * 3600 };
 const C = (h: string) => new THREE.Color(h);
-const FOG_DAY = C("#d3d6d6"), FOG_DUSK = C("#c7b39f"), FOG_NIGHT = C("#252c36");
+const FOG_DAY = C("#d3d6d6"), FOG_DUSK = C("#c7b39f"), FOG_NIGHT = C("#252c36"), FOG_GLOW = C("#6d6458");
 const SUN_LOW = C("#ffad66"), SUN_HIGH = C("#fff4e6");
 const SKY_DAY = C("#bcd3ee"), SKY_NIGHT = C("#2c3a55"), GROUND_DAY = C("#cdb48c"), GROUND_NIGHT = C("#2a2622");
 
@@ -54,6 +54,7 @@ export function Atmosphere({ rt, icao }: { rt: Runtime; icao: string }) {
     // ---- operations state that materials react to
     const wetTarget = precip === "heavy_rain" ? 1 : precip === "rain" ? 0.85 : precip === "light_rain" ? 0.5 : 0;
     twinState.wetness += (wetTarget - twinState.wetness) * Math.min(1, dt * (wetTarget > twinState.wetness ? 0.6 : 0.08));
+    twinState.scatter += (THREE.MathUtils.smoothstep(wx?.fog ?? 0, 0.2, 0.9) - twinState.scatter) * Math.min(1, dt * 0.8);
     twinState.lvp = wx?.category === "LVP" || activeRestrictions(w, icao, "LOW_VISIBILITY").length > 0;
     twinState.closedRunways.clear();
     for (const r of activeRestrictions(w, icao, "RUNWAY_CLOSED")) twinState.closedRunways.add(String(r.params.runway ?? ""));
@@ -62,9 +63,11 @@ export function Atmosphere({ rt, icao }: { rt: Runtime; icao: string }) {
     const fog = scene.fog as THREE.Fog;
     if (fog) {
       fog.near = groundFogDensity(vis, wx?.fog ?? 0) + (precip !== "none" ? 0.0012 : 0);
-      fog.far = hazeDensity(vis) * (1 + overcast);
+      fog.far = hazeDensity(vis, wx?.fog ?? 0) * (1 + overcast);
       const dusk = Math.max(0, 1 - Math.abs(s.elevation - 2) / 10);
       tmp.c.copy(FOG_DAY).lerp(FOG_DUSK, dusk * 0.8).lerp(FOG_NIGHT, night);
+      // at night a dense fog layer glows with the airfield lighting it scatters
+      if (night > 0.3) tmp.c.lerp(FOG_GLOW, Math.min(1, (wx?.fog ?? 0) * 1.2) * 0.55 * night);
       if (overcast > 0.5) tmp.c.multiplyScalar(1 - 0.25 * (overcast - 0.5));
       fog.color.copy(tmp.c);
     }
@@ -105,7 +108,7 @@ export function Atmosphere({ rt, icao }: { rt: Runtime; icao: string }) {
       hemi.current.groundColor.copy(GROUND_DAY).lerp(GROUND_NIGHT, night);
       hemi.current.intensity = 0.55 * day + 0.42 * night + 2.5 * f.level;
     }
-    if (amb.current) amb.current.intensity = 0.06 + 0.28 * night; // apron flood lighting fill at night
+    if (amb.current) amb.current.intensity = 0.06 + 0.62 * night; // apron flood lighting fill at night
     scene.environmentIntensity = (0.12 + 0.88 * day) * (1 - 0.45 * overcast);
 
     const sk = sky.current?.material as THREE.ShaderMaterial | undefined;

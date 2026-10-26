@@ -143,6 +143,7 @@ export function Airfield({ data, center }: { data: AirfieldData; center: P2 }) {
     (mats.ground as THREE.MeshStandardMaterial).color.set("#d8c39f").multiplyScalar(1 - 0.18 * wet);
     const u = lightMat.uniforms;
     u.uTime.value = clock.elapsedTime;
+    u.uScatter.value = s.scatter;
     u.uScale.value = size.height / (2 * Math.tan(((camera as THREE.PerspectiveCamera).fov * Math.PI) / 360));
     const night = s.night;
     const base = 0.22 + 0.95 * night;
@@ -223,7 +224,7 @@ function Buildings({ data }: { data: AirfieldData }) {
   const mats = useMemo(() => {
     const glass = facadeTextures("glass"), concrete = facadeTextures("concrete"), metal = facadeTextures("metal");
     const wall = (t: { map: THREE.Texture; emissive: THREE.Texture }, rough: number, metalness: number) => new THREE.MeshStandardMaterial({
-      map: t.map, emissiveMap: t.emissive, emissive: new THREE.Color("#ffd29a"), emissiveIntensity: 0, roughness: rough, metalness,
+      map: t.map, emissiveMap: t.emissive, emissive: new THREE.Color("#ffe2bd"), emissiveIntensity: 0, roughness: rough, metalness,
     });
     return {
       glass: wall(glass, 0.22, 0.35), concrete: wall(concrete, 0.85, 0), metal: wall(metal, 0.5, 0.45),
@@ -234,9 +235,9 @@ function Buildings({ data }: { data: AirfieldData }) {
   }, []);
   useFrame(() => {
     const n = twinState.night;
-    mats.glass.emissiveIntensity = 0.05 + 1.25 * n;
-    mats.concrete.emissiveIntensity = 0.9 * n;
-    mats.ctxWall.emissiveIntensity = 0.7 * n;
+    mats.glass.emissiveIntensity = 0.04 + 0.85 * n;
+    mats.concrete.emissiveIntensity = 0.55 * n;
+    mats.ctxWall.emissiveIntensity = 0.45 * n;
   });
   const b = data.buildings;
   return (
@@ -257,7 +258,7 @@ function FloodPools({ data }: { data: AirfieldData }) {
   const { geo, mat } = useMemo(() => {
     const pos: number[] = [], uv: number[] = [];
     for (const m of data.masts) {
-      const r = 70;
+      const r = 88;
       const [x, y] = m.at;
       const q = [[x - r, y - r, 0, 0], [x + r, y - r, 1, 0], [x + r, y + r, 1, 1], [x - r, y + r, 0, 1]];
       for (const k of [0, 1, 2, 0, 2, 3]) { pos.push(q[k][0], 0, -q[k][1]); uv.push(q[k][2], q[k][3]); }
@@ -270,6 +271,6 @@ function FloodPools({ data }: { data: AirfieldData }) {
     }), 10);
     return { geo: g, mat: m as THREE.MeshBasicMaterial };
   }, [data]);
-  useFrame(() => { mat.opacity = 0.32 * twinState.night; mat.visible = twinState.night > 0.05; });
+  useFrame(() => { mat.opacity = (0.5 + 0.25 * twinState.scatter) * twinState.night; mat.visible = twinState.night > 0.05; });
   return <mesh geometry={geo} material={mat} renderOrder={3} />;
 }

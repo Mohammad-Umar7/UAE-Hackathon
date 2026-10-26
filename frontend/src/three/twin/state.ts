@@ -17,5 +17,7 @@ export const twinState = {
   /** Camera orbit target (layout-independent, three.js coords). */
   target: new THREE.Vector3(),
   cameraDistance: 1500,
+  /** 0..1 how much fog scatters point lights (drives halo size). */
+  scatter: 0,
   simTime: 0,
 };
