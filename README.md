@@ -165,6 +165,7 @@ docs/                  conventions, data sources, demo script, pitch, business m
 * [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — components, data flow, determinism
 * [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) — three-minute demo
 * [docs/PITCH.md](docs/PITCH.md), [docs/BUSINESS_MODEL_CANVAS.md](docs/BUSINESS_MODEL_CANVAS.md), [docs/PILOT_PLAN.md](docs/PILOT_PLAN.md)
+* [docs/BENCHMARKS.md](docs/BENCHMARKS.md) — simulator, optimiser and validation timings on the real layouts
 * [docs/LIMITATIONS.md](docs/LIMITATIONS.md) — what this prototype does not do
 * [docs/ASSET_LICENSES.md](docs/ASSET_LICENSES.md) — models, textures, fonts, libraries
 
