@@ -245,7 +245,7 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
   for (const r of Object.values(w.restrictions)) {
     if (r.kind !== "STAND_CLOSED" || (so && !r.shared)) continue;
     const s = rel(r.start, t0), e = rel(r.end, t0);
-    if (e <= 0 || s >= endRel) continue;
+    if (e <= 0) continue;
     for (const sid of (r.params.stands as string[]) ?? []) fixed.push({ airport: r.airport, stand: sid, start: Math.max(0, s), end: e, label: r.id, kind: "closure" });
   }
   const occ = new Map<string, [number, number, string][]>();
@@ -291,7 +291,8 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
       const on = eldt + st.taxiIn;
       const off = v.dep ? Math.max(v.dep.sched, on + v.minTat) : on + 86400;
       const s = rel(on, t0) - PRE, e = rel(off, t0) + POST;
-      if (e > 0 && s < endRel) {
+      // keep every future occupancy: long turnarounds of movable flights can reach far beyond the horizon
+      if (e > 0) {
         fixed.push({ airport: v.airport, stand: st.id, start: Math.max(0, s), end: e, label: v.id, kind: "inbound", who: callsignOf(v) });
         addOcc(v.airport, st.id, [Math.max(0, s), e, v.id]);
       }

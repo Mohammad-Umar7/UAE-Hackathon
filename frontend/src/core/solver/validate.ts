@@ -122,6 +122,7 @@ export function validatePlan(w: World, ap: Registry, decisions: Decision[], rows
     const t = AIRCRAFT[v.type];
     checks.PHASE++;
     if (d.action === "assign_stand") {
+      if (v.airport === d.airport && v.stand === d.stand && !ASSIGNABLE.has(v.phase)) continue; // already satisfied
       if (!ASSIGNABLE.has(v.phase) || v.airport !== d.airport) { add("PHASE", d, `stand reassignment no longer executable (phase ${v.phase}, at ${v.airport})`); continue; }
       const st = ap[d.airport].stands[d.stand!];
       if (!st) { add("STAND_COMPATIBILITY", d, `unknown stand ${d.stand}`); continue; }
@@ -131,7 +132,12 @@ export function validatePlan(w: World, ap: Registry, decisions: Decision[], rows
       if (v.prm) checks.ACCESSIBILITY++;
       if (!chk.ok) add(chk.code === "PRM_ACCESS" ? "ACCESSIBILITY" : chk.code === "STAND_CLOSED" ? "STAND_CLOSURE" : "STAND_COMPATIBILITY", d, chk.reason);
     } else if (d.action === "landing_slot") {
-      if (!INBOUND.has(v.phase)) { add("PHASE", d, `landing slot no longer applicable (phase ${v.phase})`); continue; }
+      if (!INBOUND.has(v.phase)) {
+        // overtaken by events: the flight already landed at its home airport (not a conflict)
+        if (v.airport === d.airport && v.phase !== "DIVERTED" && v.phase !== "CANCELLED") continue;
+        add("PHASE", d, `landing slot no longer applicable (phase ${v.phase})`);
+        continue;
+      }
       checks.FUEL++;
       if ((v.phase === "INBOUND" || v.phase === "HOLDING") && v.eta !== null && v.fuelEndurance !== null && d.eldt! - v.eta > v.fuelEndurance + 120) {
         add("FUEL", d, `holding ${Math.round((d.eldt! - v.eta) / 60)} min exceeds fuel endurance ${Math.round(v.fuelEndurance / 60)} min`);
