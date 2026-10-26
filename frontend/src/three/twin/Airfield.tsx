@@ -6,7 +6,7 @@ import * as THREE from "three";
 import type { AirportInfo } from "@/core/airports/registry";
 import {
   apronsOf, buildBuildings, buildHoldMarkings, buildRunwayLights, buildRunways, buildStandMarkings, buildTaxiLights,
-  buildingsOf, emptyLights, floodMasts, GeoBuilder, holdPositions, landuseOf, LIGHT_GROUPS, roadsOf, runwaysOf, taxiwaysOf,
+  buildingsOf, contextOf, emptyLights, floodMasts, GeoBuilder, holdPositions, landuseOf, layoutBounds, LIGHT_GROUPS, roadsOf, runwaysOf, taxiwaysOf,
   type DesignatorLabel, type P2,
 } from "./geometry";
 import { airfieldLightGeometry, airfieldLightMaterial } from "./lights";
@@ -33,9 +33,11 @@ export function buildAirfield(ap: AirportInfo) {
   buildHoldMarkings(holds, yellow, lights);
   buildTaxiLights(tx.centre, lights);
   const masts = floodMasts(stands, lights);
-  // landside context
+  // landside context, bounded around the airfield
+  const bounds = layoutBounds(layout, ap);
+  const ctxR = bounds.radius + 2600;
   const roads = new GeoBuilder(16), green = new GeoBuilder(30), water = new GeoBuilder(60), parking = new GeoBuilder(12);
-  for (const r of roadsOf(layout)) roads.ribbon(r.points.map((p) => [p[0], p[1]] as P2), Number(r.width_m ?? 8), 0);
+  for (const r of roadsOf(layout, bounds.center, ctxR)) roads.ribbon(r.points.map((p) => [p[0], p[1]] as P2), Number(r.width_m ?? 8), 0, false, r.points.length < 40);
   for (const l of landuseOf(layout)) {
     const target = l.kind === "water" ? water : l.kind === "parking" ? parking : l.kind === "grass" || l.kind === "landscaping" ? green : null;
     target?.polygon(l.polygon.map((p) => [p[0], p[1]] as P2), (l.holes ?? []).map((h) => h.map((p) => [p[0], p[1]] as P2)), 0);
@@ -43,7 +45,7 @@ export function buildAirfield(ap: AirportInfo) {
   const bg = { glass: new GeoBuilder(), concrete: new GeoBuilder(), metal: new GeoBuilder(), roof: new GeoBuilder(30), roofMetal: new GeoBuilder(30) };
   buildBuildings(buildingsOf(layout, stands), bg);
   const ctx = { glass: new GeoBuilder(), concrete: new GeoBuilder(), metal: new GeoBuilder(), roof: new GeoBuilder(30), roofMetal: new GeoBuilder(30) };
-  const context = ((layout.context_buildings ?? []) as { footprint: number[][]; height_m?: number }[]).map((c) => ({ kind: "context", footprint: c.footprint, height_m: c.height_m }));
+  const context = contextOf(layout, bounds.center, ctxR, 9000).map((c) => ({ kind: "context", footprint: c.footprint, height_m: c.height_m }));
   buildBuildings(context, ctx, 4);
   const geo = (b: GeoBuilder) => (b.empty ? null : b.build());
   return {

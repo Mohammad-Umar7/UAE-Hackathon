@@ -65,7 +65,7 @@ export class GeoBuilder {
   }
 
   /** Polyline ribbon with round joints (overlaps are harmless: same material, world UVs). */
-  ribbon(pts: P2[], width: number, h: number, caps = true): void {
+  ribbon(pts: P2[], width: number, h: number, caps = true, joints = true): void {
     if (pts.length < 2) return;
     const w = width / 2;
     for (let i = 0; i < pts.length - 1; i++) {
@@ -74,7 +74,7 @@ export class GeoBuilder {
       if (len(d) < 1e-6) continue;
       const n = mul(perp(norm(d)), w);
       this.quad(add(a, n), add(b, n), sub(b, n), sub(a, n), h);
-      if (i > 0 || caps) this.disc(a, w, h, w > 4 ? 14 : 8);
+      if ((i > 0 && joints) || (i === 0 && caps)) this.disc(a, w, h, w > 4 ? 14 : 8);
     }
     if (caps) this.disc(pts[pts.length - 1], w, h, w > 4 ? 14 : 8);
   }
@@ -147,24 +147,37 @@ const cw = (r: P2[]) => (ringArea(r) > 0 ? [...r].reverse() : r);
 
 // ------------------------------------------------------------------ runways
 
+export interface RunwayEndGeom {
+  designator: string;
+  at: P2; // landing threshold
+  pave: P2; // physical end of the pavement behind the threshold
+  displaced: number; // metres between pavement end and threshold
+  dir: P2; // unit direction of landing
+  heading: number;
+}
+
 export interface RunwayGeom {
   id: string;
   a: P2; b: P2; // pavement ends
   width: number;
-  ends: { designator: string; at: P2; dir: P2; heading: number }[];
+  ends: RunwayEndGeom[];
 }
+
+type LayoutRunwayEnd = { designator: string; x: number; y: number; heading_true?: number; end_x?: number; end_y?: number };
 
 export function runwaysOf(layout: Layout): RunwayGeom[] {
   return layout.runways.map((r) => {
-    const [e0, e1] = r.ends;
-    const a: P2 = [e0.x, e0.y], b: P2 = [e1.x, e1.y];
-    const u = norm(sub(b, a));
+    const [e0, e1] = r.ends as LayoutRunwayEnd[];
+    const t0: P2 = [e0.x, e0.y], t1: P2 = [e1.x, e1.y];
+    const a: P2 = e0.end_x !== undefined && e0.end_y !== undefined ? [e0.end_x, e0.end_y] : t0;
+    const b: P2 = e1.end_x !== undefined && e1.end_y !== undefined ? [e1.end_x, e1.end_y] : t1;
+    const u = norm(sub(t1, t0));
     const hd = (v: P2) => ((Math.atan2(v[0], v[1]) * 180) / Math.PI + 360) % 360;
     return {
       id: r.id, a, b, width: Number(r.width_m ?? 45),
       ends: [
-        { designator: e0.designator, at: a, dir: u, heading: e0.heading_true ?? hd(u) },
-        { designator: e1.designator, at: b, dir: mul(u, -1), heading: e1.heading_true ?? hd(mul(u, -1)) },
+        { designator: e0.designator, at: t0, pave: a, displaced: len(sub(t0, a)), dir: u, heading: e0.heading_true ?? hd(u) },
+        { designator: e1.designator, at: t1, pave: b, displaced: len(sub(t1, b)), dir: mul(u, -1), heading: e1.heading_true ?? hd(mul(u, -1)) },
       ],
     };
   });
@@ -187,6 +200,18 @@ export function buildRunways(rws: RunwayGeom[], asphalt: GeoBuilder, shoulder: G
     }
     for (const end of rw.ends) {
       const E = end.at, d = end.dir, n = perp(d);
+      if (end.displaced > 40) {
+        // displaced threshold: transverse bar + centreline arrows pointing to the threshold
+        paint.rect(add(E, mul(d, -0.9)), d, 1.8, W - 3, 0);
+        for (let s = 40; s < end.displaced - 20; s += 120) {
+          const c = sub(E, mul(d, s));
+          paint.rect(sub(c, mul(d, 12)), d, 24, 1.2, 0);
+          for (const side of [-1, 1]) {
+            const tip = c, tail = add(sub(c, mul(d, 8)), mul(n, side * 3));
+            paint.ribbon([tail, tip], 1.0, 0, false);
+          }
+        }
+      }
       // threshold piano keys
       const stripes = W >= 60 ? 16 : W >= 45 ? 12 : W >= 30 ? 8 : 6;
       const per = stripes / 2, sw = 1.8;
@@ -203,7 +228,7 @@ export function buildRunways(rws: RunwayGeom[], asphalt: GeoBuilder, shoulder: G
       for (const side of [-1, 1]) {
         paint.rect(add(add(E, mul(d, 400 + 25)), mul(n, side * (9 + 4.5))), d, 50, 9, 0);
         for (const [at, count] of [[150, 3], [300, 3], [600, 2], [750, 2], [900, 1]] as [number, number][]) {
-          if (at + 30 > L / 2) continue;
+          if (at + 30 > (L - rw.ends[0].displaced - rw.ends[1].displaced) / 2) continue;
           for (let k = 0; k < count; k++) {
             paint.rect(add(add(E, mul(d, at + 11.25)), mul(n, side * (9 + 1.5 + k * 4.5))), d, 22.5, 3, 0);
           }
@@ -211,7 +236,7 @@ export function buildRunways(rws: RunwayGeom[], asphalt: GeoBuilder, shoulder: G
       }
     }
     // centreline: 30 m dashes, 20 m gaps, between the designators
-    const c0 = add(rw.a, mul(u, 90)), c1 = sub(rw.b, mul(u, 90));
+    const c0 = add(rw.ends[0].at, mul(rw.ends[0].dir, 90)), c1 = add(rw.ends[1].at, mul(rw.ends[1].dir, 90));
     paint.dashed([c0, c1], 0.9, 30, 20, 0);
   }
 }
@@ -362,7 +387,10 @@ export function buildRunwayLights(rws: RunwayGeom[], L: LightSet): void {
       const E = end.at, d = end.dir, nn = perp(d);
       for (let x = -W / 2; x <= W / 2 + 0.01; x += 3) {
         light(L, add(add(E, mul(d, 1)), mul(nn, x)), 0.3, C.green, 1.7, "runway", -1, ri);
-        light(L, add(sub(E, mul(d, 1.5)), mul(nn, x)), 0.3, C.red, 1.5, "runway", -1, ri);
+        light(L, add(sub(end.pave, mul(d, 1.5)), mul(nn, x)), 0.3, C.red, 1.5, "runway", -1, ri);
+      }
+      if (end.displaced > 40) for (const side of [-1, 1]) for (let k = 0; k < 5; k++) {
+        light(L, add(E, mul(nn, side * (W / 2 + 2 + k * 3))), 0.4, C.green, 1.8, "runway", -1, ri); // wing bars
       }
       // touchdown zone barrettes
       for (let s = 60; s <= 900; s += 60) for (const side of [-1, 1]) for (let k = 0; k < 3; k++) {
@@ -460,7 +488,24 @@ export function floodMasts(stands: StandInfo[], L: LightSet): { at: P2; heading:
 
 // ------------------------------------------------------------------ misc layout layers
 
-export function roadsOf(layout: Layout): LayoutRoad[] { return ((layout.roads ?? []) as LayoutRoad[]).filter((r) => r.points?.length >= 2); }
+const near = (pts: number[][], c: P2, R: number) => pts.some((p) => Math.hypot(p[0] - c[0], p[1] - c[1]) < R);
+
+export function roadsOf(layout: Layout, c: P2 = [0, 0], R = 1e9): LayoutRoad[] {
+  return ((layout.roads ?? []) as LayoutRoad[]).filter((r) => r.points?.length >= 2 && near(r.points, c, R));
+}
+
+/** City context around the airport: nearest/largest footprints first, capped for GPU memory. */
+export function contextOf(layout: Layout, c: P2, R: number, max: number): { footprint: number[][]; height_m?: number }[] {
+  const all = (layout.context_buildings ?? []) as { footprint: number[][]; height_m?: number }[];
+  const scored = all.filter((b) => b.footprint?.length >= 3).map((b) => {
+    let sx = 0, sy = 0;
+    for (const p of b.footprint) { sx += p[0]; sy += p[1]; }
+    const d = Math.hypot(sx / b.footprint.length - c[0], sy / b.footprint.length - c[1]);
+    return { b, d };
+  }).filter((x) => x.d < R);
+  scored.sort((p, q) => p.d - q.d);
+  return scored.slice(0, max).map((x) => x.b);
+}
 export function landuseOf(layout: Layout): LayoutLanduse[] { return ((layout.landuse ?? []) as LayoutLanduse[]).filter((l) => l.polygon?.length >= 3); }
 
 export function layoutBounds(layout: Layout, ap: AirportInfo): { min: P2; max: P2; center: P2; radius: number } {
