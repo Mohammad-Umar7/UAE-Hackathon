@@ -17,6 +17,16 @@ data and original Blender models.
 > All flights, airlines (11 fictional carriers) and operational numbers are **synthetic**. Airport geometry comes from
 > OpenStreetMap and public aeronautical information; nothing here represents real airline or airport operational data.
 
+![Digital twin of Zayed International in night fog: low-visibility procedures, a recovery plan previewed in 3D](docs/images/twin-auh-fog-night.jpg)
+
+<sup>Screen captures of the running prototype (Operation Nightfall, seed 7; synthetic traffic, fictional airlines).</sup>
+
+| | |
+|---|---|
+| ![Terminal A, Zayed International](docs/images/twin-auh-terminal-a.jpg) | ![Sharjah International terminal](docs/images/twin-shj-terminal.jpg) |
+| ![Dubai International with a runway closed and diversions arriving](docs/images/twin-dxb-runway-closure.jpg) | ![Agents coordinating, guided presentation](docs/images/agents-presentation.jpg) |
+| ![Recovery workbench: candidates vs baselines, approvals, audit](docs/images/workbench.jpg) | ![Evidence: before/after from the same pre-commit state](docs/images/evidence.jpg) |
+
 ---
 
 ## Quick start
