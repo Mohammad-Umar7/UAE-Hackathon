@@ -27,6 +27,8 @@ const ROWS: { label: string; get: (c: Col) => number | string; better: "low" | "
   { label: "Stand changes", get: (c) => c.plan?.kpis.standChanges ?? "—", better: "none" },
   { label: "Cross-airport requests", get: (c) => c.plan?.kpis.coordinationRequests ?? "—", better: "none" },
   { label: "Unresolved flights", get: (c) => c.plan?.kpis.unresolved ?? "—", better: "low" },
+  { label: "Optimality gap (HiGHS)", get: (c) => (!c.plan || c.plan.mipGap === null ? "—" : `${(Math.max(0, c.plan.mipGap) * 100).toFixed(2)} %`), better: "none",
+    hint: "relative MIP gap when the node-limited search stopped; 0 % = proven optimal for this model" },
 ];
 
 export function PlanComparison({ p }: { p: Proposal }) {
