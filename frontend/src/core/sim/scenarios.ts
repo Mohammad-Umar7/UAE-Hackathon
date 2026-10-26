@@ -232,6 +232,10 @@ function buildNightfall(ctx: ScenarioContext) {
   const tBlock = s + 48 * M;
   const vid = pickBlockedVisit(ctx, "OMDB", tBlock);
   if (vid) makeStandBlocked(ctx, "OMDB", tBlock, tBlock + 3 * H + 20 * M, vid, "hydraulic leak — aircraft unserviceable", 75);
+  // DXB loses one of its two runways for an inspection in the evening peak: diversion capacity shrinks
+  if (new Set(Object.values(ctx.airports.OMDB?.runwayEnds ?? {}).map((e) => e.runwayId)).size >= 2) {
+    makeRunwayClosure(ctx, "OMDB", s + 55 * M, s + 2 * H + 35 * M, undefined, "Runway inspection after a reported tyre-debris strike");
+  }
   const prm = pickInbound(ctx, "OMAA", s + 65 * M, s + 105 * M, ["wb"], "SQR");
   if (prm) makeAccessibility(ctx, "OMAA", s + 5 * M, prm, 3);
   makeResourceOutage(ctx, "OMSJ", "ambulift", 2, s - 20 * M, s + 6 * H,
@@ -244,7 +248,7 @@ function buildNightfall(ctx: ScenarioContext) {
 
 export const SCENARIOS: ScenarioDef[] = [
   { id: "nightfall", code: "I", title: "Operation Nightfall", start: hm(17, 20), duration: 7 * H, focus: ["OMAA", "OMDB", "OMSJ"],
-    summary: "Cascading three-airport disruption: fog at Zayed International, a blocked stand at Dubai International, passengers needing assistance, and Sharjah constraints only revealed through coordination.",
+    summary: "Cascading three-airport disruption: fog at Zayed International, a runway inspection and a blocked stand at Dubai International, passengers needing assistance, and Sharjah constraints only revealed through coordination.",
     build: buildNightfall, tags: ["signature"] },
   { id: "baseline", code: "—", title: "Normal operations", start: hm(17, 20), duration: 6 * H, focus: ["OMAA", "OMDB", "OMSJ"],
     summary: "All three airports operating normally (reference run).", build: (c) => { clearWeather(c); } },
