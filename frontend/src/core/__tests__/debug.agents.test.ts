@@ -21,7 +21,8 @@ describe.skipIf(!process.env.SKYPACT_DEBUG)("debug agents", () => {
     rt.pacingMs = 0;
     rt.speed = 120;
     rt.load(process.env.SKYPACT_SCENARIO ?? "nightfall", 7);
-    rt.stakeholderModes.NATIONAL_SUPERVISOR = "simulated";
+    // SKYPACT_HUMAN=1 keeps the supervisor human (as in the app), so proposals wait for an approval
+    if (!process.env.SKYPACT_HUMAN) rt.stakeholderModes.NATIONAL_SUPERVISOR = "simulated";
     rt.running = true;
     const end = rt.scenario.start + Number(process.env.SKYPACT_MIN ?? 120) * 60;
     for (let i = 0; i < 40000 && rt.world.now < end; i++) { rt.tick(0.25); await new Promise((r) => setTimeout(r, 0)); }
@@ -34,11 +35,11 @@ describe.skipIf(!process.env.SKYPACT_DEBUG)("debug agents", () => {
       }
     }
     for (const p of Object.values(rt.proposals)) {
-      console.log(`PROPOSAL ${p.id} v${p.version} ${p.status} ${p.label} decisions=${p.plan.decisions.length} kpis=${JSON.stringify(p.plan.kpis)}`);
+      console.log(`PROPOSAL ${p.id} v${p.version} ${p.status} ${p.label} decisions=${p.plan.decisions.length} created=${fmtTime(p.createdAt, true)} stale=${p.staleReason ?? "-"} kpis=${JSON.stringify(p.plan.kpis)}`);
       for (const d of p.plan.decisions.slice(0, 12)) console.log(`   ${d.action} ${d.callsign} ${d.airport}${d.to ? "→" + d.to : ""} ${d.stand ?? ""} ${d.eldt ? fmtTime(d.eldt) : ""}`);
     }
     for (const e of rt.evidence) console.log("EVIDENCE", e.proposal, "noAction", e.noAction.totalDelayMin, e.noAction.airborneHoldingMin, e.noAction.fuelDiversions,
       "| local", e.localGreedy.totalDelayMin, "| plan", e.plan.totalDelayMin, e.plan.airborneHoldingMin, e.plan.fuelDiversions);
     console.log("audit ok", rt.audit.verify().ok, rt.audit.entries.length, "outcome", JSON.stringify(rt.outcome()));
-  }, 600000);
+  }, 1800000);
 });
