@@ -109,6 +109,8 @@ export interface Problem {
   wb: Record<string, { cap: number; fixed: [number, number][]; out: [number, number, number][] }>;
   restrictionEnd: Record<string, number | null>;
   forbidden: Forbidden[];
+  /** `${airport}:${stand}` → conflicting stand ids (only stands that have conflicts) */
+  conflicts: Record<string, string[]>;
   snapshot: Snapshot;
   buildMs: number;
 }
@@ -434,8 +436,10 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
     occupancy: Object.fromEntries(fixed.filter((f) => f.kind !== "inbound").map((f) => [`${f.airport}:${f.stand}`, [f.start, f.end, f.label, f.kind]])),
     visits: Object.fromEntries(flights.map((f) => [f.visit, { phase: w.visits[f.visit].phase, stand: f.currentStand, eta: w.visits[f.visit].eta }])),
   };
+  const conflicts: Record<string, string[]> = {};
+  for (const icao of scope) for (const st of Object.values(airports[icao].stands)) if (st.conflicts.length) conflicts[`${icao}:${st.id}`] = [...st.conflicts];
   return {
-    t0, horizon: H, scope, flights, fixed, tows, caps, fixedLandings, divLimit, ambulift, wb, restrictionEnd, forbidden, snapshot,
+    t0, horizon: H, scope, flights, fixed, tows, caps, fixedLandings, divLimit, ambulift, wb, restrictionEnd, forbidden, conflicts, snapshot,
     buildMs: performance.now() - tStart,
   };
 }

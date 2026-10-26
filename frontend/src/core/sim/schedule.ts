@@ -112,7 +112,8 @@ function allocate(w: World, ap: AirportInfo, arrivals: [number, string, TypeKey]
       const sibt = tLand + st.taxiIn;
       const sobt = sibt + ground;
       const occ: [number, number] = [sibt - buffer, sobt + 300 + buffer];
-      if (busy[st.id].every(([a, b]) => occ[1] <= a || occ[0] >= b)) { chosen = { st, sibt, sobt, occ }; break; }
+      const free = (id: string) => busy[id].every(([a, b]) => occ[1] <= a || occ[0] >= b);
+      if (free(st.id) && st.conflicts.every(free)) { chosen = { st, sibt, sobt, occ }; break; }
     }
     if (!chosen) return;
     const { st, sibt, sobt, occ } = chosen;

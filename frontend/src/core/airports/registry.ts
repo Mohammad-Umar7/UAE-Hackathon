@@ -36,6 +36,8 @@ export interface StandInfo {
   services: Set<string>;
   source: string;
   leadIn: Pt[];
+  /** Stands that cannot be occupied at the same time (MARS centre vs left/right, close stop points). */
+  conflicts: string[];
   taxiIn: number;
   taxiOut: number;
   index: number;
@@ -203,9 +205,13 @@ export function buildAirport(profile: AirportProfile, layout: Layout): AirportIn
       sizeCode: String(s.size_code ?? codeForSpan(span)), bridgeRoot: (s.bridge_root as Pt) ?? null,
       bridgeCount: bridges, area, zone: zoneFor(area, kind, id, profile), entryNode: Number(s.entry_node),
       stopNode: Number(s.stop_node), services: services(kind, contact, bridges), source: String(s.source ?? "osm"),
-      leadIn: ((s.lead_in as number[][]) ?? []).map((p) => [p[0], p[1]] as Pt), taxiIn: 420, taxiOut: 540, index: i,
+      leadIn: ((s.lead_in as number[][]) ?? []).map((p) => [p[0], p[1]] as Pt), conflicts: ((s.conflicts as string[]) ?? []).map(String),
+      taxiIn: 420, taxiOut: 540, index: i,
     };
   });
+  // conflicts are symmetric and only refer to stands that exist
+  for (const st of Object.values(stands)) st.conflicts = st.conflicts.filter((c) => stands[c] && c !== st.id);
+  for (const st of Object.values(stands)) for (const c of st.conflicts) if (!stands[c].conflicts.includes(st.id)) stands[c].conflicts.push(st.id);
   const ap: AirportInfo = {
     icao: profile.icao, profile, layout, graph, runwayEnds, stands, arrivalEnd, departureEnd,
     maxWingspan: Math.max(0, ...Object.values(stands).map((s) => s.maxWingspan)),

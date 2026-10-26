@@ -25,7 +25,7 @@ const TOL = 90;
 
 export const CONSTRAINT_CATALOGUE: [string, string][] = [
   ["STAND_COMPATIBILITY", "Aircraft wingspan and category fit the stand"],
-  ["STAND_OVERLAP", "One aircraft per stand at a time, with 5-minute buffers"],
+  ["STAND_OVERLAP", "One aircraft per stand (and per conflicting MARS stand pair) at a time, with 5-minute buffers"],
   ["STAND_CLOSURE", "Closed stands are not used"],
   ["ARRIVAL_CAPACITY", "Landings per 15 min within the modelled runway capacity"],
   ["FUEL", "Airborne holding within the flight's fuel endurance (synthetic)"],
@@ -102,8 +102,13 @@ export function validatePlan(w: World, ap: Registry, decisions: Decision[], rows
   const place = (airport: string, stand: string, s: number, e: number, d: { visit?: string; callsign?: string }) => {
     checks.STAND_OVERLAP++;
     const k = `${airport}:${stand}`;
-    const hit = (occ.get(k) ?? []).find(([a, b]) => a < e - TOL && b > s + TOL);
-    if (hit) add("STAND_OVERLAP", d, `stand ${stand} at ${airport} overlaps ${hit[2]} (${fmtTime(Math.max(hit[0], s))}–${fmtTime(Math.min(hit[1], e))})`);
+    for (const sid of [stand, ...(ap[airport]?.stands[stand]?.conflicts ?? [])]) {
+      const hit = (occ.get(`${airport}:${sid}`) ?? []).find(([a, b]) => a < e - TOL && b > s + TOL);
+      if (!hit) continue;
+      const where = sid === stand ? `stand ${stand}` : `stand ${stand} (conflicts with ${sid})`;
+      add("STAND_OVERLAP", d, `${where} at ${airport} overlaps ${hit[2]} (${fmtTime(Math.max(hit[0], s))}–${fmtTime(Math.min(hit[1], e))})`);
+      break;
+    }
     if (!occ.has(k)) occ.set(k, []);
     occ.get(k)!.push([s, e, d.callsign ?? d.visit ?? "plan"]);
   };

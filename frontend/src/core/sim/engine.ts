@@ -358,6 +358,14 @@ export class Engine {
     if (st.occupant !== null && st.occupant !== v.id && clear > tArrive - buffer) {
       return [false, `occupied by ${callsignOf(this.w.visits[st.occupant])} until ~${Math.round(clear)}`];
     }
+    for (const c of info.conflicts) {
+      const cs = this.w.stands[`${v.airport}:${c}`];
+      if (!cs) continue;
+      if (cs.reservedBy !== null && cs.reservedBy !== v.id) return [false, `conflicting stand ${c} reserved`];
+      if (cs.occupant !== null && cs.occupant !== v.id && this.expectedClearTime(v.airport, c) > tArrive - buffer) {
+        return [false, `conflicting stand ${c} occupied by ${callsignOf(this.w.visits[cs.occupant])}`];
+      }
+    }
     return [true, ""];
   }
 

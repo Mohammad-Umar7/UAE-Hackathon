@@ -142,8 +142,13 @@ export function buildModel(pb: Problem, variant: VariantId, exclude: Set<string>
     if (!fixedByStand.has(k)) fixedByStand.set(k, []);
     fixedByStand.get(k)!.push([f.start, f.end, f.who ?? f.label, f.kind]);
   }
-  const blocker = (airport: string, stand: string, s: number, e: number) =>
-    (fixedByStand.get(`${airport}:${stand}`) ?? []).find(([a, b]) => a < e && b > s) ?? null;
+  const blocker = (airport: string, stand: string, s: number, e: number) => {
+    for (const sid of [stand, ...(pb.conflicts[`${airport}:${stand}`] ?? [])]) {
+      const hit = (fixedByStand.get(`${airport}:${sid}`) ?? []).find(([a, b]) => a < e && b > s);
+      if (hit) return hit;
+    }
+    return null;
+  };
   const prunedBy = new Map<number, Map<string, PrunedReason>>();
   const notePrune = (fi: number, airport: string, stand: string, b: [number, number, string, string]) => {
     if (!prunedBy.has(fi)) prunedBy.set(fi, new Map());
@@ -250,7 +255,17 @@ export function buildModel(pb: Problem, variant: VariantId, exclude: Set<string>
     byStand.get(k)!.push(i);
   });
   let cliqueCount = 0;
-  for (const ids of byStand.values()) {
+  // conflicting stand pairs behave like one stand for the overlapping options of both
+  const groups: number[][] = [...byStand.values()];
+  for (const [k, others] of Object.entries(pb.conflicts)) {
+    const [airport, stand] = [k.slice(0, k.indexOf(":")), k.slice(k.indexOf(":") + 1)];
+    for (const o of others) {
+      if (o <= stand) continue; // each pair once
+      const ids = [...(byStand.get(`${airport}:${stand}`) ?? []), ...(byStand.get(`${airport}:${o}`) ?? [])];
+      if (ids.length >= 2) groups.push(ids);
+    }
+  }
+  for (const ids of groups) {
     if (ids.length < 2) continue;
     const starts = [...new Set(ids.map((i) => cols[i].start!))].sort((a, b) => a - b);
     let prevKey = "";

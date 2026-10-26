@@ -1,5 +1,9 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import loadHighs from "highs";
 import { describe, it } from "vitest";
+import { ICAOS } from "../airports/profiles";
+import { buildRegistry, type Layout } from "../airports/registry";
 import { InProcessCompute } from "../compute";
 import { Runtime } from "../runtime";
 import type { HighsLike } from "../solver/milp";
@@ -9,7 +13,10 @@ import { makeAirports } from "./fixtures";
 describe.skipIf(!process.env.SKYPACT_DEBUG)("debug agents", () => {
   it("prints the agent conversation for Nightfall", async () => {
     const highs = (await loadHighs()) as unknown as HighsLike;
-    const aps = makeAirports();
+    // SKYPACT_REAL=1 runs on the OSM-derived layouts served by the app instead of the fixtures
+    const aps = process.env.SKYPACT_REAL
+      ? buildRegistry(Object.fromEntries(ICAOS.map((icao) => [icao, JSON.parse(readFileSync(path.join(process.cwd(), "public/data/airports", `${icao}.layout.json`), "utf8")) as Layout])))
+      : makeAirports();
     const rt = new Runtime(aps, new InProcessCompute(highs, aps));
     rt.pacingMs = 0;
     rt.speed = 120;
