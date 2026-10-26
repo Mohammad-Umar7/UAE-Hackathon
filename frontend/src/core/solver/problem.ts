@@ -12,6 +12,7 @@ import { AIRCRAFT, approachDuration } from "../aircraft";
 import { diversionMinutes } from "../airports/profiles";
 import type { Registry } from "../airports/registry";
 import { bucketCapacities, bucketOf, BUCKET_S } from "../sim/capacity";
+import { ACTIVATION_LEAD_S } from "../sim/engine";
 import type { Visit, World } from "../types";
 import { callsignOf, resourceAvailable, restrictionsOverlapping } from "../world";
 import { airportEligible, standEligible } from "./eligibility";
@@ -142,6 +143,11 @@ export interface ProblemConfig {
   predicted?: string[];
 }
 
+/** Time a supervisor realistically needs to review and approve a plan. */
+export const APPROVAL_LEAD_S = 15 * 60;
+/** Minimum modelled holding fuel (30 min) less the ±8 min ETA uncertainty at take-off. */
+export const CONSERVATIVE_ENDURANCE_S = 22 * 60;
+
 export const rel = (t: number, t0: number) => Math.ceil((t - t0) / 60 - 1e-9);
 
 function isForbidden(f: Forbidden[], visit: string, airport: string, stand: string | null): boolean {
@@ -178,7 +184,7 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
   const scope = cfg.scope ?? Object.keys(airports);
   const so = cfg.sharedOnly ?? true;
   const forbidden = cfg.forbidden ?? [];
-  const maxHome = cfg.maxHome ?? 10, maxDiv = cfg.maxDiv ?? 5;
+  const maxHome = cfg.maxHome ?? 10, maxDiv = cfg.maxDiv ?? 3;
   const predicted = new Set(cfg.predicted ?? []);
 
   const caps: Problem["caps"] = {};
@@ -312,7 +318,11 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
     const ap = airports[v.airport];
     const t = AIRCRAFT[v.type];
     const isWait = v.phase === "WAITING_STAND";
-    const airborne = v.phase === "INBOUND" || v.phase === "HOLDING";
+    // a flight that will take off before the plan can realistically be approved cannot take a ground delay:
+    // plan it as airborne with a conservative endurance (minimum modelled fuel minus the ETA uncertainty)
+    const departsSoon = v.phase === "SCHEDULED" && v.eta !== null && v.eta - ACTIVATION_LEAD_S < now + APPROVAL_LEAD_S;
+    const airborne = v.phase === "INBOUND" || v.phase === "HOLDING" || departsSoon;
+    const endurance = v.phase === "SCHEDULED" ? CONSERVATIVE_ENDURANCE_S : (v.fuelEndurance ?? 2700);
     const restricted = restrictionEnd[v.airport] !== null;
     const app = Math.ceil(approachDuration(v.type) / 60) + 1;
     let holdLimit: number | null = null;
@@ -320,7 +330,9 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
     if (isWait) { E = rel(now, t0) + 1; hi = E; }
     else {
       E = Math.max(rel(v.eta!, t0), rel(now, t0) + app);
-      if (airborne) holdLimit = Math.max(0, Math.floor((v.fuelEndurance ?? 2700) / 60 - Math.max(0, (now - v.eta!) / 60)));
+      // fuel is an absolute deadline (ETA + holding endurance); measuring it from E would let a flight
+      // that is already holding overshoot by the approach time
+      if (airborne) holdLimit = Math.max(0, Math.floor((v.eta! + endurance - t0) / 60) - E);
       if (!restricted) { if (v.eldt !== null) E = Math.max(E, rel(v.eldt, t0)); hi = E; }
       else hi = airborne ? E + holdLimit! : E + 120;
     }
@@ -356,7 +368,10 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
       opts.push([busy * 4 + (busy > 0 ? 400 : 0) + pref + taxi + (o.current ? 0 : 3), o]);
     }
     opts.sort((a, b) => a[0] - b[0] || (a[1].stand < b[1].stand ? -1 : 1));
-    const nHome = restricted ? maxHome : maxHome + 6;
+    // flights whose current stand stays free need few alternatives; conflicted flights get the full set
+    const cur = opts.find(([, o]) => o.current);
+    const clean = Boolean(cur && cur[0] < 400) && !predicted.has(v.id);
+    const nHome = clean ? Math.min(3, maxHome) : restricted ? maxHome : maxHome + 6;
     const homeOpts = [...opts.filter(([, o]) => o.current).map(([, o]) => o),
       ...opts.filter(([, o]) => !o.current).slice(0, nHome + (isWait ? 4 : 0)).map(([, o]) => o)];
     const divOpts: DivOpt[] = [];
