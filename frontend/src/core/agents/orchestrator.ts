@@ -74,6 +74,8 @@ export class Orchestrator {
   private lastConflictAt: Record<string, number> = {};
   private seenIncidents = new Set<string>();
   private lastStaleSig = "";
+  private deferred: Trigger[] = [];
+  private predictedByWf = new Map<string, string[]>();
 
   constructor(private host: Host) {}
 
@@ -230,6 +232,13 @@ export class Orchestrator {
     if (t.kind === "disruption" || t.kind === "conflict") {
       const open = this.openProposal();
       const airports = t.kind === "disruption" ? t.airports : [t.airport];
+      if (open && t.kind === "conflict") {
+        // local conflicts do not churn a plan that is out for approval; they are folded into the next revision
+        this.deferred.push(t);
+        this.say("coordination", ["airport_ops"], "ImpactAssessment",
+          `${t.title} noted while ${open.id} v${open.version} awaits approval — will be included in the next revision`, { deferred: true }, null, open.thread);
+        return;
+      }
       if (open) {
         // a new disruption while a plan is out for approval: supersede it and replan with wider scope
         const wf = this.workflows.find((x) => x.id === open.thread)!;
@@ -326,6 +335,8 @@ export class Orchestrator {
     const conflicts = await this.tool("airport_ops", "detect_conflicts", { airports: aps }, wf.id, causedBy,
       () => proj.events.filter((e) => e.kind === "STAND_CONFLICT" || e.kind === "FUEL_DIVERSION" || e.kind === "PRM_SERVICE_DELAY"),
       (r) => r.length ? r.slice(0, 4).map((e) => `${e.callsign} ${e.kind.replace(/_/g, " ").toLowerCase()} @${fmtTime(e.t)}`).join(" · ") + (r.length > 4 ? ` +${r.length - 4} more` : "") : "No conflicts predicted");
+    this.predictedByWf.set(wf.id, [...new Set(conflicts.filter((c) => c.kind === "STAND_CONFLICT" && c.visit && c.t < this.w.now + 3 * 3600)
+      .map((c) => c.visit!))]);
     const restricted = aps.filter((a) => Object.values(this.w.restrictions).some((r) => r.airport === a && r.shared && r.end > this.w.now
       && (r.kind === "ARRIVAL_CAPACITY" || r.kind === "RUNWAY_CLOSED")));
     const material = restricted.length > 0 || conflicts.length > 0 || proj.airborneHoldingMin > 60;
@@ -374,7 +385,7 @@ export class Orchestrator {
     const scope = [...new Set([...wf.airports, ...Object.values(this.w.restrictions)
       .filter((r) => r.shared && r.end > this.w.now && (r.kind === "ARRIVAL_CAPACITY" || r.kind === "RUNWAY_CLOSED")).map((r) => r.airport)])];
     const pb = await this.tool("recovery", "build_recovery_problem", { scope, horizonMin: 180, forbidden: this.forbidden.length }, wf.id, causedBy,
-      () => buildProblem(this.w, this.host.airports, { scope, forbidden: this.forbidden }),
+      () => buildProblem(this.w, this.host.airports, { scope, forbidden: this.forbidden, predicted: this.predictedByWf.get(wf.id) ?? [] }),
       (p) => { const s = problemStats(p); return `${s.flights} movable flights, ${s.homeOptions} home + ${s.diversionOptions} diversion options, ${s.fixedOccupancies} fixed occupancies, ${s.excludedOptions} options excluded by hard rules`; },
       ["Shared operational picture only"]);
     const plans = await this.tool("recovery", "run_optimizer", { solver: "HiGHS MILP (WebAssembly)", variants: ["min_delay", "stability", "min_coord"] }, wf.id, causedBy,
@@ -584,6 +595,11 @@ export class Orchestrator {
     this.forbidden = [];
     this.activeWorkflow = null;
     this.host.onCommitted?.(p, preCommit);
+    if (this.deferred.length) {
+      const first = this.deferred[0];
+      this.deferred = [];
+      if (first.kind === "conflict") this.queue.push({ ...first, title: `${first.title} (deferred)` });
+    }
   }
 
   private setStatus(p: Proposal, status: Proposal["status"], note: string, by: string) {

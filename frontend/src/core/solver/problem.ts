@@ -136,6 +136,8 @@ export interface ProblemConfig {
   maxHome?: number;
   maxDiv?: number;
   allowTows?: boolean;
+  /** visits the look-ahead projection predicts will hit a stand conflict (made movable) */
+  predicted?: string[];
 }
 
 export const rel = (t: number, t0: number) => Math.ceil((t - t0) / 60 - 1e-9);
@@ -175,6 +177,7 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
   const so = cfg.sharedOnly ?? true;
   const forbidden = cfg.forbidden ?? [];
   const maxHome = cfg.maxHome ?? 10, maxDiv = cfg.maxDiv ?? 5;
+  const predicted = new Set(cfg.predicted ?? []);
 
   const caps: Problem["caps"] = {};
   const fixedLandings: Problem["fixedLandings"] = {};
@@ -275,6 +278,7 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
     let reason = "";
     if (scope.includes(v.airport) && inHorizon) {
       if (restricted) reason = "arrival capacity restricted";
+      else if (predicted.has(v.id)) reason = `projected stand conflict at ${v.stand ?? "—"} (look-ahead)`;
       else if (!st) reason = "no stand assigned";
       else {
         const on = rel(eldt + st.taxiIn, t0);

@@ -142,7 +142,9 @@ export function validatePlan(w: World, ap: Registry, decisions: Decision[], rows
       if ((v.phase === "INBOUND" || v.phase === "HOLDING") && v.eta !== null && v.fuelEndurance !== null && d.eldt! - v.eta > v.fuelEndurance + 120) {
         add("FUEL", d, `holding ${Math.round((d.eldt! - v.eta) / 60)} min exceeds fuel endurance ${Math.round(v.fuelEndurance / 60)} min`);
       }
-      if (d.eldt! < now - 60) add("PHASE", d, "landing slot time has already passed");
+      // a slot whose time has passed while the flight is still airborne has lapsed (the arrival manager
+      // re-sequences it); it is not a safety violation of the remaining plan
+      if (d.eldt! < now - 60) continue;
     } else if (d.action === "divert") {
       if (!INBOUND.has(v.phase)) { add("PHASE", d, `diversion no longer possible (phase ${v.phase})`); continue; }
       const alt = ap[d.to!];
