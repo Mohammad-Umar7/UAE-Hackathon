@@ -129,7 +129,9 @@ export class DynamicLights {
           vGain = gain;
           vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
           gl_Position = projectionMatrix * mvPosition;
-          gl_PointSize = clamp( size * ( 1.0 + 2.0 * uScatter ) * uScale / max( 1.0, - mvPosition.z ), uMinPx, 64.0 );
+          // halos grow with fog but stay modest up close (a nav light is small even through fog)
+          float px = size * ( 1.0 + 2.0 * uScatter ) * uScale / max( 1.0, - mvPosition.z );
+          gl_PointSize = clamp( px, uMinPx, mix( 36.0, 18.0, smoothstep( 300.0, 40.0, - mvPosition.z ) ) );
           #include <fog_vertex>
         }
       `,
