@@ -1,16 +1,15 @@
 "use client";
 
-import { Html, Line, OrbitControls } from "@react-three/drei";
+import { Line, OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { approachDuration } from "@/core/aircraft";
 import { PROFILES } from "@/core/airports/profiles";
 import { isOpen } from "@/core/approvals/workflow";
 import type { Runtime } from "@/core/runtime";
-import { callsignOf } from "@/core/world";
 import { useOps } from "@/store/ops";
 import { inboundBearing, offsetKm, project } from "./geo";
+import { Anchor, AnchorProjector, AnchorSet } from "./ScreenAnchors";
 
 type GeoJSON = { features: { geometry: { type: string; coordinates: unknown } ; properties?: Record<string, unknown> }[] };
 
@@ -137,16 +136,6 @@ function AirportMarker({ rt, icao }: { rt: Runtime; icao: string }) {
         <circleGeometry args={[3.2, 48]} />
         <meshBasicMaterial color={color} transparent opacity={0.12} />
       </mesh>
-      <Html position={[0, 1, 0]} center distanceFactor={160} zIndexRange={[10, 0]}>
-        <button onClick={() => { setAirport(icao); setView("twin"); }} className="hud whitespace-nowrap px-2.5 py-1.5 text-left" style={{ transform: "translateY(-46px)" }}>
-          <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ background: color }} />
-            <span className="text-[12px] font-semibold">{p.iata}</span>
-            <span className="muted text-[10.5px]">{p.shortName}</span>
-          </div>
-          <div className="muted mono text-[10px]">{Math.round(sum.rate)}/{p.arrCapacity} arr/h · {sum.sample?.holding ?? 0} holding · {sum.sample?.waiting ?? 0} waiting</div>
-        </button>
-      </Html>
     </group>
   );
 }
@@ -205,7 +194,6 @@ function Traffic({ rt }: { rt: Runtime }) {
     if (im.instanceColor) im.instanceColor.needsUpdate = true;
     hm.instanceMatrix.needsUpdate = true;
   });
-  void approachDuration;
   return (
     <group ref={group}>
       <instancedMesh ref={meshes} args={[geo, undefined, 300]}>
@@ -218,12 +206,14 @@ function Traffic({ rt }: { rt: Runtime }) {
   );
 }
 
+interface ArcSpec { from: string; to: string; color: string; dashed: boolean; label: string }
+
 /** Coordination arcs between airports for the latest proposal (pending / rejected / committed). */
-function Arcs({ rt }: { rt: Runtime }) {
+function arcsOf(rt: Runtime): ArcSpec[] {
   const props = Object.values(rt.proposals).sort((a, b) => b.createdAt - a.createdAt);
   const p = props.find(isOpen) ?? props[0];
-  if (!p) return null;
-  const arcs: { from: string; to: string; color: string; dashed: boolean; label: string }[] = [];
+  if (!p) return [];
+  const arcs: ArcSpec[] = [];
   const seen = new Set<string>();
   for (const d of p.plan.decisions) {
     if (d.action !== "divert" || !d.to) continue;
@@ -235,60 +225,87 @@ function Arcs({ rt }: { rt: Runtime }) {
     const n = p.plan.decisions.filter((x) => x.action === "divert" && x.to === d.to && x.airport === d.airport).length;
     arcs.push({ from: d.airport, to: d.to, color, dashed: p.status !== "COMMITTED", label: `${n} diversion${n > 1 ? "s" : ""} · ${p.status === "COMMITTED" ? "approved" : slot?.decision === "REJECTED" ? "rejected" : "pending approval"}` });
   }
+  return arcs;
+}
+
+function arcGeometry(a: ArcSpec) {
+  const A = PROFILES[a.from], B = PROFILES[a.to];
+  const [x1, z1] = project(A.lat, A.lon), [x2, z2] = project(B.lat, B.lon);
+  const mid = new THREE.Vector3((x1 + x2) / 2, 18 + Math.hypot(x2 - x1, z2 - z1) * 0.12, (z1 + z2) / 2);
+  const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(x1, 1, z1), mid, new THREE.Vector3(x2, 1, z2));
+  return { points: curve.getPoints(48), mid };
+}
+
+function Arcs({ rt }: { rt: Runtime }) {
+  useOps((s) => s.version);
   return (
     <>
-      {arcs.map((a) => {
-        const A = PROFILES[a.from], B = PROFILES[a.to];
-        const [x1, z1] = project(A.lat, A.lon), [x2, z2] = project(B.lat, B.lon);
-        const mid = new THREE.Vector3((x1 + x2) / 2, 18 + Math.hypot(x2 - x1, z2 - z1) * 0.12, (z1 + z2) / 2);
-        const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(x1, 1, z1), mid, new THREE.Vector3(x2, 1, z2));
+      {arcsOf(rt).map((a) => (
+        <Line key={`${a.from}-${a.to}`} points={arcGeometry(a).points} color={a.color} lineWidth={2.5} dashed={a.dashed} dashSize={3} gapSize={2} />
+      ))}
+    </>
+  );
+}
+
+const CITIES: [string, number, number][] = [["Abu Dhabi", 24.4539, 54.3773], ["Dubai", 25.2048, 55.2708], ["Sharjah", 25.3463, 55.4209], ["Ajman", 25.4052, 55.5136], ["Al Ain", 24.2075, 55.7447]];
+
+/** DOM labels for airports, cities and coordination arcs (positioned by the AnchorProjector). */
+function MapLabels({ rt, anchors }: { rt: Runtime; anchors: AnchorSet }) {
+  useOps((s) => s.version);
+  const { setAirport, setView } = useOps();
+  return (
+    <>
+      {CITIES.map(([n, la, lo]) => {
+        const [x, z] = project(la, lo);
+        return <Anchor key={n} set={anchors} id={`city:${n}`} pos={[x, 1, z]}><div className="whitespace-nowrap text-[11px] font-medium tracking-wide text-white/45">{n}</div></Anchor>;
+      })}
+      {Object.keys(rt.airports).sort().map((icao) => {
+        const p = PROFILES[icao];
+        const [x, z] = project(p.lat, p.lon);
+        const sum = rt.airportSummary(icao);
+        const color = STATUS_COLOR[sum.status];
         return (
-          <group key={`${a.from}-${a.to}`}>
-            <Line points={curve.getPoints(48)} color={a.color} lineWidth={2.5} dashed={a.dashed} dashSize={3} gapSize={2} />
-            <Html position={mid.toArray()} center distanceFactor={160}>
-              <div className="hud whitespace-nowrap px-2 py-1 text-[10.5px]" style={{ borderColor: a.color }}>{PROFILES[a.from].iata} → {PROFILES[a.to].iata} · {a.label}</div>
-            </Html>
-          </group>
+          <Anchor key={icao} set={anchors} id={`ap:${icao}`} pos={[x, 1.8, z]}>
+            <button onClick={() => { setAirport(icao); setView("twin"); }} className="hud pointer-events-auto whitespace-nowrap px-2.5 py-1.5 text-left" style={{ transform: "translateY(-46px)" }}>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full" style={{ background: color }} />
+                <span className="text-[12px] font-semibold">{p.iata}</span>
+                <span className="muted text-[10.5px]">{p.shortName}</span>
+              </div>
+              <div className="muted mono text-[10px]">{Math.round(sum.rate)}/{p.arrCapacity} arr/h · {sum.sample?.holding ?? 0} holding · {sum.sample?.waiting ?? 0} waiting</div>
+            </button>
+          </Anchor>
+        );
+      })}
+      {arcsOf(rt).map((a) => {
+        const { mid } = arcGeometry(a);
+        return (
+          <Anchor key={`arc:${a.from}-${a.to}`} set={anchors} id={`arc:${a.from}-${a.to}`} pos={[mid.x, mid.y, mid.z]}>
+            <div className="hud whitespace-nowrap px-2 py-1 text-[10.5px]" style={{ borderColor: a.color }}>{PROFILES[a.from].iata} → {PROFILES[a.to].iata} · {a.label}</div>
+          </Anchor>
         );
       })}
     </>
   );
 }
 
-function CityLabels() {
-  const cities: [string, number, number][] = [["Abu Dhabi", 24.4539, 54.3773], ["Dubai", 25.2048, 55.2708], ["Sharjah", 25.3463, 55.4209], ["Ajman", 25.4052, 55.5136], ["Al Ain", 24.2075, 55.7447]];
-  return (
-    <>
-      {cities.map(([n, la, lo]) => {
-        const [x, z] = project(la, lo);
-        return <Html key={n} position={[x, 1, z]} center distanceFactor={200}><div className="pointer-events-none whitespace-nowrap text-[11px] font-medium tracking-wide text-white/45">{n}</div></Html>;
-      })}
-    </>
-  );
-}
-
 export function NationalMap({ rt }: { rt: Runtime }) {
+  const anchors = useMemo(() => new AnchorSet(), []);
   return (
+    <div className="relative h-full w-full">
     <Canvas camera={{ position: [-20, 170, 150], fov: 38, near: 1, far: 3000 }} dpr={[1, 2]} gl={{ antialias: true }}>
       <color attach="background" args={["#0b1622"]} />
       <fog attach="fog" args={["#0b1622", 260, 620]} />
       <ambientLight intensity={0.7} />
       <directionalLight position={[60, 120, 40]} intensity={1.2} />
       <Land />
-      <CityLabels />
-      {Object.keys(rt.airports).map((icao) => <AirportMarker key={icao} rt={rt} icao={icao} />)}
+      {Object.keys(rt.airports).sort().map((icao) => <AirportMarker key={icao} rt={rt} icao={icao} />)}
       <Traffic rt={rt} />
       <Arcs rt={rt} />
       <OrbitControls target={[10, 0, -10]} maxPolarAngle={1.2} minDistance={60} maxDistance={420} enableDamping />
-      <Probe rt={rt} />
+      <AnchorProjector set={anchors} />
     </Canvas>
+    <div className="pointer-events-none absolute inset-0 overflow-hidden"><MapLabels rt={rt} anchors={anchors} /></div>
+    </div>
   );
-}
-
-/** Keeps HTML labels fresh when the runtime changes (labels read runtime values). */
-function Probe({ rt }: { rt: Runtime }) {
-  useOps((s) => s.version);
-  void rt;
-  void callsignOf;
-  return null;
 }
