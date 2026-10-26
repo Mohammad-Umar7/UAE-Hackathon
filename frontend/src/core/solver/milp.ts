@@ -44,6 +44,8 @@ export const VARIANTS: Record<VariantId, { label: string; short: string; w: Weig
 
 const GROUND_WAIT_STEPS = [0, 5, 10, 15, 20, 30, 45, 60, 90];
 const SLOT_STEP = 5;
+/** Relative optimality target: a plan reported "Optimal" is proven within 0.5 % of the best plan for this model. */
+export const MIP_REL_GAP = 0.005;
 
 interface Col {
   name: string;
@@ -106,12 +108,22 @@ export interface HighsLike {
   };
 }
 
+/**
+ * Landing-slot grid: 5-minute steps for the first half hour (sequencing detail matters most there),
+ * then 10 and 15-minute steps (15-minute capacity buckets) out to the fuel/horizon limit.
+ */
 const slots = (lo: number, hi: number) => {
   const out: number[] = [];
-  for (let x = lo; x < hi; x += SLOT_STEP) out.push(x);
+  for (let x = lo; x < hi;) {
+    out.push(x);
+    const d = x - lo;
+    x += d < 30 ? SLOT_STEP : d < 90 ? 2 * SLOT_STEP : 3 * SLOT_STEP;
+  }
   if (!out.length || out[out.length - 1] !== hi) out.push(hi);
   return out;
 };
+/** A stand change combined with a long hold is rarely sensible: alternatives get a one-hour landing window. */
+const ALT_WINDOW = 60;
 
 export interface PrunedReason {
   airport: string;
@@ -165,7 +177,7 @@ export function buildModel(pb: Problem, variant: VariantId, exclude: Set<string>
       if (exclude.has(`${f.visit}|home:${o.stand}`)) return;
       const cands: [number, number][] = []; // [L, on]
       if (f.waiting) for (const g of GROUND_WAIT_STEPS) cands.push([f.E, f.E + o.taxi + g]);
-      else if (f.restricted) for (const L of slots(f.E, f.Lhi)) cands.push([L, L + o.taxi]);
+      else if (f.restricted) for (const L of slots(f.E, o.current ? f.Lhi : Math.min(f.Lhi, f.E + ALT_WINDOW))) cands.push([L, L + o.taxi]);
       else for (const g of GROUND_WAIT_STEPS) cands.push([f.E, f.E + o.taxi + g]);
       cands.forEach(([L, on], k) => {
         const off = f.sobt !== null ? Math.max(f.sobt, on + f.tat) : endRel + 600;
@@ -211,7 +223,16 @@ export function buildModel(pb: Problem, variant: VariantId, exclude: Set<string>
       });
     });
     mine.push(cols.length);
-    cols.push({ name: `u${fi}`, cost: Math.round(w.unresolved * wpax * (f.priority ? 5 : 1)), kind: "u", fi, airport: f.home });
+    // "unresolved" leaves the flight on its current plan: it still occupies its current stand, so no other
+    // flight may be planned onto that stand over that interval (its landing is re-sequenced by the AMAN)
+    const curOpt = f.homeOpts.find((o) => o.current);
+    let keep: Partial<Col> = {};
+    if (curOpt && f.currentEldt !== null && !f.waiting) {
+      const on = f.currentEldt + curOpt.taxi;
+      const off = f.sobt !== null ? Math.max(f.sobt, on + f.tat) : endRel + 600;
+      keep = { stand: curOpt.stand, start: on - PRE, end: off + POST };
+    }
+    cols.push({ name: `u${fi}`, cost: Math.round(w.unresolved * wpax * (f.priority ? 5 : 1)), kind: "u", fi, airport: f.home, ...keep });
     flightCols.push(mine);
   });
   const towGroups: number[][] = [];
@@ -265,18 +286,29 @@ export function buildModel(pb: Problem, variant: VariantId, exclude: Set<string>
       if (ids.length >= 2) groups.push(ids);
     }
   }
+  const emitted = new Set<string>();
+  const clique = (ids: number[]) => {
+    const key = ids.join(",");
+    if (emitted.has(key)) return;
+    emitted.add(key);
+    emit(`st${cliqueCount++}`, ids.map((i) => term(1, cols[i].name)), "<= 1");
+  };
+  const flightOf = (i: number) => (cols[i].fi >= 0 ? `f${cols[i].fi}` : cols[i].towVisit);
   for (const ids of groups) {
     if (ids.length < 2) continue;
     const starts = [...new Set(ids.map((i) => cols[i].start!))].sort((a, b) => a - b);
-    let prevKey = "";
     for (const tau of starts) {
       const active = ids.filter((i) => cols[i].start! <= tau && tau < cols[i].end!);
-      const flightsActive = new Set(active.map((i) => (cols[i].fi >= 0 ? `f${cols[i].fi}` : cols[i].towVisit)));
-      if (active.length < 2 || flightsActive.size < 2) continue;
-      const key = active.join(",");
-      if (key === prevKey) continue;
-      prevKey = key;
-      emit(`st${cliqueCount++}`, active.map((i) => term(1, cols[i].name)), "<= 1");
+      // planned options exclude each other; unresolved flights' current intervals exclude planned options,
+      // but two unresolved flights already in conflict are left as they are (that is why they are unresolved)
+      const planned = active.filter((i) => cols[i].kind !== "u");
+      if (planned.length >= 2 && new Set(planned.map(flightOf)).size >= 2) clique(planned);
+      for (const u of active.filter((i) => cols[i].kind === "u")) {
+        // only options the optimiser chooses (stands, diversions, tow targets) give way; a towable aircraft
+        // staying put is like a fixed occupancy, so "all unresolved + all stay" always remains feasible
+        const others = planned.filter((i) => cols[i].fi !== cols[u].fi && cols[i].kind !== "stay");
+        if (others.length) clique([...others, u]);
+      }
     }
   }
   // runway arrival capacity
@@ -312,7 +344,7 @@ export function buildModel(pb: Problem, variant: VariantId, exclude: Set<string>
   const divBy = new Map<string, number[]>();
   cols.forEach((c, i) => {
     if (c.kind !== "z") return;
-    const k = `${c.airport}|${Math.floor(c.L! / 60)}`;
+    const k = `${c.airport}|${Math.floor((pb.t0 + c.L! * 60) / 3600)}`; // clock hour (same as the validator)
     if (!divBy.has(k)) divBy.set(k, []);
     divBy.get(k)!.push(i);
   });
@@ -381,7 +413,7 @@ export function solveVariant(highs: HighsLike, pb: Problem, variant: VariantId,
   const t = performance.now();
   const res = highs.solve(model.lp, {
     // node limit keeps results deterministic; the time limit is only a safety net
-    time_limit: opts.timeLimit ?? 30, mip_max_nodes: 50000, mip_rel_gap: 0.0005, output_flag: false, presolve: "on", random_seed: 7,
+    time_limit: opts.timeLimit ?? 30, mip_max_nodes: 50000, mip_rel_gap: MIP_REL_GAP, output_flag: false, presolve: "on", random_seed: 7,
   });
   const solveMs = performance.now() - t;
   const status = res.Status;
@@ -508,10 +540,17 @@ function pivots(plan: PlanResult): { key: string; note: string }[] {
 /** Solve the three weighting variants. If a variant reproduces an earlier plan's assignment, look
  * for a genuinely different plan by excluding one pivotal decision of the earlier plan (reported as
  * a forced alternative). If none exists, the duplicate is reported honestly. Deterministic. */
-export function solveAlternatives(highs: HighsLike, pb: Problem, timeLimit = 30): PlanResult[] {
+export const VARIANT_IDS: VariantId[] = ["min_delay", "stability", "min_coord"];
+
+/**
+ * Three objective variants; identical assignments are re-solved with one pivot decision excluded so the
+ * supervisor sees genuinely different options. `first` lets a caller supply first-pass solves computed in
+ * parallel (one worker per variant); the result is identical to solving them here in order.
+ */
+export function solveAlternatives(highs: HighsLike, pb: Problem, timeLimit = 30, first?: PlanResult[]): PlanResult[] {
   const out: PlanResult[] = [];
-  for (const v of ["min_delay", "stability", "min_coord"] as VariantId[]) {
-    let r = solveVariant(highs, pb, v, { timeLimit });
+  for (const [i, v] of VARIANT_IDS.entries()) {
+    let r = first?.[i] ?? solveVariant(highs, pb, v, { timeLimit });
     const dup = out.find((p) => p.signature && assignmentSignature(p) === assignmentSignature(r));
     if (dup && r.rows.length) {
       let found = false;
