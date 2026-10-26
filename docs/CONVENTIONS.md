@@ -129,6 +129,18 @@ Jet bridge (apron-drive), built in a local frame with the rotunda centre at the 
 * Every `stand` has `entry_node` (on a taxilane) and `stop_node` (the stand) connected by a `stand_link` edge that follows the lead-in line.
 * Capabilities that public data cannot provide (stand wingspan limits, bridges) are derived by documented heuristics and marked `"source": "derived"`.
 
+### 4.1 Extra fields written by `pipeline/osm` (optional — consumers may ignore them)
+
+Details and heuristics: `docs/DATA_SOURCES.md`. Validate with `pipeline/osm/validate_layouts.py`.
+
+* Top level: `aerodrome_boundary` (outline ring), `context_bounds` (extent of roads/landuse/context buildings; `bounds` is the aerodrome extent).
+* `runways[].ends[]`: `x, y` / `threshold_node` are the **landing threshold** (displaced where the GCAA AIP says so: DXB 12L 450 m, 30R 300 m, 12R 715 m, 30L 132 m; SHJ 12/30 300 m); `end_x, end_y` / `end_node` are the pavement end (start of the take-off roll); `displaced_threshold_m` (measured from the OSM pavement end), `elevation_m` (AIP). `runways[]`: `aip_length_m`, `aip_width_m`. `exits[].distance_from_threshold_m` is measured from the landing threshold; `exits[].taxiway_ref`.
+* `stands[]`: `gate` (nearest OSM gate ref of a contact stand), `alt_refs` (merged duplicate/alternative positions, e.g. DXB `B18L`/`B18R` → `B18`), `conflicts` (stand ids that cannot be occupied at the same time: MARS centre vs L/R, stop points < 25 m apart), `link_source`, `derived_fields`, `derivation` (for `source: "derived"` stands). `size_code` is the code letter of `max_wingspan_m` (A<15, B<24, C<36, D<52, E<65, F≤80); use the number for the hard fit check (a stand with `max_wingspan_m` 72 is "F" but cannot take an 80 m span).
+* `buildings[]`: `height_source` (`osm:height|osm:levels|reference|default|derived`), optional `min_height_m`, `part_of`, `reference_peak_height_m`, `footprint_note`.
+* `taxiways[]` and `taxi_graph.edges[]`: `source: "derived"` on synthetic geometry (apron taxilanes generated where OSM has none, gap bridges, stand links without an OSM lead-in).
+* `roads[]`: `name`, `bridge`, `tunnel`, `layer`; `kind: "rail"` (+ `rail`: subway/light_rail/rail) for metro/railway lines, `kind: "airside_service"` for GSE roads.
+* `landuse[].source`; `context_buildings[]`: optional `min_height_m` (OSM building:part) and `name` (only towers ≥ 100 m, e.g. Burj Khalifa, which is emitted as its stepped building:parts up to the 828 m spire).
+
 ## 5. Aircraft type catalogue (public dimensions, rounded)
 
 | Key | Inspired by | ICAO code letter | Length m | Span m | Height m | Notes |
