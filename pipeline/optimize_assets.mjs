@@ -33,12 +33,19 @@ for (const cat of cats) {
   for (const f of files) {
     const t0 = Date.now();
     const doc = await io.read(path.join(src, f));
+    // Articulated assets (jet bridges) are not quantised or meshopt-compressed (meshopt quantises
+    // internally): quantising a leaf mesh node folds the dequantisation scale/offset into that node's
+    // transform, which would destroy the part pivots the runtime animates. Every asset keeps its
+    // UPPER_SNAKE empties (prune drops empty leaf nodes unless told otherwise).
+    const articulated = /^jet_bridge/.test(f);
     await doc.transform(
       fn.dedup(),
-      fn.prune({ keepAttributes: true, keepExtras: true }),
+      fn.prune({ keepAttributes: true, keepExtras: true, keepLeaves: true }),
       fn.weld(),
-      fn.quantize({ quantizePosition: 16, quantizeNormal: 10, quantizeTexcoord: 14, pattern: /^(POSITION|NORMAL|TEXCOORD_\d)$/ }),
-      fn.meshopt({ encoder: MeshoptEncoder, level: "medium" }),
+      ...(articulated ? [] : [
+        fn.quantize({ quantizePosition: 16, quantizeNormal: 10, quantizeTexcoord: 14, pattern: /^(POSITION|NORMAL|TEXCOORD_\d)$/ }),
+        fn.meshopt({ encoder: MeshoptEncoder, level: "medium" }),
+      ]),
     );
     const out = path.join(dst, f);
     await io.write(out, doc);
