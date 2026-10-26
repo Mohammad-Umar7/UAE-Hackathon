@@ -44,6 +44,9 @@ export default function TwinView() {
         <Legend />
       </div>
       <PlanBar icao={airport} />
+      <div className="pointer-events-none absolute bottom-1.5 right-3 text-[10px] text-white/45">
+        Map data © OpenStreetMap contributors (ODbL) · original 3D models · synthetic flights and fictional airlines
+      </div>
     </div>
   );
 }

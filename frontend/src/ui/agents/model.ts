@@ -15,7 +15,7 @@ export interface GNode {
 }
 
 export const NODES: GNode[] = [
-  { id: "weather", x: 85, y: 205, label: "Weather & Disruption", sub: "detects material change", color: "#6B8EAD", kind: "agent" },
+  { id: "weather", x: 85, y: 205, label: "Weather Watch", sub: "weather & incident changes", color: "#6B8EAD", kind: "agent" },
   { id: "airport_ops", x: 270, y: 205, label: "Airport Operations", sub: "impact & projection", color: "#3D6E8F", kind: "agent" },
   { id: "airline_ops", x: 455, y: 85, label: "Airline Operations", sub: "schedules & connections", color: "#8A6D3B", kind: "agent" },
   { id: "atc", x: 455, y: 325, label: "ATC Liaison", sub: "restrictions · no clearances", color: "#5E6B8C", kind: "agent" },
