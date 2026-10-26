@@ -165,7 +165,8 @@ export class Runtime {
   // ================================================================ clock
   tick(dtReal: number) {
     if (!this.running || this.held) return;
-    this.advance(this.world.now + Math.min(dtReal, 0.25) * this.speed);
+    // clamp large gaps (background tabs) so the simulation never leaps more than 2 s of wall time
+    this.advance(this.world.now + Math.min(dtReal, 2) * this.speed);
   }
 
   step(seconds = 60) {
