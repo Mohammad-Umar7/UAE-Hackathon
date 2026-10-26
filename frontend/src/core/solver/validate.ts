@@ -92,8 +92,9 @@ export function validatePlan(w: World, ap: Registry, decisions: Decision[], rows
   const occ = occupancy(w, ap, planVisits, sharedOnly);
   const landings: Record<string, Map<number, number>> = Object.fromEntries(Object.keys(ap).map((a) => [a, new Map()]));
   const planBuckets: Record<string, Set<number>> = Object.fromEntries(Object.keys(ap).map((a) => [a, new Set()]));
+  const unresolvedVisits = new Set(decisions.filter((d) => d.action === "unresolved").map((d) => d.visit));
   for (const v of Object.values(w.visits)) {
-    if (planVisits.has(v.id) || !v.arr || v.phase === "DIVERTED" || v.phase === "CANCELLED") continue;
+    if (planVisits.has(v.id) || unresolvedVisits.has(v.id) || !v.arr || v.phase === "DIVERTED" || v.phase === "CANCELLED") continue;
     const tl = v.aldt ?? v.eldt;
     if (tl !== null && tl > now - BUCKET_S) landings[v.airport].set(bucketOf(tl), (landings[v.airport].get(bucketOf(tl)) ?? 0) + 1);
   }
@@ -163,10 +164,10 @@ export function validatePlan(w: World, ap: Registry, decisions: Decision[], rows
       checks.STAND_COMPATIBILITY++;
       if (v.prm) checks.ACCESSIBILITY++;
       if (!chk2.ok) add(chk2.code === "PRM_ACCESS" ? "ACCESSIBILITY" : "STAND_COMPATIBILITY", d, chk2.reason);
-      const hk = `${d.to}|${Math.floor((d.eldt! - now) / 3600)}`;
+      const hk = `${d.to}|${Math.floor(d.eldt! / 3600)}`; // clock hour (same as the optimiser)
       divCount.set(hk, (divCount.get(hk) ?? 0) + 1);
       checks.DIVERSION_ACCEPTANCE++;
-      if (divCount.get(hk)! > alt.profile.maxDiversionsPerHour) add("DIVERSION_ACCEPTANCE", d, `${d.to} would receive more than ${alt.profile.maxDiversionsPerHour} diversions in one hour`);
+      if (divCount.get(hk)! > alt.profile.maxDiversionsPerHour) add("DIVERSION_ACCEPTANCE", d, `${d.to} would receive more than ${alt.profile.maxDiversionsPerHour} diversions between ${fmtTime(Math.floor(d.eldt! / 3600) * 3600)} and ${fmtTime(Math.floor(d.eldt! / 3600) * 3600 + 3600)}`);
       checks.FUEL++;
       if ((v.phase === "INBOUND" || v.phase === "HOLDING") && v.eta !== null && v.fuelEndurance !== null) {
         const dm = diversionMinutes(ap[v.airport].profile, alt.profile) * 60;
