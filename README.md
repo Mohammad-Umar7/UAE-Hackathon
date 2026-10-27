@@ -67,17 +67,22 @@ npx eslint src          # lint
 
 ## What you can do
 
+The app opens in **Simple** mode for a first-time audience: a welcome card tells the story in four steps, a
+**Now** bar under the top bar says in one sentence what is happening and what to do next, the clock has just **Play**
+and **Skip to next event** (fast-forward until something happens), and every view speaks plain language. **Expert**
+mode (switch at the bottom of the navigation) brings back every number, log and table.
+
 | View | Purpose |
 |---|---|
-| **Command** | National map (OSM coastline, roads, cities) with live traffic, holding stacks, diversion arcs, airport status cards with METARs, recovery alerts and the agent feed. |
-| **Digital twin** | 3D airport per ICAO: real runways/taxiways/aprons/stands, liveried aircraft moving on the simulator's exact trajectories, docking jet bridges and turnaround vehicles, day/dusk/night lighting from the real sun position, height fog from the reported visibility, runway closures, stand status, taxi routes and plan-preview arcs. Click any aircraft or stand. |
-| **Recovery workbench** | Proposal under approval: candidate plans vs. *no action* and *each airport alone*, “why this plan”, every decision, validation result, approval slots (approve / reject with reason / request revision), plan versions and audit excerpt. |
-| **Agents** | Live coordination graph with animated messages, swim-lane sequence of each workflow from detection to commitment, and an inspectable log of every message and tool call (parameters, results, duration, authority, and the model sent to HiGHS). |
-| **Stands (Gantt)** | Per-stand timeline: planned, actual, estimated and proposed occupancy, conflicts and technical holds. |
-| **Scenario lab** | Launch scenarios A–I or Nightfall, change the seed, or inject incidents (fog, storm, runway closure, blocked stand, priority arrival, diversion influx, resource outage, accessibility needs) — alone or simultaneously. |
-| **Evidence** | Outcome metrics of each committed plan against no-action and local-only baselines (same pre-commit state; the plan is projected on top of the same local handling, so the difference is the value of coordination), optimiser statistics, provenance, JSON export. |
+| **Overview** | National map with live traffic, circling aircraft, diversion flows and what is wrong right now; a card per airport (landings per hour, planes on the way, aircraft circling), the plan that needs a decision and what the agents did. Expert adds METARs, the full agent feed and the operations timeline. |
+| **3D airport** | Each airport in 3D from OpenStreetMap: liveried aircraft moving on the simulator's trajectories, docking jet bridges and turnaround vehicles, lighting from the real sun position, fog from the reported visibility, closures, gate status, taxi routes and the plan previewed in violet. Click any aircraft or gate. |
+| **AI agents** | An interactive scene of the seven agents and the people who decide, in the order they act: messages fly along the links, the working agent says what it is doing, each person shows their decision. Click an agent for its job, its limits and everything it did; hover a step of the story to light up the agents involved; replay the whole conversation. Expert adds the swim-lane sequence and the log of every message and tool call (including the model sent to HiGHS). |
+| **Decision** | The recovery plan in plain words — the problem if nobody acts, what the plan changes, what it should achieve against doing nothing, why it was chosen — and who has approved; your Approve / Say no buttons first. Expert adds candidates vs. baselines, every decision, validation detail, versions and the audit excerpt. |
+| **Results** | The approved plan measured against doing nothing and against each airport acting alone (same pre-commit state; the plan is projected on top of the same local handling, so the difference is the value of coordination). Expert adds optimiser statistics, provenance and the JSON evidence export. |
+| **Gate plan** | Per-gate timeline: planned, actual, estimated and proposed occupancy, conflicts and technical holds. |
+| **Scenarios** | Launch scenarios A–I or Nightfall, change the seed, or inject incidents (fog, storm, runway closure, blocked stand, priority arrival, diversion influx, resource outage, accessibility needs) — alone or simultaneously. |
 | **Replay** | Deterministic replay of the whole run from recorded inputs; re-simulate to any time. |
-| **Present** | Guided demo that drives the real system (no staged data); interruptible at any point. |
+| **Guided demo** | A three-minute tour that drives the real system (no staged data); interruptible at any point. |
 
 Switch role in the top bar (National Supervisor, airport controllers, airline representative, ATC liaison): what a role
 may see and decide is enforced by the runtime, not just the UI.
