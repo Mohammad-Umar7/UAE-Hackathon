@@ -14,6 +14,7 @@ import { fmtTime } from "@/core/world";
 import { useOps, type CameraMode, type View } from "@/store/ops";
 import { followStart } from "../agents/follow";
 import { comparisons } from "../impact/compare";
+import { PhoneApproval, PHONE_ROLE } from "./PhoneApproval";
 
 interface Step {
   id: string;
@@ -37,7 +38,9 @@ const fogActive = (rt: Runtime) => Object.values(rt.world.incidents).some((i) =>
 const newestOpen = (rt: Runtime): [string, Proposal] | null =>
   Object.entries(rt.proposals).filter(([, p]) => isOpen(p)).sort((a, b) => b[1].createdAt - a[1].createdAt)[0] ?? null;
 const hasMessage = (rt: Runtime, type: string) => rt.orchestrator.messages.some((m) => m.type === type);
-const othersDecided = (p: Proposal) => p.approvals.filter((a) => a.key !== "NATIONAL_SUPERVISOR").every((a) => a.decision !== "PENDING");
+/** everyone except the supervisor (the presenter) and Sharjah's duty manager (the phone in the story) has answered */
+const othersDecided = (p: Proposal) => p.approvals.filter((a) => a.key !== "NATIONAL_SUPERVISOR" && a.key !== PHONE_ROLE).every((a) => a.decision !== "PENDING");
+const phonePending = (p: Proposal) => p.approvals.some((a) => a.key === PHONE_ROLE && a.decision === "PENDING");
 /** a plan made after the fog began, answered by everyone except the supervisor */
 const fogPlanReady = (rt: Runtime) => {
   const fog = Object.values(rt.world.incidents).find((i) => i.airport === "OMAA" && i.type === "FOG" && i.status !== "scheduled");
@@ -51,6 +54,8 @@ const STEPS: Step[] = [
     body: "Abu Dhabi, Dubai and Sharjah are each other's backup airports. SKYPACT watches all three together. Everything here runs live in this browser, and nothing happens without a person's approval.",
     enter: (rt) => {
       if (rt.scenario.id !== "nightfall" || rt.world.now > rt.scenario.start + 60 || Object.keys(rt.proposals).length) rt.load("nightfall", 7);
+      // Sharjah answers on its own until the fog arrives (its earlier refusals are part of the story)
+      if (rt.stakeholderModes[PHONE_ROLE] === "human") rt.setStakeholderMode(PHONE_ROLE, "simulated", "NATIONAL_SUPERVISOR");
       rt.setRunning(false);
     },
   },
@@ -69,7 +74,7 @@ const STEPS: Step[] = [
     },
     // wait for the agents and for the camera to finish telling it (or for the presenter to stop following)
     until: (rt) => fogPlanReady(rt) && (useOps.getState().followAt?.done ?? true),
-    waiting: "The agents are working; the camera follows each one as it acts…", done: "Everyone except you has approved. Your turn next.",
+    waiting: "The agents are working; the camera follows each one as it acts…", done: "The desks have answered. Two people are still to decide.",
     body: "The camera follows each agent as it acts and shows what it found: the weather agent warns, the airport agent predicts what happens if nobody acts, the planning agent builds a plan with an optimiser, the safety agent checks it, and people are asked to approve.",
   },
   {
@@ -80,8 +85,9 @@ const STEPS: Step[] = [
     id: "approve", title: "People decide", view: "workbench", speed: 60, approve: true,
     enter: (rt) => { const o = newestOpen(rt); if (o) useOps.getState().select({ selectedProposal: o[0] }); },
     until: (rt) => { const o = newestOpen(rt); return Boolean(o && othersDecided(o[1])); },
-    waiting: "Collecting approvals…", done: "Everyone else has approved — your turn.",
-    body: "Airports, airlines and air-traffic control have approved; the final yes belongs to the national supervisor — that's you. People can say no: earlier this evening two plans were turned down because Sharjah's wheelchair lifts and large-aircraft ground crews were out of service, and the agents re-planned (see “Earlier versions”).",
+    waiting: "Collecting approvals…",
+    done: (rt) => { const o = newestOpen(rt); return o && phonePending(o[1]) ? "Sharjah's duty manager is out on the apron: the request is on their phone." : "Sharjah has answered from the apron. The final yes is yours."; },
+    body: "Sharjah's duty manager isn't at a desk tonight. They are out on the apron, so the plan reaches their phone: four lines on what it asks of Sharjah, and the same yes or no. People can say no: earlier this evening two plans were turned down because Sharjah's wheelchair lifts and ground crews were out of service, and the agents re-planned. Once Sharjah has answered, the final yes belongs to the national supervisor: you."
   },
   {
     id: "execute", title: "The plan runs", view: "command", speed: 30,
@@ -107,7 +113,12 @@ export default function Presentation() {
   const step = STEPS[Math.min(presentation.step, STEPS.length - 1)];
 
   const go = useCallback((i: number) => setPresentation({ step: Math.max(0, Math.min(STEPS.length - 1, i)) }), [setPresentation]);
-  const exit = useCallback(() => { setPresentation({ active: false }); entered.current = -1; }, [setPresentation]);
+  const exit = useCallback(() => {
+    setPresentation({ active: false });
+    entered.current = -1;
+    // outside the story Sharjah answers on its own again
+    if (runtime && runtime.stakeholderModes[PHONE_ROLE] === "human") runtime.setStakeholderMode(PHONE_ROLE, "simulated", "NATIONAL_SUPERVISOR");
+  }, [setPresentation, runtime]);
 
   // enter a step: set the stage, then run the clock until its condition holds
   useEffect(() => {
@@ -132,8 +143,16 @@ export default function Presentation() {
     if (!presentation.active || !runtime) return;
     const id = setInterval(() => {
       setClock(fmtTime(runtime.world.now));
+      // once the fog is in, Sharjah's duty manager answers in person, on the phone, instead of automatically
+      if (fogActive(runtime) && runtime.stakeholderModes[PHONE_ROLE] !== "human") runtime.setStakeholderMode(PHONE_ROLE, "human", "NATIONAL_SUPERVISOR");
       const s = STEPS[presentation.step];
-      if (phase.current === "waiting" && s.until?.(runtime)) {
+      if (s.approve) {
+        // the clock runs only while the desks answer, then holds so the plan can't go out of date while the phone
+        // and the presenter decide; a "no" from the phone starts it again for the agents to re-plan
+        const ready = Boolean(s.until?.(runtime));
+        if (ready === runtime.running) runtime.setRunning(!ready);
+        phase.current = ready ? "done" : "waiting";
+      } else if (phase.current === "waiting" && s.until?.(runtime)) {
         if (!s.approve && s.id !== "execute") runtime.setRunning(false);
         phase.current = "done";
       }
@@ -163,6 +182,7 @@ export default function Presentation() {
     if (!o) { toast("No open proposal to approve yet", "warn"); return; }
     const slot = o[1].approvals.find((a) => a.key === "NATIONAL_SUPERVISOR" && a.decision === "PENDING");
     if (!slot) { toast("The supervisor has already decided on this proposal", "info"); return; }
+    if (phonePending(o[1])) { toast("Sharjah hasn't answered yet: approve on the phone first", "warn"); return; }
     try {
       runtime.decide(o[0], slot.key, "APPROVED", "Approved during the guided demonstration", "NATIONAL_SUPERVISOR");
       runtime.setSpeed(30);
@@ -174,6 +194,8 @@ export default function Presentation() {
 
   const last = presentation.step === STEPS.length - 1;
   return (
+    <>
+    {step.id === "approve" && <PhoneApproval rt={runtime} />}
     <div className="pointer-events-none fixed inset-x-0 bottom-5 z-50 flex justify-center px-4">
       <div className="hud pointer-events-auto w-[min(720px,100%)] overflow-hidden shadow-[0_18px_60px_rgba(0,0,0,0.45)]">
         <div className="h-[3px] bg-white/10"><div className="h-full bg-[#4fb8a4] transition-all duration-500" style={{ width: `${((presentation.step + 1) / STEPS.length) * 100}%` }} /></div>
@@ -214,5 +236,6 @@ export default function Presentation() {
         </div>
       </div>
     </div>
+    </>
   );
 }
