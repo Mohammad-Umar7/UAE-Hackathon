@@ -56,8 +56,8 @@ const STEPS: Step[] = [
   },
   {
     id: "fog", title: "18:00 · thick fog at Abu Dhabi", view: "twin", airport: "OMAA", camera: "strategic", lighting: "auto", speed: 120,
-    // stop as the fog arrives, so the agents' response happens in front of the audience in the next step
-    until: fogActive,
+    // stop as the fog arrives (and the airport reports it), so the agents' response happens in front of the audience next
+    until: (rt) => fogActive(rt) && (rt.world.weather.OMAA?.visibility ?? 10000) <= 1000,
     waiting: "Fast-forwarding to the fog…", done: "The fog is in: low-visibility rules are on.",
     body: "In fog, planes must land further apart: Abu Dhabi can now land 12 planes an hour instead of 30, so arriving aircraft start circling while they wait.",
   },
@@ -84,9 +84,9 @@ const STEPS: Step[] = [
     body: "Airports, airlines and air-traffic control have approved; the final yes belongs to the national supervisor — that's you. People can say no: earlier this evening two plans were turned down because Sharjah's wheelchair lifts and large-aircraft ground crews were out of service, and the agents re-planned (see “Earlier versions”).",
   },
   {
-    id: "execute", title: "The plan runs", view: "twin", airport: "OMAA", camera: "strategic", speed: 30,
+    id: "execute", title: "The plan runs", view: "command", speed: 30,
     until: (rt) => hasMessage(rt, "PlanCommitted"), waiting: "Starting the approved plan…", done: "The plan is running.",
-    body: "Aircraft move to their new gates and some land at Sharjah or Dubai instead. If anything changes, the plan is withdrawn and re-planned rather than carried out blindly.",
+    body: "The arcs on the map are the flights the plan sends from Abu Dhabi to Sharjah and Dubai; the rest land at Abu Dhabi at their new times and gates. If anything changes, the plan is withdrawn and re-planned rather than carried out blindly.",
   },
   {
     id: "evidence", title: "Before & after, approved", view: "evidence",
