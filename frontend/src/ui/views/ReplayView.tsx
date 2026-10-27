@@ -1,7 +1,7 @@
 "use client";
 
 import { Play, Rewind, SkipForward } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { fmtTime } from "@/core/world";
 import { useOps, useRuntime } from "@/store/ops";
 import { participantColor, participantLabel } from "../agents/CoordinationLog";
@@ -59,24 +59,29 @@ export default function ReplayView() {
       </div>
       <div className="panel p-4">
         <div className="relative h-24">
-          <div className="absolute left-0 right-0 top-10 h-1.5 rounded bg-bg-2" />
-          <div className="absolute left-0 top-10 h-1.5 rounded bg-navy" style={{ width: x(at) }} />
+          <div className="absolute left-0 right-0 top-[42px] h-1.5 rounded bg-bg-2" />
+          <div className="absolute left-0 top-[42px] h-1.5 rounded bg-navy" style={{ width: x(at) }} />
           {incidents.map((i) => (
-            <div key={i.id} className="absolute top-[52px] h-2 rounded bg-[color-mix(in_oklab,var(--red)_35%,transparent)]" title={i.title}
+            <div key={i.id} className="absolute top-[54px] h-1.5 rounded bg-[color-mix(in_oklab,var(--red)_35%,transparent)]" title={i.title}
               style={{ left: x(Math.max(start, i.start)), width: `calc(${x(Math.min(end, i.end))} - ${x(Math.max(start, i.start))})` }} />
           ))}
           {clusters.map((c, k) => {
             const phase = c.items.some((m) => m.phase === "rejection") ? "rejection" : c.items.some((m) => m.phase === "approval") ? "approval" : "other";
+            const open = () => { setCursor(c.t); setInspect({ kind: "message", id: c.items[0].id }); };
+            // labels alternate above the track and below the incident lane; near the ends they align inwards
+            const f = (c.t - start) / (end - start);
+            const align = f < 0.15 ? "-translate-x-2 text-left" : f > 0.85 ? "-translate-x-[calc(100%-8px)] text-right" : "-translate-x-1/2 text-center";
             return (
-              <button key={c.items[0].phase} onClick={() => { setCursor(c.t); setInspect({ kind: "message", id: c.items[0].id }); }}
-                className="absolute -translate-x-1/2 text-center" style={{ left: x(c.t), top: k % 2 ? 58 : 0 }}>
-                <div className={`mx-auto h-3 w-3 rounded-full border-2 border-white shadow ${phase === "rejection" ? "bg-[var(--red)]" : phase === "approval" ? "bg-[var(--teal)]" : "bg-navy"}`} style={{ marginTop: k % 2 ? 0 : 34 }} />
-                <div className="mt-0.5 whitespace-nowrap text-[10.5px] font-semibold">{c.items.map((m) => m.label).join(" → ")}</div>
-                <div className="mono text-[10px] text-muted">{fmtTime(c.t)}</div>
-              </button>
+              <Fragment key={c.items[0].phase}>
+                <button onClick={open} title={fmtTime(c.t)} className={`absolute top-[39px] h-3 w-3 -translate-x-1/2 rounded-full border-2 border-white shadow ${phase === "rejection" ? "bg-[var(--red)]" : phase === "approval" ? "bg-[var(--teal)]" : "bg-navy"}`} style={{ left: x(c.t) }} />
+                <button onClick={open} className={`absolute ${align}`} style={{ left: x(c.t), top: k % 2 ? 64 : 4 }}>
+                  <div className="whitespace-nowrap text-[10.5px] font-semibold">{c.items.map((m) => m.label).join(" → ")}</div>
+                  <div className="mono text-[10px] text-muted">{fmtTime(c.t)}</div>
+                </button>
+              </Fragment>
             );
           })}
-          <input type="range" min={start} max={end} value={at} onChange={(e) => setCursor(Number(e.target.value))} className="absolute left-0 right-0 top-[34px] w-full opacity-0" />
+          <input type="range" min={start} max={end} value={at} onChange={(e) => setCursor(Number(e.target.value))} className="absolute left-0 right-0 top-[36px] w-full opacity-0" />
         </div>
         <div className="mt-6 flex items-center gap-3 text-[12px]">
           <span className="mono">{fmtTime(start)}</span>
