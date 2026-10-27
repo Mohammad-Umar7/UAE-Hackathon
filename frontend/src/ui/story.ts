@@ -162,7 +162,7 @@ export function storyNow(rt: Runtime, role: string): StoryNow {
   }
   if (incidents.length) return { tone: "alert", text: `${lead}The agents react as soon as the clock runs.`, cta: rt.running ? { label: "Watch the agents", go: "agents" } : { label: "Run the clock", go: "run" } };
   if (!rt.running && rt.world.now <= rt.scenario.start + 60) {
-    return { tone: "calm", text: `${fmtTime(rt.world.now)} on a busy evening at Abu Dhabi, Dubai and Sharjah — all normal for now. Trouble is coming.`, cta: { label: "Start the guided demo", go: "demo" } };
+    return { tone: "calm", text: `${fmtTime(rt.world.now)} on a busy evening at Abu Dhabi, Dubai and Sharjah — all normal for now. Trouble is coming.` };
   }
   return { tone: "calm", text: "All three airports are operating normally.", cta: rt.running ? undefined : { label: "Run the clock", go: "run" } };
 }

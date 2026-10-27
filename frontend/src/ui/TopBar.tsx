@@ -10,9 +10,6 @@ import { useOps, useRuntime } from "@/store/ops";
 import { Logo } from "./Logo";
 
 const SPEEDS = [1, 10, 30, 60, 120];
-/** Simple mode: one comfortable speed (a simulated minute every two seconds) and a skip that fast-forwards only
- *  until the next thing happens — a disruption starting or an agent acting — then drops back to it. */
-const NORMAL = 30, SKIP = 180;
 
 export function TopBar() {
   const rt = useRuntime();
@@ -49,9 +46,8 @@ export function TopBar() {
       <div className="mx-auto flex items-center gap-2">
         <div className="flex items-baseline gap-1.5 rounded-lg border border-line bg-panel-2 px-3 py-1">
           <span className="mono text-[17px] font-semibold tracking-tight">{fmtTime(w.now, true)}</span>
-          <span className="whitespace-nowrap text-[10.5px] text-muted">GST<span className="max-[1799px]:hidden"> · synthetic day</span></span>
+          <span className="whitespace-nowrap text-[10.5px] text-muted">GST</span>
         </div>
-        {!expert && <SimpleClock />}
         <div className={`items-center gap-1 ${expert ? "flex" : "hidden"}`}>
           <button className="btn h-8 w-8 justify-center p-0" onClick={() => rt.setRunning(!rt.running)} title={rt.running ? "Pause" : "Run"}>
             {rt.running ? <Pause size={15} /> : <Play size={15} />}
@@ -132,29 +128,6 @@ export function TopBar() {
         </div>
       </div>
     </header>
-  );
-}
-
-function SimpleClock() {
-  const rt = useRuntime();
-  const skipping = rt.skipping !== null && rt.running;
-  const playPause = () => {
-    if (!rt.running && rt.speed !== NORMAL) rt.setSpeed(NORMAL);
-    rt.setRunning(!rt.running);
-  };
-  return (
-    <div className="flex items-center gap-1.5">
-      <button className="btn h-8 px-2.5" onClick={playPause} title={rt.running ? "Pause the simulation" : "Run the simulation (a simulated minute every two seconds)"}>
-        {rt.running ? <Pause size={14} /> : <Play size={14} />} {rt.running ? "Pause" : "Play"}
-      </button>
-      <button className={`btn h-8 px-2.5 ${skipping ? "btn-primary" : ""}`} disabled={rt.held || skipping}
-        title="Fast-forward until something happens, then continue at normal speed" onClick={() => rt.skipToNextEvent(SKIP, NORMAL)}>
-        <FastForward size={14} /> {skipping ? "Skipping…" : "Skip to next event"}
-      </button>
-      {rt.held
-        ? <span className="pill pill-amber"><span className="relative mr-0.5 inline-block h-2 w-2"><span className="absolute inset-0 rounded-full bg-[var(--amber)]" style={{ animation: "pulse-ring 1.2s ease-out infinite" }} /><span className="absolute inset-0 rounded-full bg-[var(--amber)]" /></span>Agents thinking</span>
-        : <span className={`pill pill-dot ${rt.running ? "pill-teal" : "pill-gray"}`}>{rt.running ? "Running" : "Paused"}</span>}
-    </div>
   );
 }
 

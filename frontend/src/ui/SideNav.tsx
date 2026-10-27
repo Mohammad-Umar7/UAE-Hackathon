@@ -58,7 +58,6 @@ export function SideNav() {
             </button>
           ))}
         </div>
-        <div className="text-center text-[9px] leading-tight text-faint">Simulation only</div>
       </div>
     </nav>
   );
