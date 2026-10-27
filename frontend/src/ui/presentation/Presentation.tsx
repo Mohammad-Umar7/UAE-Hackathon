@@ -110,7 +110,7 @@ const NIGHTFALL: Step[] = [
   },
   {
     id: "replay", title: "Every step can be replayed and audited", view: "replay",
-    body: "Every input is recorded, so the evening can be replayed exactly, and a tamper-proof log shows who approved what and when. Flights and airlines are synthetic throughout.",
+    body: "Every input is recorded, so the evening can be replayed exactly, and a tamper-proof log shows who approved what and when. The schedule is synthetic throughout: real airlines, generated times.",
   },
 ];
 

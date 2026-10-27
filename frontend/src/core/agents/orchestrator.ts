@@ -60,9 +60,10 @@ export class AuthorityError extends Error {}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const HORIZON = 4 * 3600;
-/** Time allowed per optimiser variant. Most solves finish well inside it; when one does not, HiGHS returns the best plan
- *  found so far (on the Nightfall fog problem that is within 0.1 % of optimal), so the clock never waits half a minute. */
-const SOLVE_SECONDS = 12;
+/** Time allowed per optimiser variant. A fast machine finishes well inside it (node limit or 0.5 % gap) and never waits;
+ *  on a slower laptop the Nightfall fog problem needs ~30 s, and cut off at 12 s it returned 45 of 159 flights unresolved
+ *  and no diversions at all, a plan that changed nothing. Past this limit HiGHS returns the best plan found so far. */
+const SOLVE_SECONDS = 30;
 
 export class Orchestrator {
   messages: AgentMessage[] = [];

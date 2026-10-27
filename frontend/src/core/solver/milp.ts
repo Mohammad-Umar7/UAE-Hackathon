@@ -427,8 +427,11 @@ export function solveVariant(highs: HighsLike, pb: Problem, variant: VariantId,
   const model = buildModel(pb, variant, opts.exclude);
   const t = performance.now();
   const res = highs.solve(model.lp, {
-    // node limit keeps results deterministic; the time limit is only a safety net
-    time_limit: opts.timeLimit ?? 30, mip_max_nodes: 50000, mip_rel_gap: MIP_REL_GAP, output_flag: false, presolve: "on", random_seed: 7,
+    // node limit keeps results deterministic; the time limit is only a safety net. More primal-heuristic effort than
+    // HiGHS's default (0.05) finds good plans early: on the Nightfall fog problem the best plan after 12 s left 7
+    // flights unresolved instead of 45.
+    time_limit: opts.timeLimit ?? 30, mip_max_nodes: 50000, mip_rel_gap: MIP_REL_GAP, mip_heuristic_effort: 0.3, output_flag: false,
+    presolve: "on", random_seed: 7,
   });
   const solveMs = performance.now() - t;
   const status = res.Status;
