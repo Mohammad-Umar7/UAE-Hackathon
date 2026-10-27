@@ -309,7 +309,7 @@ export function PlanPreview({ rt, ap }: { rt: Runtime; ap: AirportInfo }) {
     if (!hit) return [];
     const [, p] = hit;
     const committed = p.status === "COMMITTED";
-    const out: { pts: THREE.Vector3[]; color: string; dashed: boolean }[] = [];
+    const out: { pts: THREE.Vector3[]; color: string; dashed: boolean; dash: number }[] = [];
     const arr = ap.runwayEnds[ap.arrivalEnd];
     const landing = arr ? new THREE.Vector3(arr.x + Math.sin((arr.heading * Math.PI) / 180) * 1400, 0, -(arr.y + Math.cos((arr.heading * Math.PI) / 180) * 1400)) : new THREE.Vector3();
     const standPt = (id: string | undefined | null) => {
@@ -323,15 +323,17 @@ export function PlanPreview({ rt, ap }: { rt: Runtime; ap: AirportInfo }) {
       if (e && e.pose.z < 5) return new THREE.Vector3(e.pose.x, 0, -e.pose.y);
       return standPt(stand) ?? landing.clone();
     };
-    const arc = (a: THREE.Vector3, b: THREE.Vector3, color: string, text: string) => {
+    const arc = (a: THREE.Vector3, b: THREE.Vector3, color: string, text: string, rise?: number) => {
       const d = a.distanceTo(b);
       const mid = a.clone().add(b).multiplyScalar(0.5);
-      mid.y = Math.min(220, 18 + d * 0.22);
+      mid.y = rise ?? Math.min(220, 18 + d * 0.22);
       const curve = new THREE.QuadraticBezierCurve3(a.clone().setY(a.y + 3), mid, b.clone().setY(b.y + 3));
-      out.push({ pts: curve.getPoints(40), color, dashed: !committed });
+      // dashes scale with the arc, so a long diversion arc reads as a line rather than a string of dots
+      out.push({ pts: curve.getPoints(40), color, dashed: !committed, dash: Math.max(10, d / 30) });
       const top = curve.getPoint(0.5);
       planMarks.push({ x: top.x, y: top.y + 6, z: top.z, text, color, approved: committed });
     };
+    const away = new Map<string, number>(); // diversions out of this airport, per destination
     for (const d of p.plan.decisions) {
       if (d.action === "assign_stand" && d.airport === ap.icao) {
         const b = standPt(d.stand);
@@ -340,22 +342,29 @@ export function PlanPreview({ rt, ap }: { rt: Runtime; ap: AirportInfo }) {
         const a = standPt(d.from_stand), b = standPt(d.to_stand);
         if (a && b) arc(a, b, "#f2a93b", `${d.callsign} tow ${d.from_stand} → ${d.to_stand}`);
       } else if (d.action === "divert" && d.airport === ap.icao && d.to) {
-        const A = PROFILES[ap.icao], B = PROFILES[d.to];
-        const brg = Math.atan2((B.lon - A.lon) * Math.cos((A.lat * Math.PI) / 180), B.lat - A.lat);
-        const end = landing.clone().add(new THREE.Vector3(Math.sin(brg) * 4200, 380, -Math.cos(brg) * 4200));
-        arc(landing.clone().setY(250), end, "#f2a93b", `${d.callsign} → ${B.iata} (diversion)`);
+        away.set(d.to, (away.get(d.to) ?? 0) + 1);
       } else if (d.action === "divert" && d.to === ap.icao) {
         const b = standPt(d.stand);
         if (b) arc(landing.clone(), b, "#f2a93b", `${d.callsign} from ${PROFILES[d.airport]?.iata ?? d.airport} → ${d.stand ?? "stand"}`);
       }
     }
+    // one arc per destination, rising off the approach and away towards the other airport
+    [...away].forEach(([to, n], k) => {
+      const A = PROFILES[ap.icao], B = PROFILES[to];
+      if (!A || !B) return;
+      const brg = Math.atan2((B.lon - A.lon) * Math.cos((A.lat * Math.PI) / 180), B.lat - A.lat);
+      const start = landing.clone().setY(220);
+      // Dubai and Sharjah lie in almost the same direction from Abu Dhabi: each destination gets its own height
+      const end = landing.clone().add(new THREE.Vector3(Math.sin(brg) * 4200, 420 + 260 * k, -Math.cos(brg) * 4200));
+      arc(start, end, "#f2a93b", `${n} flight${n === 1 ? "" : "s"} → ${B.city} (diversion)`, 760 + 300 * k);
+    });
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hit?.[0], hit?.[1].status, hit?.[1].version, ap]);
   return (
     <group>
       {arcs.map((a, i) => (
-        <Line key={i} points={a.pts} color={a.color} lineWidth={2.4} dashed={a.dashed} dashSize={10} gapSize={6} transparent opacity={0.95} toneMapped={false} />
+        <Line key={i} points={a.pts} color={a.color} lineWidth={2.4} dashed={a.dashed} dashSize={a.dash} gapSize={a.dash * 0.6} transparent opacity={0.95} toneMapped={false} />
       ))}
     </group>
   );
