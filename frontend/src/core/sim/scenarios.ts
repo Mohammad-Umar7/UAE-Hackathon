@@ -236,8 +236,10 @@ function buildNightfall(ctx: ScenarioContext) {
   if (new Set(Object.values(ctx.airports.OMDB?.runwayEnds ?? {}).map((e) => e.runwayId)).size >= 2) {
     makeRunwayClosure(ctx, "OMDB", s + 55 * M, s + 2 * H + 35 * M, undefined, "Runway inspection after a reported tyre-debris strike");
   }
+  // reported with the fog, so the evening's first plan has to protect these passengers too (and nothing before the
+  // fog keeps the agents busy while the demo fast-forwards to it)
   const prm = pickInbound(ctx, "OMAA", s + 65 * M, s + 105 * M, ["wb"], "SQR");
-  if (prm) makeAccessibility(ctx, "OMAA", s + 5 * M, prm, 3);
+  if (prm) makeAccessibility(ctx, "OMAA", s + 40 * M, prm, 3);
   makeResourceOutage(ctx, "OMSJ", "ambulift", 2, s - 20 * M, s + 6 * H,
     "Both ambulifts unserviceable (hydraulic lift fault) — recorded in the Sharjah local equipment log only.", false, "local_log");
   makeResourceOutage(ctx, "OMSJ", "wb_handling", 3, s - 20 * M, s + 6 * H,
