@@ -58,9 +58,8 @@ const STEPS: Step[] = [
     body: "One agent spots the fog, another predicts the knock-on effects, and the planning agent uses a mathematical optimiser to build recovery plans. Every step is listed on the right; click an agent to see its job.",
   },
   {
-    id: "plans", title: "A plan, compared with doing nothing", view: "workbench",
-    enter: (rt) => { const o = newestOpen(rt); if (o) useOps.getState().select({ selectedProposal: o[0] }); },
-    body: "This is the recommended plan: what it changes and what it should achieve against doing nothing. A separate safety-check agent has re-checked every rule before anyone is asked.",
+    id: "plans", title: "Before & after, predicted", view: "evidence",
+    body: "Left: what the simulator predicts if nobody acts: planes stack up circling and crews divert on low fuel. Middle: the plan the agents built, re-checked by a separate safety agent. Right: the same evening with the plan. Below: how it unfolds hour by hour, and what each agent did.",
   },
   {
     id: "local", title: "Sharjah knows something the system didn't", view: "agents", speed: 60,
@@ -83,8 +82,8 @@ const STEPS: Step[] = [
     body: "Aircraft move to their new gates and some land at Sharjah or Dubai instead. If anything changes, the plan is withdrawn and re-planned rather than carried out blindly.",
   },
   {
-    id: "evidence", title: "Measured, not claimed", view: "evidence",
-    body: "The result, measured against doing nothing from the same starting point: far less circling, fewer emergency fuel diversions and shorter passenger delays — on synthetic traffic.",
+    id: "evidence", title: "Before & after, approved", view: "evidence",
+    body: "Both futures re-run from the moment the plan was approved, with the same simulator: less circling, fewer emergency fuel diversions and shorter delays than doing nothing. Hover the chart to compare any moment. Synthetic traffic throughout.",
   },
   {
     id: "replay", title: "Every step can be replayed and audited", view: "replay",
