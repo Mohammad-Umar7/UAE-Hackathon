@@ -86,7 +86,8 @@ export function Atmosphere({ rt, icao }: { rt: Runtime; icao: string }) {
       if (elev > -2) {
         L.position.copy(twinState.target).addScaledVector(tmp.dir, 6000);
         const k = THREE.MathUtils.clamp((elev + 2) / 14, 0, 1);
-        L.intensity = 3.4 * k * (1 - 0.65 * overcast);
+        // a strong key light against a modest sky fill: curved roofs and aircraft get real shading and shadows
+        L.intensity = 4.6 * k * (1 - 0.65 * overcast);
         L.color.copy(SUN_LOW).lerp(SUN_HIGH, THREE.MathUtils.clamp(elev / 35, 0, 1));
       } else {
         // moonlight from the east-southeast, cool and dim
@@ -107,10 +108,10 @@ export function Atmosphere({ rt, icao }: { rt: Runtime; icao: string }) {
     if (hemi.current) {
       hemi.current.color.copy(SKY_DAY).lerp(SKY_NIGHT, night);
       hemi.current.groundColor.copy(GROUND_DAY).lerp(GROUND_NIGHT, night);
-      hemi.current.intensity = 0.7 * day + 0.55 * night + 2.5 * f.level;
+      hemi.current.intensity = 0.4 * day + 0.55 * night + 2.5 * f.level;
     }
     if (amb.current) amb.current.intensity = 0.06 + 0.62 * night; // apron flood lighting fill at night
-    scene.environmentIntensity = (0.12 + 0.88 * day) * (1 - 0.45 * overcast);
+    scene.environmentIntensity = (0.12 + 0.5 * day) * (1 - 0.45 * overcast);
 
     const sk = sky.current?.material as THREE.ShaderMaterial | undefined;
     if (sk?.uniforms) {

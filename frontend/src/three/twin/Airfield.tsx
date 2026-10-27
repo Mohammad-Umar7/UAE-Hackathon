@@ -14,7 +14,7 @@ import { facadeTextures, poolTexture, surfaceSet, type SurfaceSet } from "./text
 import { twinState } from "./state";
 
 /** Desert sand around the airfield: warm and a little saturated, so the paved areas stand out against it. */
-const SAND = "#ddbf8f";
+const SAND = "#d8b37c";
 
 /** Everything static about one airport's airfield, built once per layout. */
 export function buildAirfield(ap: AirportInfo, replaced: Set<string> = new Set()) {
@@ -108,7 +108,7 @@ function useSurfaces() {
   useEffect(() => {
     let alive = true;
     Promise.all([
-      surfaceSet("aerial_sand", 0.86, 0.45), surfaceSet("concrete_floor_02", 0.86, 0.7), surfaceSet("aerial_asphalt_01", 0.8, 1.1),
+      surfaceSet("aerial_sand", 0.86, 0.95), surfaceSet("concrete_floor_02", 0.86, 0.7), surfaceSet("aerial_asphalt_01", 0.8, 1.1),
       surfaceSet("asphalt_02", 0.8, 1.0),
     ]).then(([sand, concrete, asphalt, asphalt2]) => { if (alive) setS({ sand, concrete, asphalt, asphalt2 }); }).catch(() => setS({}));
     return () => { alive = false; };
