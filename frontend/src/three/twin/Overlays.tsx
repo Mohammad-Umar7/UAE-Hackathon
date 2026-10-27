@@ -288,7 +288,7 @@ export function RunwayClosures({ rws }: { rws: RunwayGeom[] }) {
 
 // ------------------------------------------------------------------ plan preview
 
-export interface PlanMark { x: number; y: number; z: number; text: string; color: string }
+export interface PlanMark { x: number; y: number; z: number; text: string; color: string; approved: boolean }
 /** Labels for plan arcs, drawn by the 2D label layer. */
 export const planMarks: PlanMark[] = [];
 
@@ -330,7 +330,7 @@ export function PlanPreview({ rt, ap }: { rt: Runtime; ap: AirportInfo }) {
       const curve = new THREE.QuadraticBezierCurve3(a.clone().setY(a.y + 3), mid, b.clone().setY(b.y + 3));
       out.push({ pts: curve.getPoints(40), color, dashed: !committed });
       const top = curve.getPoint(0.5);
-      planMarks.push({ x: top.x, y: top.y + 6, z: top.z, text, color });
+      planMarks.push({ x: top.x, y: top.y + 6, z: top.z, text, color, approved: committed });
     };
     for (const d of p.plan.decisions) {
       if (d.action === "assign_stand" && d.airport === ap.icao) {

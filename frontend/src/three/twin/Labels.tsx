@@ -103,7 +103,7 @@ export function Labels({ ap, canvas }: { ap: AirportInfo; canvas: React.RefObjec
     }
     for (const m of planMarks) {
       const a = project(m.x, m.y, m.z);
-      if (a) items.push({ x: a[0], y: a[1] - 10, ax: a[0], ay: a[1], title: m.text, sub: "proposed by recovery agent", tone: "plan", pri: 4e4, sel: false });
+      if (a) items.push({ x: a[0], y: a[1] - 10, ax: a[0], ay: a[1], title: m.text, sub: m.approved ? "approved plan" : "proposed by the planning agent", tone: "plan", pri: 4e4, sel: false });
     }
     items.sort((p, q) => q.pri - p.pri);
     g.textAlign = "left";
