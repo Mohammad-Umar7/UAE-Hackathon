@@ -50,9 +50,10 @@ function fogNoise(): THREE.DataTexture {
 }
 
 const LAYERS = [
-  { h: 3.5, scale: 820, drift: [5.5, 1.6], opacity: 0.62 },
-  { h: 13, scale: 1180, drift: [-3.4, 2.4], opacity: 0.42 },
-  { h: 29, scale: 1650, drift: [2.2, -1.8], opacity: 0.24 },
+  { h: 4, scale: 760, drift: [5.5, 1.6], opacity: 0.5 },
+  { h: 15, scale: 1100, drift: [-3.4, 2.4], opacity: 0.46 },
+  { h: 32, scale: 1500, drift: [2.6, -1.8], opacity: 0.4 },
+  { h: 58, scale: 2100, drift: [-1.6, -1.2], opacity: 0.28 },
 ];
 
 export function FogBanks({ rt, icao, center, radius }: { rt: Runtime; icao: string; center: P2; radius: number }) {
@@ -81,7 +82,7 @@ export function FogBanks({ rt, icao, center, radius }: { rt: Runtime; icao: stri
         void main() {
           vec2 uv = vWorld.xz / uScale + uOffset;
           float n = texture2D( uNoise, uv ).r * 0.62 + texture2D( uNoise, uv * 2.9 + vec2( 0.31, 0.77 ) ).r * 0.38;
-          float a = smoothstep( 0.30, 0.82, n ) * uOpacity;
+          float a = smoothstep( 0.24, 0.76, n ) * uOpacity;
           vec3 toFrag = vWorld - cameraPosition;
           float d = length( toFrag );
           a *= smoothstep( 12.0, 140.0, d );                                  // never a hard sheet at the lens
@@ -106,7 +107,7 @@ export function FogBanks({ rt, icao, center, radius }: { rt: Runtime; icao: stri
 
   useFrame(({ clock }) => {
     const wx = rt.world.weather[icao];
-    const amount = THREE.MathUtils.smoothstep(wx?.fog ?? 0, 0.3, 0.85);
+    const amount = THREE.MathUtils.smoothstep(wx?.fog ?? 0, 0.25, 0.7);
     const fogColor = (scene.fog as THREE.Fog | null)?.color;
     meshes.forEach((mesh, i) => {
       const l = LAYERS[i];

@@ -11,8 +11,8 @@
 
 import * as THREE from "three";
 
-/** e-folding height of the fog layer in metres. */
-export const FOG_LAYER_M = 28;
+/** e-folding height of the fog layer in metres (low-visibility fog at an airfield is tens of metres deep). */
+export const FOG_LAYER_M = 55;
 
 let installed = false;
 
@@ -68,12 +68,13 @@ export function installHeightFog(): void {
 }
 
 /**
- * Visibility (m) → surface extinction coefficient. Koschmieder gives 3.912 / V; the twin uses a
- * slightly lower value so that aircraft remain readable in the 3D view during low-visibility ops.
+ * Visibility (m) → surface extinction coefficient. Koschmieder gives 3.912 / V; the twin goes a
+ * little thicker so fog reads at a glance from the overview camera, and caps the density so that
+ * aircraft on the apron still show through the layer during low-visibility operations.
  */
 export function groundFogDensity(visibility: number, fog: number): number {
   if (fog <= 0.01 && visibility >= 8000) return 0;
-  return Math.min(0.035, 3.0 / Math.max(80, visibility)) * Math.min(1, 0.3 + fog);
+  return Math.min(0.014, 4.6 / Math.max(80, visibility)) * Math.min(1, 0.5 + fog);
 }
 
 /**

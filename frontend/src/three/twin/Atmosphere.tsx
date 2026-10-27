@@ -16,7 +16,7 @@ installHeightFog();
 
 const LIGHTING_TIME: Record<string, number> = { day: 13 * 3600, dusk: 17.82 * 3600, night: 21.5 * 3600 };
 const C = (h: string) => new THREE.Color(h);
-const FOG_DAY = C("#d3d6d6"), FOG_DUSK = C("#c7b39f"), FOG_NIGHT = C("#252c36"), FOG_GLOW = C("#5a5f66");
+const FOG_DAY = C("#d3d6d6"), FOG_DUSK = C("#c7b39f"), FOG_NIGHT = C("#252c36"), FOG_GLOW = C("#8a8d92");
 const SUN_LOW = C("#ffad66"), SUN_HIGH = C("#fff4e6");
 const SKY_DAY = C("#bcd3ee"), SKY_NIGHT = C("#2c3a55"), GROUND_DAY = C("#cdb48c"), GROUND_NIGHT = C("#1e2329");
 
@@ -65,10 +65,11 @@ export function Atmosphere({ rt, icao }: { rt: Runtime; icao: string }) {
       fog.near = groundFogDensity(vis, wx?.fog ?? 0) + (precip !== "none" ? 0.0012 : 0);
       fog.far = hazeDensity(vis, wx?.fog ?? 0) * (1 + overcast);
       const dusk = Math.max(0, 1 - Math.abs(s.elevation - 2) / 10);
+      const thick = THREE.MathUtils.smoothstep(wx?.fog ?? 0, 0.15, 0.6);
       tmp.c.copy(FOG_DAY).lerp(FOG_DUSK, dusk * 0.8).lerp(FOG_NIGHT, night);
-      // at night a dense fog layer glows with the airfield lighting it scatters
-      if (night > 0.3) tmp.c.lerp(FOG_GLOW, Math.min(1, (wx?.fog ?? 0) * 1.2) * 0.55 * night);
-      if (overcast > 0.5) tmp.c.multiplyScalar(1 - 0.25 * (overcast - 0.5));
+      if (overcast > 0.5) tmp.c.multiplyScalar(1 - 0.25 * (overcast - 0.5) * (1 - thick));
+      // at night a fog layer glows with the airfield lighting it scatters, so it reads lighter than the ground
+      tmp.c.lerp(FOG_GLOW, thick * night);
       fog.color.copy(tmp.c);
     }
 
