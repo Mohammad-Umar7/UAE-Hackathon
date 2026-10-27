@@ -101,6 +101,44 @@ export function comparisons(rt: Runtime): Comparison[] {
   return out.sort((a, b) => a.severity - b.severity || b.at - a.at);
 }
 
+/** One flight followed through both futures: what doing nothing does to it, and what the plan does instead. */
+export interface FlightStory {
+  visit: string;
+  callsign: string;
+  origin: string;
+  home: string;
+  pax: number;
+  type: string;
+  without: { arrive: number; circleMin: number | null; at: number; to: string };
+  with: { decided: number; kind: "divert"; to: string; land: number; stand: string | null }
+    | { decided: number; kind: "slot"; land: number; ground: boolean };
+}
+
+/** The fullest flight that would run out of fuel if nobody acted and that the plan looks after. */
+export function flightStory(rt: Runtime, c: Comparison): FlightStory | null {
+  if (!c.p || !c.with) return null;
+  // the fullest aircraft first: a big airliner makes the clearest example
+  const pax = (visit: string) => rt.world.visits[visit]?.pax ?? 0;
+  const fuel = c.without.events.filter((e) => e.kind === "FUEL_DIVERSION" && e.visit).sort((a, b) => pax(b.visit!) - pax(a.visit!) || a.t - b.t);
+  // a flight the plan sends elsewhere tells the clearest story; a flight given a landing time is next best
+  for (const want of ["divert", "landing_slot"] as const) {
+    for (const e of fuel) {
+      const d = c.p.plan.decisions.find((x) => x.visit === e.visit && x.action === want);
+      const v = rt.world.visits[e.visit!];
+      if (!d || !v?.arr || d.eldt === undefined) continue;
+      const hold = e.holdMin ?? null;
+      return {
+        visit: v.id, callsign: e.callsign ?? v.arr.callsign, origin: v.arr.origin, home: v.airport, pax: d.pax ?? v.pax, type: v.type,
+        without: { arrive: hold !== null ? e.t - hold * 60 : v.eta ?? e.t, circleMin: hold, at: e.t, to: e.detail ?? "" },
+        with: want === "divert"
+          ? { decided: c.p.createdAt, kind: "divert", to: d.to!, land: d.eldt, stand: d.stand ?? null }
+          : { decided: c.p.createdAt, kind: "slot", land: d.eldt, ground: Boolean(d.ground_delay) },
+      };
+    }
+  }
+  return null;
+}
+
 /** Two concrete moments from the do-nothing future, in plain words. */
 export function examples(o: Outcome): string[] {
   const fuel = o.events.find((e) => e.kind === "FUEL_DIVERSION");

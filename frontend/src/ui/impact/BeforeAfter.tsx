@@ -10,6 +10,7 @@ import { fmtTime } from "@/core/world";
 import { useOps, useRuntime } from "@/store/ops";
 import { approvalState, city, listOr, planChanges, workflowName } from "../story";
 import { comparisons, contributions, examples, PLAN_WINDOW_S, type Comparison, type Outcome } from "./compare";
+import { FlightStoryBand } from "./FlightStory";
 import { ImpactChart, type ChartLine } from "./ImpactChart";
 
 const n0 = (x: number) => Math.round(x).toLocaleString("en-GB");
@@ -81,6 +82,8 @@ export function BeforeAfter() {
           })}
         </div>
       )}
+
+      <FlightStoryBand c={c} />
 
       <div className="grid grid-cols-[minmax(0,1fr)_28px_minmax(0,1.04fr)_28px_minmax(0,1fr)] items-stretch">
         <Side tone="bad" eyebrow="Without SKYPACT" title="If nobody acts" story={withoutStory(c.cause)} o={c.without}

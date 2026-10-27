@@ -38,7 +38,7 @@ export interface Projection extends OutcomeMetrics {
   policy: PolicyName;
   standConflicts: number;
   fuelDiversions: number;
-  events: { kind: string; t: number; airport: string | null; visit?: string; callsign?: string; detail?: string }[];
+  events: { kind: string; t: number; airport: string | null; visit?: string; callsign?: string; detail?: string; holdMin?: number }[];
   series: SeriesPoint[];
   computeMs: number;
   horizonS: number;
@@ -92,6 +92,7 @@ export function project(world: World, airports: Registry, policy: PolicyName = "
     events: events.slice(0, 200).map((e) => ({
       kind: e.kind, t: e.t, airport: e.airport, visit: e.data.visit as string | undefined, callsign: e.data.callsign as string | undefined,
       detail: (e.data.reason ?? e.data.to ?? e.data.stand ?? "") as string,
+      holdMin: e.data.holding_min as number | undefined,
     })),
     computeMs: Math.round(performance.now() - t),
   };
