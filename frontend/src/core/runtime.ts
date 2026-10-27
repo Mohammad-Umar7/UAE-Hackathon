@@ -148,12 +148,34 @@ export class Runtime {
 
   setRunning(on: boolean): void {
     this.running = on;
+    if (!on) this.endSkip();
     this.notify();
   }
 
   setSpeed(x: number): void {
     this.speed = x;
+    this.skipping = null;
     this.notify();
+  }
+
+  /** Fast-forward until something happens (an incident starts or an agent sends a message), then continue at
+   *  `normal` speed — so a viewer never waits through quiet stretches. */
+  skipping: { messages: number; incidents: number; normal: number } | null = null;
+  skipToNextEvent(fast = 180, normal = 30): void {
+    this.skipping = { messages: this.orchestrator.messages.length, incidents: this.activeIncidentCount(), normal };
+    this.speed = fast;
+    this.running = true;
+    this.notify();
+  }
+
+  private activeIncidentCount(): number {
+    return Object.values(this.world.incidents).filter((i) => i.shared && i.status === "active").length;
+  }
+
+  private endSkip(): void {
+    if (!this.skipping) return;
+    this.speed = this.skipping.normal;
+    this.skipping = null;
   }
 
   notify() {
@@ -200,6 +222,10 @@ export class Runtime {
     if (!this.running || this.held) return;
     // clamp large gaps (background tabs) so the simulation never leaps more than 2 s of wall time
     this.advance(this.world.now + Math.min(dtReal, 2) * this.speed);
+    if (this.skipping && (this.orchestrator.messages.length > this.skipping.messages || this.activeIncidentCount() > this.skipping.incidents)) {
+      this.endSkip();
+      this.notify();
+    }
   }
 
   step(seconds = 60) {
