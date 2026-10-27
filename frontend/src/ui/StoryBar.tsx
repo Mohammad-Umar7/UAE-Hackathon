@@ -2,7 +2,7 @@
 
 import { ArrowRight, CircleCheck, CircleDot, Loader2, TriangleAlert, UserCheck } from "lucide-react";
 import { useOps, useRuntime } from "@/store/ops";
-import { activeIncidents, plainIncident, storyNow, type Go, type Tone } from "./story";
+import { storyNow, type Go, type Tone } from "./story";
 
 const TONE: Record<Tone, { icon: typeof CircleDot; color: string; bg: string }> = {
   calm: { icon: CircleDot, color: "var(--teal)", bg: "var(--panel)" },
@@ -19,7 +19,6 @@ export function StoryBar() {
   const s = storyNow(rt, role);
   const t = TONE[s.tone];
   const Icon = t.icon;
-  const others = activeIncidents(rt).slice(1, 3);
   const go = (g: Go) => {
     if (g === "run") rt.setRunning(true);
     else if (g === "demo") setPresentation({ active: true, step: 0 });
@@ -30,7 +29,6 @@ export function StoryBar() {
       <Icon size={15} className={s.tone === "work" ? "animate-spin" : ""} style={{ color: t.color }} />
       <span className="eyebrow" style={{ color: t.color }}>Now</span>
       <p className="min-w-0 flex-1 truncate text-[13px] text-ink" title={s.text}>{s.text}</p>
-      {others.map((i) => <span key={i.id} className="pill pill-outline hidden shrink-0 xl:inline-flex">{plainIncident(i)}</span>)}
       {s.cta && (
         <button className={`btn btn-sm shrink-0 ${s.tone === "action" ? "btn-primary" : ""}`} onClick={() => go(s.cta!.go)}>
           {s.cta.label} <ArrowRight size={12} />

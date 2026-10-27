@@ -69,8 +69,7 @@ export const useOps = create<OpsState>((set, get) => ({
   camera: "strategic",
   presentation: { active: false, step: 0 },
   detail: "simple",
-  // "?intro=0" skips the welcome card (screenshots, rehearsals)
-  welcome: typeof window === "undefined" || !/[?&]intro=0/.test(window.location.search),
+  welcome: true,
   toasts: [],
   attach(rt, sources) {
     set({ runtime: rt, sources });
