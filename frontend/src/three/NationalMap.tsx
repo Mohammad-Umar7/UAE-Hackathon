@@ -226,7 +226,7 @@ function Traffic({ rt }: { rt: Runtime }) {
   );
 }
 
-interface ArcSpec { from: string; to: string; color: string; dashed: boolean; label: string }
+interface ArcSpec { from: string; to: string; color: string; dashed: boolean; n: number; status: string }
 
 /** Coordination arcs between airports for the latest proposal (pending / rejected / committed). */
 function arcsOf(rt: Runtime): ArcSpec[] {
@@ -243,7 +243,8 @@ function arcsOf(rt: Runtime): ArcSpec[] {
     const slot = p.approvals.find((s) => s.key === `AIRPORT_CONTROLLER:${d.to}`);
     const color = p.status === "COMMITTED" ? "#4fb8a4" : slot?.decision === "REJECTED" ? "#e57373" : "#e0a646";
     const n = p.plan.decisions.filter((x) => x.action === "divert" && x.to === d.to && x.airport === d.airport).length;
-    arcs.push({ from: d.airport, to: d.to, color, dashed: p.status !== "COMMITTED", label: `${n} diversion${n > 1 ? "s" : ""} · ${p.status === "COMMITTED" ? "approved" : slot?.decision === "REJECTED" ? "rejected" : "pending approval"}` });
+    arcs.push({ from: d.airport, to: d.to, color, dashed: p.status !== "COMMITTED", n,
+      status: p.status === "COMMITTED" ? "approved" : slot?.decision === "REJECTED" ? "rejected" : "pending approval" });
   }
   return arcs;
 }
@@ -269,6 +270,13 @@ function Arcs({ rt }: { rt: Runtime }) {
 
 /** Dubai and Sharjah are 15 km apart: push their labels to opposite sides so they never overlap. */
 const LABEL_SHIFT: Record<string, string> = { OMDB: "translate(-58%, 34px)", OMSJ: "translate(58%, -58px)", OMAA: "translateY(-46px)" };
+/** Diversion flows are listed beside the receiving airport, on the side its own label leaves free
+ *  (a label at an arc's midpoint lands on Dubai, which sits between Abu Dhabi and Sharjah). */
+const FLOW_SHIFT: Record<string, string> = {
+  OMAA: "translate(calc(50% + 26px), calc(50% + 14px))",
+  OMDB: "translate(calc(50% + 22px), calc(50% + 30px))",
+  OMSJ: "translate(calc(50% + 26px), calc(50% - 4px))",
+};
 
 const CITIES: [string, number, number][] = [["Abu Dhabi", 24.4539, 54.3773], ["Dubai", 25.2048, 55.2708], ["Sharjah", 25.3463, 55.4209], ["Ajman", 25.4052, 55.5136], ["Al Ain", 24.2075, 55.7447]];
 
@@ -301,11 +309,16 @@ function MapLabels({ rt, anchors }: { rt: Runtime; anchors: AnchorSet }) {
           </Anchor>
         );
       })}
-      {arcsOf(rt).map((a) => {
-        const { mid } = arcGeometry(a);
+      {[...Map.groupBy(arcsOf(rt), (a) => a.to)].map(([to, flows]) => {
+        const p = PROFILES[to];
+        const [x, z] = project(p.lat, p.lon);
+        const total = flows.reduce((n, a) => n + a.n, 0);
         return (
-          <Anchor key={`arc:${a.from}-${a.to}`} set={anchors} id={`arc:${a.from}-${a.to}`} pos={[mid.x, mid.y, mid.z]}>
-            <div className="hud whitespace-nowrap px-2 py-1 text-[10.5px]" style={{ borderColor: a.color }}>{PROFILES[a.from].iata} → {PROFILES[a.to].iata} · {a.label}</div>
+          <Anchor key={`flow:${to}`} set={anchors} id={`flow:${to}`} pos={[x, 1.8, z]}>
+            <div className="hud whitespace-nowrap border-l-[3px] px-2 py-1 text-[10.5px] leading-snug" style={{ borderLeftColor: flows[0].color, transform: FLOW_SHIFT[to] }}>
+              <div className="font-semibold">{total} diversion{total > 1 ? "s" : ""} into {p.iata} · {flows[0].status}</div>
+              {flows.map((a) => <div key={a.from} className="muted">{a.n} from {PROFILES[a.from].iata}</div>)}
+            </div>
           </Anchor>
         );
       })}
