@@ -16,7 +16,7 @@ import { twinState } from "./state";
 /** Desert sand around the airfield: warm and a little saturated, so the paved areas stand out against it. */
 const SAND = "#ddbf8f";
 /** The 3D view keeps only the aerodrome and this much around it (metres); the rest of the city is left out. */
-export const CROP_MARGIN = 200;
+const CROP_MARGIN = 200;
 /** Nearest city buildings kept inside that rectangle (Dubai International sits in the middle of the city). */
 const CITY_MAX = 3500;
 const TILE_EDGE = 60;
