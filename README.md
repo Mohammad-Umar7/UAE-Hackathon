@@ -17,7 +17,7 @@ data and original Blender models.
 > All flights, airlines (11 fictional carriers) and operational numbers are **synthetic**. Airport geometry comes from
 > OpenStreetMap and public aeronautical information; nothing here represents real airline or airport operational data.
 
-![3D view of Abu Dhabi airport in night fog, with the recovery plan previewed in violet](docs/images/twin-auh-fog-night.jpg)
+![3D view of Abu Dhabi airport as thick fog rolls in at dusk, with the recovery plan previewed in violet](docs/images/twin-auh-fog-night.jpg)
 
 <sup>Screen captures of the running prototype (Operation Nightfall, seed 7; synthetic traffic, fictional airlines).</sup>
 
@@ -25,7 +25,7 @@ data and original Blender models.
 |---|---|
 | ![Terminal A, Zayed International](docs/images/twin-auh-terminal-a.jpg) | ![Sharjah International terminal](docs/images/twin-shj-terminal.jpg) |
 | ![Dubai International with a runway closed and diversions arriving](docs/images/twin-dxb-runway-closure.jpg) | ![AI agents: replaying the conversation between the agents](docs/images/agents-presentation.jpg) |
-| ![Decision: the problem, the plan, what it should achieve and who must approve](docs/images/workbench.jpg) | ![Results: the approved plan against doing nothing and each airport alone](docs/images/evidence.jpg) |
+| ![Decision: the problem, the plan, what it should achieve and who must approve](docs/images/workbench.jpg) | ![Before & after: the evening if nobody acts, the plan, and the same evening with the plan](docs/images/evidence.jpg) |
 
 ![Overview: the three airports, live traffic, what is wrong and what needs a decision](docs/images/command.jpg)
 
@@ -78,7 +78,7 @@ mode (switch at the bottom of the navigation) brings back every number, log and 
 | **3D airport** | Each airport in 3D from OpenStreetMap: liveried aircraft moving on the simulator's trajectories, docking jet bridges and turnaround vehicles, lighting from the real sun position, fog from the reported visibility, closures, gate status, taxi routes and the plan previewed in violet. Click any aircraft or gate. |
 | **AI agents** | An interactive scene of the seven agents and the people who decide, in the order they act: messages fly along the links, the working agent says what it is doing, each person shows their decision. Click an agent for its job, its limits and everything it did; hover a step of the story to light up the agents involved; replay the whole conversation. Expert adds the swim-lane sequence and the log of every message and tool call (including the model sent to HiGHS). |
 | **Decision** | The recovery plan in plain words — the problem if nobody acts, what the plan changes, what it should achieve against doing nothing, why it was chosen — and who has approved; your Approve / Say no buttons first. Expert adds candidates vs. baselines, every decision, validation detail, versions and the audit excerpt. |
-| **Results** | The approved plan measured against doing nothing and against each airport acting alone (same pre-commit state; the plan is projected on top of the same local handling, so the difference is the value of coordination). Expert adds optimiser statistics, provenance and the JSON evidence export. |
+| **Before & after** | The same evening simulated twice from the same moment: **without SKYPACT** (if nobody acts: aircraft stack up circling, crews divert on low fuel, gates clash), **the plan** the agents built and who approved it, and **with SKYPACT**, each with big numbers and the change. A chart shows both futures unfolding over four hours (planes circling, low-fuel diversions, passenger delay) with a crosshair readout and a table view, and a strip shows what each agent contributed. It works as soon as the agents have predicted the impact, while the plan awaits approval, and after approval (re-run from that moment). **Expert** turns it into the evidence view: the third baseline (each airport acting alone), optimiser statistics, provenance and the JSON evidence export. |
 | **Gate plan** | Per-gate timeline: planned, actual, estimated and proposed occupancy, conflicts and technical holds. |
 | **Scenarios** | Launch scenarios A–I or Nightfall, change the seed, or inject incidents (fog, storm, runway closure, blocked stand, priority arrival, diversion influx, resource outage, accessibility needs) — alone or simultaneously. |
 | **Replay** | Deterministic replay of the whole run from recorded inputs; re-simulate to any time. |
