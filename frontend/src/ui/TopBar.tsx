@@ -45,7 +45,7 @@ export function TopBar() {
       <div className="mx-auto flex items-center gap-2">
         <div className="flex items-baseline gap-1.5 rounded-lg border border-line bg-panel-2 px-3 py-1">
           <span className="mono text-[17px] font-semibold tracking-tight">{fmtTime(w.now, true)}</span>
-          <span className="whitespace-nowrap text-[10.5px] text-muted">GST · synthetic day</span>
+          <span className="whitespace-nowrap text-[10.5px] text-muted">GST<span className="max-[1799px]:hidden"> · synthetic day</span></span>
         </div>
         <div className="flex items-center gap-1">
           <button className="btn h-8 w-8 justify-center p-0" onClick={() => rt.setRunning(!rt.running)} title={rt.running ? "Pause" : "Run"}>
@@ -72,7 +72,7 @@ export function TopBar() {
       <div className="flex items-center gap-2">
         <span className={`pill ${rt.llm?.available ? "pill-teal" : "pill-gray"}`} title={rt.llm?.available ? `Optional local model for briefings (${rt.llm.model}); optimisation, validation and approvals are deterministic` : "No local language model detected — deterministic agents (fully functional)"}>
           {rt.llm?.available ? <Cpu size={12} /> : <Bot size={12} />}
-          {rt.llm?.available ? "Agents · local LLM" : "Agents · deterministic"}
+          <span className="max-[1699px]:hidden">Agents · </span>{rt.llm?.available ? "local LLM" : "deterministic"}
         </span>
         <button className={`btn h-8 ${presentation.active ? "btn-primary" : ""}`} onClick={() => setPresentation({ active: !presentation.active, step: presentation.active ? presentation.step : 0 })}>
           <Presentation size={14} /> Present
@@ -89,9 +89,9 @@ export function TopBar() {
                   title={`${myPending.length} approval${myPending.length > 1 ? "s" : ""} waiting for you`}>{myPending.length}</span>
               )}
             </span>
-            <span className="max-w-[210px] text-left leading-tight">
+            <span className="max-w-[210px] text-left leading-tight max-[1679px]:max-w-[180px]">
               <span className="block truncate text-[11.5px] font-semibold">{r.title}</span>
-              <span className="block truncate text-[10.5px] text-muted">{r.person} · simulated user</span>
+              <span className="block truncate text-[10.5px] text-muted max-[1679px]:hidden">{r.person} · simulated user</span>
             </span>
             <ChevronDown size={13} className="text-muted" />
           </button>
