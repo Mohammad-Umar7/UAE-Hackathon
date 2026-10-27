@@ -15,11 +15,24 @@ const laneOf = (n: NodeId): number => {
   return i >= 0 ? i : LANES.length - 1;
 };
 
-/** Swimlane sequence diagram of the messages in one workflow (ordered as they happened). */
+/** Swimlane sequence diagram of the messages in one workflow (ordered as they happened). Consecutive
+ *  messages of the same type between the same lanes (a round of coordination requests, say) share a row,
+ *  so the whole workflow from detection to commitment stays readable. */
 export function Sequence({ thread }: { thread: string | null }) {
   const rt = useRuntime();
   const { setInspect, inspect } = useOps();
-  const msgs = rt.orchestrator.messages.filter((m) => !thread || m.thread === thread).slice(-60);
+  const rows: { m: (typeof rt.orchestrator.messages)[number]; key: string; n: number; ids: string[] }[] = [];
+  for (const m of rt.orchestrator.messages) {
+    if (thread && m.thread !== thread) continue;
+    const e = endpoints(m);
+    const key = `${m.type}|${laneOf(e.from)}|${[...new Set(e.to.map(laneOf))].sort().join(",")}`;
+    const last = rows[rows.length - 1];
+    if (last?.key === key) {
+      last.n++;
+      last.ids.push(m.id);
+    } else rows.push({ m, key, n: 1, ids: [m.id] });
+  }
+  const msgs = rows.slice(-120);
   const laneW = 112;
   const rowH = 22;
   const W = LANES.length * laneW;
@@ -34,13 +47,13 @@ export function Sequence({ thread }: { thread: string | null }) {
             <text x={i * laneW + laneW / 2} y={18} textAnchor="middle" style={{ fontSize: 10.5, fontWeight: 600 }} className="fill-[var(--ink-2)]">{l.label}</text>
           </g>
         ))}
-        {msgs.map((m, k) => {
+        {msgs.map(({ m, n, ids }, k) => {
           const e = endpoints(m);
           const y = 40 + k * rowH;
           const from = laneOf(e.from);
           const tos = [...new Set(e.to.map(laneOf))].filter((t) => t !== from);
           const color = TYPE_TONE[m.type] ?? "var(--navy)";
-          const sel = inspect?.kind === "message" && inspect.id === m.id;
+          const sel = inspect?.kind === "message" && ids.includes(inspect.id);
           return (
             <g key={m.id} className="cursor-pointer" onClick={() => setInspect({ kind: "message", id: m.id })}>
               {sel && <rect x={0} y={y - 11} width={W} height={rowH} fill="var(--navy-soft)" />}
@@ -57,7 +70,7 @@ export function Sequence({ thread }: { thread: string | null }) {
                 );
               })}
               {tos.length === 0 && <circle cx={from * laneW + laneW / 2} cy={y} r={6} fill="none" stroke={color} />}
-              <text x={Math.min(...[from, ...tos]) * laneW + laneW / 2 + 6} y={y - 4} style={{ fontSize: 9.5, fontWeight: 600 }} fill={color}>{m.type}</text>
+              <text x={Math.min(...[from, ...tos]) * laneW + laneW / 2 + 6} y={y - 4} style={{ fontSize: 9.5, fontWeight: 600 }} fill={color}>{m.type}{n > 1 ? ` ×${n}` : ""}</text>
             </g>
           );
         })}
