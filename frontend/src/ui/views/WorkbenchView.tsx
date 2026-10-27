@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenText, Cpu, ShieldCheck } from "lucide-react";
+import { BookOpenText, Cpu, Play, Presentation, ShieldCheck } from "lucide-react";
 import { explainProposal } from "@/core/agents/explain";
 import { isOpen, type Proposal } from "@/core/approvals/workflow";
 import { fmtTime } from "@/core/world";
@@ -9,16 +9,33 @@ import { STATUS_PILL } from "../common/format";
 import { Approvals } from "../workbench/Approvals";
 import { Decisions } from "../workbench/Decisions";
 import { PlanComparison } from "../workbench/PlanComparison";
+import { SimpleDecision } from "../workbench/SimpleDecision";
 import { Situation } from "../workbench/Situation";
 
 export default function WorkbenchView() {
   const rt = useRuntime();
-  const { selectedProposal, select } = useOps();
+  const { selectedProposal, select, setPresentation } = useOps();
+  const expert = useOps((s) => s.detail === "expert");
   const all = Object.entries(rt.proposals).sort((a, b) => b[1].createdAt - a[1].createdAt || b[1].version - a[1].version);
   const open = all.find(([, p]) => isOpen(p));
   const key = selectedProposal && rt.proposals[selectedProposal] ? selectedProposal : open?.[0] ?? all[0]?.[0] ?? null;
   const p = key ? rt.proposals[key] : null;
   const versions = p ? all.filter(([, x]) => x.thread === p.thread) : [];
+  if (!expert) {
+    if (p) return <SimpleDecision p={p} versions={versions} onPick={(k) => select({ selectedProposal: k })} />;
+    return (
+      <div className="grid h-full place-items-center p-6">
+        <div className="panel max-w-[520px] p-8 text-center">
+          <div className="text-[18px] font-semibold tracking-tight">No recovery plan yet</div>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-muted">When something goes wrong, the AI agents build a recovery plan and bring it here. The people in charge then approve it — or say no and explain why.</p>
+          <div className="mt-5 flex justify-center gap-2">
+            <button className="btn btn-primary" onClick={() => rt.setRunning(true)}><Play size={14} /> Play the simulation</button>
+            <button className="btn" onClick={() => setPresentation({ active: true, step: 0 })}><Presentation size={14} /> Watch the guided demo</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="grid h-full grid-cols-[300px_minmax(0,1fr)_350px] gap-3 p-3">
       <Situation p={p} />
