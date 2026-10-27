@@ -93,9 +93,11 @@ export function ImpactChart({ lines, t0, t1, now, shadeFrom, shadeLabel, integer
         {ys.map((v) => (
           <span key={v} className="mono absolute -left-11 w-9 -translate-y-1/2 text-right text-[10.5px] text-faint" style={{ top: `${(100 * (top - v)) / top}%` }}>{compact(v)}</span>
         ))}
-        {hours.map((h) => (
-          <span key={h} className="mono absolute top-full mt-1.5 -translate-x-1/2 text-[10.5px] text-faint" style={{ left: pct(h) }}>{fmtTime(h)}</span>
-        ))}
+        {hours.map((h) => {
+          // the first and last labels align inwards so they never hang past the plot
+          const f = (h - t0) / (t1 - t0);
+          return <span key={h} className={`mono absolute top-full mt-1.5 text-[10.5px] text-faint ${f > 0.97 ? "-translate-x-full" : f > 0.03 ? "-translate-x-1/2" : ""}`} style={{ left: pct(h) }}>{fmtTime(h)}</span>;
+        })}
         {shadeFrom !== undefined && shadeFrom < t1 && shadeLabel && (
           <span className="absolute -top-5 right-0 truncate pl-1.5 text-[10.5px] text-faint" style={{ left: pct(shadeFrom) }}>{shadeLabel}</span>
         )}
