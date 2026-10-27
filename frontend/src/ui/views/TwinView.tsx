@@ -16,6 +16,7 @@ import { useOps, useRuntime, type CameraMode, type Overlays } from "@/store/ops"
 import { previewProposal } from "@/three/twin/Overlays";
 import { AirportTabs } from "../common/AirportTabs";
 import { STATUS_PILL } from "../common/format";
+import { plainIncident, plainWeather } from "../story";
 
 const TwinScene = dynamic(() => import("@/three/twin/TwinScene"), { ssr: false, loading: () => <Loading /> });
 
@@ -58,6 +59,7 @@ function StatusCard({ icao }: { icao: string }) {
   const wx = sum.weather;
   const s = sum.sample;
   const lvp = wx?.category === "LVP" || activeRestrictions(rt.world, icao, "LOW_VISIBILITY").length > 0;
+  const expert = useOps((st) => st.detail === "expert");
   const closures = activeRestrictions(rt.world, icao, "RUNWAY_CLOSED");
   const WxIcon = wx?.thunder ? CloudLightning : wx && wx.precip !== "none" ? CloudRain : wx && wx.visibility < 3000 ? CloudFog : Sun;
   return (
@@ -65,22 +67,22 @@ function StatusCard({ icao }: { icao: string }) {
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <div className="text-[13.5px] font-semibold leading-tight">{p.name}</div>
-          <div className="muted text-[10.5px]">{p.iata} / {icao} · digital twin · OSM layout + procedural models</div>
+          <div className="muted text-[10.5px]">{expert ? `${p.iata} / ${icao} · digital twin · OSM layout + procedural models` : `${p.city} · 3D view of the live simulation`}</div>
         </div>
         <span className={`pill ${sum.status === "normal" ? "pill-teal" : sum.status === "watch" ? "pill-amber" : "pill-red"}`}>{sum.status}</span>
       </div>
-      {wx && <div className="mono mt-1.5 rounded bg-white/5 px-2 py-1 text-[10px] leading-snug text-white/80">{metar(icao, wx, rt.world.now)}</div>}
+      {wx && expert && <div className="mono mt-1.5 rounded bg-white/5 px-2 py-1 text-[10px] leading-snug text-white/80">{metar(icao, wx, rt.world.now)}</div>}
       <div className="mt-2 grid grid-cols-4 gap-1.5">
-        <Kpi label="Arrivals/h" value={`${Math.round(sum.rate)}/${p.arrCapacity}`} warn={sum.rate < p.arrCapacity} />
-        <Kpi label="Holding" value={String(s?.holding ?? 0)} warn={(s?.holding ?? 0) > 0} />
-        <Kpi label="Wait stand" value={String(s?.waiting ?? 0)} warn={(s?.waiting ?? 0) > 0} />
-        <Kpi label="On stand" value={`${s?.onStand ?? 0}/${s?.stands ?? 0}`} />
+        <Kpi label={expert ? "Arrivals/h" : "Landings/h"} value={`${Math.round(sum.rate)}/${p.arrCapacity}`} warn={sum.rate < p.arrCapacity} />
+        <Kpi label={expert ? "Holding" : "Circling"} value={String(s?.holding ?? 0)} warn={(s?.holding ?? 0) > 0} />
+        <Kpi label={expert ? "Wait stand" : "Need a gate"} value={String(s?.waiting ?? 0)} warn={(s?.waiting ?? 0) > 0} />
+        <Kpi label={expert ? "On stand" : "Parked"} value={`${s?.onStand ?? 0}/${s?.stands ?? 0}`} />
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10.5px]">
-        <span className="flex items-center gap-1 text-white/75"><WxIcon size={12} /> {wx ? `${wx.category} · vis ${wx.visibility >= 9999 ? "10 km+" : `${Math.round(wx.visibility)} m`}${wx.rvr ? ` · RVR ${wx.rvr} m` : ""}` : ""}</span>
-        {lvp && <span className="pill pill-amber">LVP · stop bars lit</span>}
-        {closures.map((r) => <span key={r.id} className="pill pill-red">RWY {String(r.params.runway)} closed · until {fmtTime(r.end)}</span>)}
-        {sum.incidents.map((i) => <span key={i.id} className="pill pill-red">{i.title}</span>)}
+        <span className="flex items-center gap-1 text-white/75"><WxIcon size={12} /> {wx ? (expert ? `${wx.category} · vis ${wx.visibility >= 9999 ? "10 km+" : `${Math.round(wx.visibility)} m`}${wx.rvr ? ` · RVR ${wx.rvr} m` : ""}` : plainWeather(wx)) : ""}</span>
+        {lvp && <span className="pill pill-amber">{expert ? "LVP · stop bars lit" : "Low-visibility rules on"}</span>}
+        {closures.map((r) => <span key={r.id} className="pill pill-red">{expert ? "RWY" : "Runway"} {String(r.params.runway)} closed · until {fmtTime(r.end)}</span>)}
+        {sum.incidents.map((i) => <span key={i.id} className="pill pill-red">{expert ? i.title : plainIncident(i)}</span>)}
       </div>
     </div>
   );
@@ -265,6 +267,7 @@ function RunwayCard({ icao }: { icao: string }) {
   const ap = rt.airports[icao];
   const closed = new Map(activeRestrictions(rt.world, icao, "RUNWAY_CLOSED").map((r) => [String(r.params.runway), r]));
   const wx = rt.world.weather[icao];
+  const expert = useOps((st) => st.detail === "expert");
   return (
     <div className="hud pointer-events-auto w-[300px] px-3 py-2">
       <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-white/50">Runways</div>
@@ -277,12 +280,14 @@ function RunwayCard({ icao }: { icao: string }) {
             <span className="text-white/55">{Math.round(Number(r.length_m ?? 0))} × {Math.round(Number(r.width_m ?? 0))} m</span>
             <span className="ml-auto">
               {c ? <span className="pill pill-red">closed → {fmtTime(c.end)}</span>
-                : <span className="pill pill-teal">{inUse.map((d) => `${d === ap.arrivalEnd ? "ARR" : ""}${d === ap.arrivalEnd && d === ap.departureEnd ? "/" : ""}${d === ap.departureEnd ? "DEP" : ""} ${d}`).join(" · ") || "open"}</span>}
+                : <span className="pill pill-teal">{inUse.map((d) => expert
+                  ? `${d === ap.arrivalEnd ? "ARR" : ""}${d === ap.arrivalEnd && d === ap.departureEnd ? "/" : ""}${d === ap.departureEnd ? "DEP" : ""} ${d}`
+                  : `${d === ap.arrivalEnd && d === ap.departureEnd ? "landing & take-off" : d === ap.arrivalEnd ? "landing" : "take-off"} ${d}`).join(" · ") || "open"}</span>}
             </span>
           </div>
         );
       })}
-      {wx && (
+      {wx && expert && (
         <div className="mt-1.5 grid grid-cols-3 gap-1.5 border-t border-white/10 pt-1.5 text-[10.5px]">
           <div><div className="text-white/50">Wind</div><div className="mono">{String(Math.round(wx.windDir)).padStart(3, "0")}° / {Math.round(wx.windKt)}{wx.gustKt ? `G${Math.round(wx.gustKt)}` : ""} kt</div></div>
           <div><div className="text-white/50">Temp / dew</div><div className="mono">{Math.round(wx.tempC)}° / {Math.round(wx.dewC)}°</div></div>
@@ -294,10 +299,13 @@ function RunwayCard({ icao }: { icao: string }) {
 }
 
 function Legend() {
-  const items: [string, string][] = [["#35c2a5", "free"], ["#6fa6ff", "occupied"], ["#f2a93b", "inbound / reserved"], ["#a98bff", "proposed by plan"], ["#ef5350", "closed / conflict"]];
+  const expert = useOps((st) => st.detail === "expert");
+  const items: [string, string][] = expert
+    ? [["#35c2a5", "free"], ["#6fa6ff", "occupied"], ["#f2a93b", "inbound / reserved"], ["#a98bff", "proposed by plan"], ["#ef5350", "closed / conflict"]]
+    : [["#35c2a5", "free"], ["#6fa6ff", "plane parked"], ["#f2a93b", "plane on the way"], ["#a98bff", "in the new plan"], ["#ef5350", "closed or clash"]];
   return (
     <div className="hud pointer-events-auto flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5 text-[10.5px]">
-      <span className="text-white/50">Stands</span>
+      <span className="text-white/50">{expert ? "Stands" : "Gates"}</span>
       {items.map(([c, l]) => <span key={l} className="flex items-center gap-1"><span className="h-2 w-3 rounded-sm" style={{ border: `1.5px solid ${c}`, background: `${c}33` }} />{l}</span>)}
       <span className="text-white/50">Routes</span>
       <span className="flex items-center gap-1"><span className="h-1 w-3 rounded bg-[#35c2a5]" />arrival</span>
