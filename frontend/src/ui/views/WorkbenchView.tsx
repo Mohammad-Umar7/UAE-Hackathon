@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenText, Cpu, Play, Presentation, ShieldCheck } from "lucide-react";
+import { BookOpenText, Cpu, Play, ShieldCheck } from "lucide-react";
 import { explainProposal } from "@/core/agents/explain";
 import { isOpen, type Proposal } from "@/core/approvals/workflow";
 import { fmtTime } from "@/core/world";
@@ -14,7 +14,7 @@ import { Situation } from "../workbench/Situation";
 
 export default function WorkbenchView() {
   const rt = useRuntime();
-  const { selectedProposal, select, setPresentation } = useOps();
+  const { selectedProposal, select } = useOps();
   const expert = useOps((s) => s.detail === "expert");
   const all = Object.entries(rt.proposals).sort((a, b) => b[1].createdAt - a[1].createdAt || b[1].version - a[1].version);
   const open = all.find(([, p]) => isOpen(p));
@@ -25,13 +25,10 @@ export default function WorkbenchView() {
     if (p) return <SimpleDecision p={p} versions={versions} onPick={(k) => select({ selectedProposal: k })} />;
     return (
       <div className="grid h-full place-items-center p-6">
-        <div className="panel max-w-[520px] p-8 text-center">
-          <div className="text-[18px] font-semibold tracking-tight">No recovery plan yet</div>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-muted">When something goes wrong, the AI agents build a recovery plan and bring it here. The people in charge then approve it — or say no and explain why.</p>
-          <div className="mt-5 flex justify-center gap-2">
-            <button className="btn btn-primary" onClick={() => rt.setRunning(true)}><Play size={14} /> Play the simulation</button>
-            <button className="btn" onClick={() => setPresentation({ active: true, step: 0 })}><Presentation size={14} /> Watch the guided demo</button>
-          </div>
+        <div className="max-w-[460px] text-center">
+          <div className="text-[20px] font-semibold tracking-tight">Nothing to decide yet</div>
+          <p className="mt-1.5 text-[14px] leading-relaxed text-muted">When something goes wrong, the AI agents build a recovery plan and this page opens with it.</p>
+          {!rt.running && <button className="btn btn-primary mt-5" onClick={() => rt.setRunning(true)}><Play size={14} /> Resume the clock</button>}
         </div>
       </div>
     );

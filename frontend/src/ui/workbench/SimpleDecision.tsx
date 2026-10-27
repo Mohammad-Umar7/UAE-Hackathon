@@ -1,255 +1,231 @@
 "use client";
 
-import { Check, ChevronRight, CircleDashed, Clock3, Cpu, ShieldCheck, Undo2, X } from "lucide-react";
+import { ArrowRight, ArrowRightLeft, Check, ChevronRight, CircleDashed, Clock3, Hourglass, PlaneLanding, ShieldCheck, Truck, TriangleAlert, X } from "lucide-react";
 import { useState } from "react";
 import { proposalKey } from "@/core/agents/orchestrator";
-import { roleOf } from "@/core/approvals/roles";
 import { isOpen, type ApprovalSlot, type Proposal } from "@/core/approvals/workflow";
-import type { Incident } from "@/core/types";
 import { fmtTime } from "@/core/world";
 import { useOps, useRuntime } from "@/store/ops";
-import { activeIncidents, approvalState, change, planChanges, planEffects, plainIncident, whoSaid, workflowName } from "../story";
+import { approvalState, city, listOr, planEffects, whoSaid, workflowName, type Effect } from "../story";
 import { Decisions } from "./Decisions";
 import { PlanComparison } from "./PlanComparison";
 
-const STATUS: Record<string, [string, string]> = {
-  PROPOSED: ["Waiting for approval", "pill-amber"], VALIDATED: ["Waiting for approval", "pill-amber"], COMMITTED: ["Approved and running", "pill-teal"],
-  REJECTED: ["Rejected", "pill-red"], REVISION_REQUESTED: ["Changes requested", "pill-amber"], STALE: ["Out of date", "pill-gray"],
-  SUPERSEDED: ["Replaced by a newer version", "pill-gray"], EXPIRED: ["Expired", "pill-gray"], INVALID: ["Failed the safety check", "pill-red"],
-};
+const n0 = (x: number) => Math.round(x).toLocaleString("en-GB");
 
-/** The Decision view in Simple mode: the problem, the plan, what it should achieve, why — and the approvals. */
+/** The three outcomes a first-time audience understands, in plain words, worst-first. */
+const OUTCOMES: { key: Effect["key"]; label: string; show: (v: number) => string }[] = [
+  { key: "fuel", label: "Planes forced to divert, low on fuel", show: n0 },
+  { key: "holding", label: "Hours planes spend circling", show: (min) => n0(min / 60) },
+  { key: "stands", label: "Planes landing to find their gate taken", show: n0 },
+  { key: "pax", label: "Hours of passenger delay", show: n0 },
+];
+
+/** What the plan does, one short line per kind of action. */
+function actions(p: Proposal): { icon: typeof Truck; text: string }[] {
+  const ds = p.plan.decisions;
+  const n = (a: string) => ds.filter((d) => d.action === a).length;
+  const to = listOr([...new Set(ds.filter((d) => d.action === "divert").map((d) => city(d.to!)))]);
+  const out: { icon: typeof Truck; text: string }[] = [];
+  if (n("divert")) out.push({ icon: PlaneLanding, text: `${n("divert")} flight${n("divert") === 1 ? "" : "s"} land at ${to} instead` });
+  if (n("assign_stand")) out.push({ icon: ArrowRightLeft, text: `${n("assign_stand")} aircraft get a different gate` });
+  if (n("landing_slot")) out.push({ icon: Hourglass, text: `${n("landing_slot")} flights get a planned landing time` });
+  if (n("tow")) out.push({ icon: Truck, text: `${n("tow")} broken-down aircraft towed clear of a gate` });
+  if (n("unresolved")) out.push({ icon: TriangleAlert, text: `${n("unresolved")} flight${n("unresolved") === 1 ? "" : "s"} still need a person to decide` });
+  return out;
+}
+
+/** The Decision view in Simple mode: what goes wrong without the plan, what the plan does, and one button. */
 export function SimpleDecision({ p, versions, onPick }: { p: Proposal; versions: [string, Proposal][]; onPick: (key: string) => void }) {
   const rt = useRuntime();
   const wf = rt.orchestrator.workflows.find((w) => w.id === p.thread);
-  const [status, tone] = STATUS[p.status] ?? [p.status.toLowerCase(), "pill-gray"];
-  const checks = Object.values(p.validation.checks).reduce((s, n) => s + n, 0);
-  const earlier = versions.filter(([, v]) => v.version < p.version).sort((a, b) => a[1].version - b[1].version);
-  return (
-    <div className="grid h-full grid-cols-[minmax(0,1fr)_380px] gap-3 p-3">
-      <div className="scroll-y min-h-0 space-y-3 pr-1">
-        <div className="panel flex items-start gap-4 px-5 py-4">
-          <div className="min-w-0 flex-1">
-            <div className="eyebrow">Decision</div>
-            <h1 className="mt-0.5 text-[19px] font-semibold tracking-tight">Recovery plan{wf ? ` for: ${workflowName(rt, wf)}` : ""}</h1>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-muted">
-              <span className={`pill ${tone}`}>{status}</span>
-              <span>Version {p.version} · made at {fmtTime(p.createdAt)} by the planning agent</span>
-              {p.decisionDeadline && isOpen(p) && <span className="flex items-center gap-1 text-[var(--amber)]"><Clock3 size={12} /> decide by {fmtTime(p.decisionDeadline.t)}</span>}
-            </div>
-            {p.staleReason && <div className="mt-1.5 text-[12px] text-[var(--red)]">This version went out of date: {p.staleReason}</div>}
-            {earlier.length > 0 && (
-              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11.5px] text-muted">
-                Earlier versions:
-                {earlier.map(([k, v]) => (
-                  <button key={k} className="pill pill-outline hover:bg-bg-2" onClick={() => onPick(k)} title={v.history[v.history.length - 1]?.note}>
-                    v{v.version} · {(STATUS[v.status]?.[0] ?? v.status).toLowerCase()}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${p.validation.valid ? "border-[color-mix(in_oklab,var(--teal)_35%,var(--line))] bg-teal-soft" : "border-[color-mix(in_oklab,var(--red)_35%,var(--line))] bg-red-soft"}`}
-            style={{ background: p.validation.valid ? "color-mix(in oklab, var(--teal-soft) 70%, transparent)" : undefined }}>
-            <ShieldCheck size={18} className={p.validation.valid ? "text-[var(--teal)]" : "text-[var(--red)]"} />
-            <div className="leading-tight">
-              <div className="text-[12px] font-semibold">{p.validation.valid ? "Safety check passed" : "Safety check failed"}</div>
-              <div className="text-[11px] text-muted">{checks.toLocaleString("en-GB")} rules re-checked independently</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Problem p={p} />
-          <div className="panel p-4">
-            <div className="eyebrow mb-1.5">The plan</div>
-            <ul className="space-y-1.5">
-              {planChanges(p).map((c) => <li key={c} className="flex gap-2 text-[13px] leading-snug"><ChevronRight size={14} className="mt-[3px] shrink-0 text-[var(--teal)]" />{c}</li>)}
-            </ul>
-          </div>
-        </div>
-
-        <Effects p={p} />
-        <Why p={p} />
-
-        <Expand title={`See all ${p.plan.decisions.length} actions, flight by flight`}><Decisions p={p} /></Expand>
-        <Expand title="Compare with the other options the agents considered"><PlanComparison p={p} /></Expand>
-      </div>
-      <div className="scroll-y flex min-h-0 flex-col gap-3">
-        <SimpleApprovals p={p} />
-      </div>
-    </div>
-  );
-}
-
-function Problem({ p }: { p: Proposal }) {
-  const rt = useRuntime();
-  const assess = [...rt.orchestrator.messages].reverse().find((m) => m.type === "ImpactAssessment" && m.thread === p.thread);
-  const pr = assess?.payload.projection as { conflicts: number; fuelDiversions: number; holding: number } | undefined;
-  const causes: Incident[] = activeIncidents(rt).slice(0, 4);
-  const items = pr ? [
-    pr.fuelDiversions ? `${pr.fuelDiversions} flights could run low on fuel and have to divert` : "",
-    pr.conflicts ? `${pr.conflicts} aircraft would arrive to find their gate taken` : "",
-    pr.holding > 30 ? `about ${Math.round(pr.holding).toLocaleString("en-GB")} minutes of circling in the air` : "",
-  ].filter(Boolean) : [];
-  return (
-    <div className="panel p-4">
-      <div className="eyebrow mb-1.5">The problem</div>
-      {items.length > 0 ? (
-        <>
-          <div className="text-[12.5px] text-muted">If nobody acts, over the next 4 hours:</div>
-          <ul className="mt-1 space-y-1.5">{items.map((x) => <li key={x} className="flex gap-2 text-[13px] leading-snug"><X size={14} className="mt-[3px] shrink-0 text-[var(--red)]" />{x}</li>)}</ul>
-        </>
-      ) : <div className="text-[13px] text-muted">No serious knock-on effects were predicted.</div>}
-      {causes.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">{causes.map((i) => <span key={i.id} className="pill pill-red">{plainIncident(i)}</span>)}</div>
-      )}
-    </div>
-  );
-}
-
-function Effects({ p }: { p: Proposal }) {
-  const setView = useOps((s) => s.setView);
   const fx = planEffects(p);
-  if (!fx.length) return null;
+  const tiles = OUTCOMES.map((o) => ({ o, e: fx.find((e) => e.key === o.key) })).filter((x) => x.e && x.e.before > 0).slice(0, 3);
+  const newest = versions[0];
   return (
-    <div className="panel overflow-hidden">
-      <div className="panel-h">
-        <div className="panel-t">What it should achieve</div>
-        <span className="text-[11px] text-muted">simulated 4 hours ahead from the same starting point, against doing nothing</span>
-        <button className="btn btn-sm ml-auto" onClick={() => setView("evidence")}>See before &amp; after <ChevronRight size={13} /></button>
-      </div>
-      <div className="grid grid-cols-4 gap-3 p-4">
-        {fx.map((e) => {
-          const pct = change(e);
-          const better = e.after < e.before, same = Math.round(e.after) === Math.round(e.before);
-          return (
-            <div key={e.key} className="rounded-lg border border-line bg-panel-2 p-3" title={e.hint}>
-              <div className="text-[12px] font-medium text-ink-2">{e.label}</div>
-              <div className={`mt-1 text-[26px] font-semibold tracking-tight ${same ? "text-muted" : better ? "text-[var(--teal)]" : "text-[var(--amber)]"}`}>
-                {same ? "no change" : e.before === 0 ? `+${Math.round(e.after)}` : `${pct > 0 ? "+" : "−"}${Math.abs(pct)}%`}
+    <div className="scroll-y h-full">
+      <div className="mx-auto grid max-w-[1180px] grid-cols-[minmax(0,1fr)_360px] gap-5 px-6 py-6">
+        <div className="min-w-0 space-y-5">
+          <header>
+            <StatusLine p={p} />
+            <h1 className="mt-1.5 text-[28px] font-semibold leading-tight tracking-tight">{wf ? workflowName(rt, wf) : "Recovery plan"}</h1>
+            <p className="mt-1 text-[14.5px] leading-relaxed text-ink-2">
+              The AI agents built a recovery plan across all three airports. Here is what it changes over the next four hours.
+            </p>
+            {p.staleReason && newest && newest[0] !== proposalKey(p) && (
+              <button className="mt-2 flex items-center gap-1 text-[13px] font-medium text-[var(--navy)] hover:underline" onClick={() => onPick(newest[0])}>
+                This version is out of date — open the newest plan <ArrowRight size={14} />
+              </button>
+            )}
+          </header>
+
+          {tiles.length > 0 && (
+            <section className="panel overflow-hidden">
+              <div className="grid grid-cols-[minmax(0,1fr)_110px_110px_92px] items-center gap-x-4 border-b border-line px-5 py-2.5 text-[11.5px] font-medium text-muted">
+                <span />
+                <span className="text-right">If nobody acts</span>
+                <span className="text-right">With the plan</span>
+                <span className="text-right">Change</span>
               </div>
-              <div className="mono text-[11px] text-muted">{Math.round(e.before).toLocaleString("en-GB")} → {Math.round(e.after).toLocaleString("en-GB")}{e.unit ? ` ${e.unit}` : ""}</div>
-              <div className="mt-1 text-[11px] leading-snug text-faint">{e.hint}</div>
-            </div>
-          );
-        })}
+              {tiles.map(({ o, e }) => {
+                const pct = Math.round((100 * (e!.after - e!.before)) / e!.before);
+                return (
+                  <div key={o.key} className="grid grid-cols-[minmax(0,1fr)_110px_110px_92px] items-center gap-x-4 border-b border-line px-5 py-3.5 last:border-b-0">
+                    <span className="text-[14px] text-ink">{o.label}</span>
+                    <span className="mono text-right text-[20px] font-semibold text-[var(--red)]">{o.show(e!.before)}</span>
+                    <span className="mono text-right text-[20px] font-semibold text-[var(--teal)]">{o.show(e!.after)}</span>
+                    <span className={`text-right text-[15px] font-semibold ${pct < 0 ? "text-[var(--teal)]" : pct > 0 ? "text-[var(--amber)]" : "text-muted"}`}>{pct === 0 ? "same" : `${pct < 0 ? "−" : "+"}${Math.abs(pct)}%`}</span>
+                  </div>
+                );
+              })}
+            </section>
+          )}
+
+          <section>
+            <h2 className="mb-2 text-[15px] font-semibold tracking-tight">What the plan does</h2>
+            <ul className="grid gap-2">
+              {actions(p).map(({ icon: Icon, text }) => (
+                <li key={text} className="flex items-center gap-3 rounded-xl border border-line bg-panel px-4 py-3 text-[14px]">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-navy-soft text-navy"><Icon size={16} /></span>{text}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <Details p={p} versions={versions} onPick={onPick} />
+        </div>
+
+        <aside className="self-start lg:sticky lg:top-0">
+          <DecisionCard p={p} />
+        </aside>
       </div>
     </div>
   );
 }
 
-function Why({ p }: { p: Proposal }) {
-  const n = p.candidates.length || 3;
-  const open = p.plan.kpis.unresolved;
+function StatusLine({ p }: { p: Proposal }) {
+  const open = isOpen(p);
+  const committed = p.status === "COMMITTED";
+  const color = committed ? "var(--teal)" : open ? "var(--amber)" : "var(--muted)";
+  const text = committed ? "Approved — the plan is running" : open ? "Plan ready for approval" : p.status === "REJECTED" ? "Rejected" : "Out of date";
   return (
-    <div className="panel p-4">
-      <div className="eyebrow mb-1.5">Why this plan</div>
-      <p className="text-[13px] leading-relaxed text-ink-2">
-        The planning agent built {n} alternative plans with a mathematical optimiser and simulated each one. This one was picked because it
-        {open ? ` leaves only ${open} flight${open === 1 ? "" : "s"} for people to sort out` : " finds a solution for every affected flight"} and gives the
-        lowest expected delay. A separate safety-check agent then re-checked every rule — gate sizes, runway limits, fuel, wheelchair access — before
-        anyone was asked to approve.
-      </p>
-      {p.narrative && (
-        <p className="mt-2 rounded-md px-3 py-2 text-[12.5px] leading-relaxed" style={{ background: "color-mix(in oklab, var(--teal-soft) 55%, transparent)" }}>
-          <span className="mr-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--teal)]"><Cpu size={11} /> Briefing by a local AI model, numbers checked:</span>
-          {p.narrative.text}
-        </p>
-      )}
+    <div className="flex items-center gap-3 text-[12.5px]">
+      <span className="flex items-center gap-1.5 font-medium" style={{ color }}><span className="h-2 w-2 rounded-full" style={{ background: color }} />{text}</span>
+      {p.decisionDeadline && open && <span className="flex items-center gap-1 text-muted"><Clock3 size={13} /> decide by {fmtTime(p.decisionDeadline.t)}</span>}
     </div>
   );
 }
 
-function Expand({ title, children }: { title: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="space-y-2">
-      <button className="btn w-full justify-between" onClick={() => setOpen((o) => !o)}>
-        <span>{title}</span>
-        <ChevronRight size={14} className={`transition-transform ${open ? "rotate-90" : ""}`} />
-      </button>
-      {open && children}
-    </div>
-  );
-}
-
-function SimpleApprovals({ p }: { p: Proposal }) {
-  const { role, toast } = useOps();
+/** The one thing the viewer does here: approve or say no — and then see where the approvals stand. */
+function DecisionCard({ p }: { p: Proposal }) {
+  const rt = useRuntime();
+  const { role, toast, setView } = useOps();
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState("");
+  const [list, setList] = useState(false);
   const a = approvalState(p, role);
   const mine = p.approvals.find((s) => s.key === role);
-  const others = p.approvals.filter((s) => s.key !== role);
+  const canAct = Boolean(mine && mine.decision === "PENDING" && isOpen(p));
+  const decide = (d: "APPROVED" | "REJECTED" | "ACKNOWLEDGED") => {
+    try { rt.decide(proposalKey(p), mine!.key, d, reason, role); setRejecting(false); setReason(""); } catch (e) { toast((e as Error).message, "bad"); }
+  };
+  const committed = p.status === "COMMITTED";
+  const left = a.total - a.done;
   return (
-    <div className="panel flex flex-col overflow-hidden">
-      <div className="panel-h">
-        <div className="panel-t">Who must approve</div>
-        <span className="mono text-[12px] font-semibold">{a.done} of {a.total}</span>
+    <div className="panel overflow-hidden shadow-[var(--shadow-2)]">
+      <div className="p-5">
+        {canAct ? (
+          <>
+            <div className="text-[17px] font-semibold tracking-tight">Your approval is needed</div>
+            <p className="mt-1 text-[13px] leading-relaxed text-muted">Nothing happens until everyone says yes. Saying no sends it back to the agents with your reason.</p>
+            {rejecting ? (
+              <>
+                <textarea autoFocus value={reason} onChange={(e) => setReason(e.target.value)} rows={3} placeholder="Why not? The agents re-plan around it."
+                  className="mt-4 w-full resize-none rounded-lg border border-line-2 bg-panel px-3 py-2 text-[13px] outline-none focus:border-navy" />
+                <div className="mt-2 flex gap-2">
+                  <button className="btn btn-red h-10 flex-1 justify-center" disabled={!reason.trim()} onClick={() => decide("REJECTED")}>Send back</button>
+                  <button className="btn btn-ghost h-10" onClick={() => setRejecting(false)}>Cancel</button>
+                </div>
+              </>
+            ) : (
+              <div className="mt-4 grid gap-2">
+                <button className="btn btn-teal h-12 justify-center text-[15px] font-semibold" onClick={() => decide(mine!.type === "ATC_LIAISON" ? "ACKNOWLEDGED" : "APPROVED")}>
+                  <Check size={17} /> Approve the plan
+                </button>
+                <button className="btn h-10 justify-center text-[13.5px]" onClick={() => setRejecting(true)}>Say no</button>
+              </div>
+            )}
+          </>
+        ) : committed ? (
+          <>
+            <div className="text-[17px] font-semibold tracking-tight">Everyone approved</div>
+            <p className="mt-1 text-[13px] leading-relaxed text-muted">The plan is running: aircraft are moving to their new gates and landing times.</p>
+            <button className="btn btn-primary mt-4 h-11 w-full justify-center text-[14px]" onClick={() => setView("evidence")}>See before &amp; after <ArrowRight size={15} /></button>
+          </>
+        ) : isOpen(p) ? (
+          <>
+            <div className="text-[17px] font-semibold tracking-tight">{mine && mine.decision !== "PENDING" ? "You approved" : "Waiting for approvals"}</div>
+            <p className="mt-1 text-[13px] leading-relaxed text-muted">Waiting for {left} more {left === 1 ? "answer" : "answers"}. The plan starts as soon as everyone has said yes.</p>
+          </>
+        ) : (
+          <>
+            <div className="text-[17px] font-semibold tracking-tight">{p.status === "REJECTED" ? "Sent back" : "No longer open"}</div>
+            <p className="mt-1 text-[13px] leading-relaxed text-muted">{p.staleReason ?? "The agents replaced this version with a newer plan."}</p>
+          </>
+        )}
       </div>
-      <div className="h-1.5 bg-bg-2"><div className="h-full bg-[var(--teal)] transition-all" style={{ width: `${(100 * a.done) / Math.max(1, a.total)}%` }} /></div>
-      {mine && <MyDecision p={p} slot={mine} onError={(m) => toast(m, "bad")} />}
-      <ul className="py-1">
-        {others.map((s) => <SlotLine key={s.key} s={s} />)}
-      </ul>
-      <div className="border-t border-line px-3 py-2.5 text-[11.5px] leading-snug text-muted">
-        Nothing happens until everyone has approved. In this demo you act as the {roleOf(role).title.toLowerCase()}; the others answer automatically.
+
+      <div className="border-t border-line px-5 py-3.5">
+        <div className="flex items-center justify-between text-[12.5px]">
+          <span className="font-medium">{a.done} of {a.total} approved</span>
+          <button className="flex items-center gap-0.5 text-muted hover:text-ink" onClick={() => setList((v) => !v)}>
+            Who <ChevronRight size={13} className={`transition-transform ${list ? "rotate-90" : ""}`} />
+          </button>
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-bg-2"><div className="h-full rounded-full bg-[var(--teal)] transition-all" style={{ width: `${(100 * a.done) / Math.max(1, a.total)}%` }} /></div>
+        {list && <ul className="mt-3 space-y-1.5">{p.approvals.map((s) => <Slot key={s.key} s={s} />)}</ul>}
+        <p className="mt-2.5 text-[11.5px] leading-snug text-faint">Airports, airlines and air-traffic control answer on their own in this demo.</p>
+      </div>
+
+      <div className="flex items-center gap-2 border-t border-line px-5 py-3 text-[12.5px]">
+        <ShieldCheck size={15} className={p.validation.valid ? "text-[var(--teal)]" : "text-[var(--red)]"} />
+        {p.validation.valid ? "Passed the independent safety check" : "Failed the safety check"}
       </div>
     </div>
   );
 }
 
-function SlotLine({ s }: { s: ApprovalSlot }) {
+function Slot({ s }: { s: ApprovalSlot }) {
   const done = s.decision === "APPROVED" || s.decision === "ACKNOWLEDGED";
   const no = s.decision === "REJECTED" || s.decision === "REVISION_REQUESTED";
   return (
-    <li className="flex items-start gap-2 px-3 py-1.5">
-      <span className="mt-0.5">{done ? <Check size={14} className="text-[var(--teal)]" /> : no ? <X size={14} className="text-[var(--red)]" /> : <CircleDashed size={14} className="text-[var(--amber)]" />}</span>
-      <div className="min-w-0 flex-1 text-[12.5px] leading-snug">
-        <span className="font-medium">{whoSaid(s)}</span>{" "}
-        <span className={no ? "text-[var(--red)]" : "text-muted"}>
-          {done ? `${s.decision === "ACKNOWLEDGED" ? "noted it" : "approved"}${s.t ? ` at ${fmtTime(s.t)}` : ""}` : no ? `said no — ${s.reason}` : "is deciding…"}
-        </span>
-      </div>
+    <li className="flex items-start gap-2 text-[12px] leading-snug">
+      <span className="mt-[1px]">{done ? <Check size={13} className="text-[var(--teal)]" /> : no ? <X size={13} className="text-[var(--red)]" /> : <CircleDashed size={13} className="text-faint" />}</span>
+      <span className={no ? "text-[var(--red)]" : done ? "text-ink-2" : "text-muted"}>{whoSaid(s)}{no && s.reason ? ` — ${s.reason}` : ""}</span>
     </li>
   );
 }
 
-function MyDecision({ p, slot, onError }: { p: Proposal; slot: ApprovalSlot; onError: (m: string) => void }) {
-  const rt = useRuntime();
-  const role = useOps((s) => s.role);
-  const [rejecting, setRejecting] = useState(false);
-  const [reason, setReason] = useState("");
-  const pending = slot.decision === "PENDING" && isOpen(p);
-  const decide = (d: "APPROVED" | "REJECTED" | "ACKNOWLEDGED") => {
-    try { rt.decide(proposalKey(p), slot.key, d, reason, role); setRejecting(false); setReason(""); } catch (e) { onError((e as Error).message); }
-  };
-  if (!pending) {
-    return (
-      <div className="border-b border-line px-3 py-3 text-[12.5px]">
-        <span className="font-semibold">Your decision:</span> {slot.decision === "PENDING" ? "this version is no longer open." : slot.decision.toLowerCase().replace("_", " ")}
-      </div>
-    );
-  }
+/** Everything a specialist might ask about, out of the way until asked for. */
+function Details({ p, versions, onPick }: { p: Proposal; versions: [string, Proposal][]; onPick: (key: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const earlier = versions.filter(([, v]) => v.version !== p.version).sort((a, b) => a[1].version - b[1].version);
   return (
-    <div className="border-b border-line px-3 py-3" style={{ background: "color-mix(in oklab, var(--amber-soft) 60%, transparent)" }}>
-      <div className="text-[13px] font-semibold">Your decision is needed</div>
-      <p className="mt-0.5 text-[12px] leading-snug text-ink-2">Approving starts the plan. Saying no sends it back to the agents with your reason, and they re-plan.</p>
-      {rejecting && (
-        <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Why not? (recorded in the audit trail)"
-          className="mt-2 w-full resize-none rounded-md border border-line-2 bg-panel px-2 py-1.5 text-[12px] outline-none focus:border-navy" />
+    <section>
+      <button className="flex items-center gap-1.5 text-[13px] font-medium text-muted hover:text-ink" onClick={() => setOpen((o) => !o)}>
+        <ChevronRight size={15} className={`transition-transform ${open ? "rotate-90" : ""}`} /> {open ? "Hide details" : `Details: every flight, the other options, earlier versions`}
+      </button>
+      {open && (
+        <div className="mt-3 space-y-3">
+          {earlier.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-muted">
+              Other versions:
+              {earlier.map(([k, v]) => <button key={k} className="pill pill-outline hover:bg-bg-2" onClick={() => onPick(k)}>v{v.version} · {v.status.toLowerCase().replace("_", " ")}</button>)}
+            </div>
+          )}
+          <Decisions p={p} />
+          <PlanComparison p={p} />
+        </div>
       )}
-      <div className="mt-2 flex gap-1.5">
-        {rejecting ? (
-          <>
-            <button className="btn btn-red" disabled={!reason.trim()} onClick={() => decide("REJECTED")}><X size={13} /> Confirm: say no</button>
-            <button className="btn btn-ghost" onClick={() => setRejecting(false)}><Undo2 size={13} /> Back</button>
-          </>
-        ) : (
-          <>
-            <button className="btn btn-teal flex-1 justify-center" onClick={() => decide(slot.type === "ATC_LIAISON" ? "ACKNOWLEDGED" : "APPROVED")}><ShieldCheck size={14} /> Approve the plan</button>
-            <button className="btn btn-red" onClick={() => setRejecting(true)}><X size={13} /> Say no</button>
-          </>
-        )}
-      </div>
-    </div>
+    </section>
   );
 }
