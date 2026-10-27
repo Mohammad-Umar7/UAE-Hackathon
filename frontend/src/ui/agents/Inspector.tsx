@@ -18,6 +18,9 @@ export function Inspector() {
   if (!action && !message) return null;
   const wf = o.workflows.find((w) => w.id === (action?.thread ?? message?.thread));
   const proposal = wf ? Object.values(rt.proposals).filter((p) => p.thread === wf.id).sort((a, b) => b.createdAt - a.createdAt)[0] : undefined;
+  const lp = Array.isArray(action?.result)
+    ? (action.result as { modelExcerpt?: unknown; label?: string }[]).find((x) => typeof x?.modelExcerpt === "string") as { modelExcerpt: string; label?: string } | undefined
+    : undefined;
   return (
     <aside className="panel fade-in fixed bottom-3 right-3 top-[62px] z-40 flex w-[460px] flex-col overflow-hidden shadow-[var(--shadow-2)]">
       <div className="panel-h">
@@ -45,6 +48,11 @@ export function Inspector() {
             <Section title="Result summary"><p className="text-[12.5px] leading-relaxed text-ink">{action.summary}</p></Section>
             <Section title="Parameters"><Json value={action.params} /></Section>
             {action.constraints && <Section title="Constraints considered"><div className="flex flex-wrap gap-1.5">{action.constraints.map((c) => <span key={c} className="pill pill-outline">{c}</span>)}</div></Section>}
+            {lp && (
+              <Section title={`Model sent to HiGHS · ${lp.label ?? "first variant"} (first lines, LP format)`}>
+                <pre className="mono max-h-[240px] overflow-auto rounded-md border border-line bg-bg-2 p-2 text-[10.5px] leading-snug text-ink-2">{lp.modelExcerpt}</pre>
+              </Section>
+            )}
             <Section title="Tool output (recorded)"><Json value={action.result} /></Section>
             <Section title="Authority">
               <p className="text-[12px] text-muted">{AGENTS[action.agent].name} may call: <span className="mono text-ink-2">{AGENTS[action.agent].tools.join(", ")}</span>. It cannot: {AGENTS[action.agent].cannot.join("; ").toLowerCase()}.</p>

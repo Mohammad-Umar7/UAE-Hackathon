@@ -631,11 +631,34 @@ export class Orchestrator {
   }
 }
 
+/** Recorded tool output: trimmed structurally (shorter arrays and strings, shallow nesting) until it fits,
+ *  so a large result stays a navigable record instead of a cut-off string. */
 function trimResult(r: unknown): unknown {
+  const trim = (v: unknown, depth: number, items: number, chars: number, key = ""): unknown => {
+    if (typeof v === "string") {
+      const lim = key === "modelExcerpt" ? 4000 : chars;
+      return v.length > lim ? `${v.slice(0, lim)}…` : v;
+    }
+    if (Array.isArray(v)) {
+      if (depth > 5) return `[${v.length} items]`;
+      const out = v.slice(0, items).map((x) => trim(x, depth + 1, items, chars));
+      return v.length > items ? [...out, `… ${v.length - items} more`] : out;
+    }
+    if (v && typeof v === "object") {
+      if (depth > 5) return "{…}";
+      return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, trim(x, depth + 1, items, chars, k)]));
+    }
+    return v;
+  };
   try {
-    const s = JSON.stringify(r, (_k, v) => (Array.isArray(v) && v.length > 25 ? [...v.slice(0, 25), `… ${v.length - 25} more`] : v));
+    const s = JSON.stringify(r);
     if (!s) return null;
-    return s.length > 20000 ? { truncated: true, preview: s.slice(0, 2000) } : JSON.parse(s);
+    const plain = JSON.parse(s) as unknown;
+    for (const [items, chars] of [[25, 600], [8, 300], [4, 160]] as const) {
+      const t = trim(plain, 0, items, chars);
+      if (JSON.stringify(t).length <= 40000) return t;
+    }
+    return { truncated: true, preview: s.slice(0, 2000) };
   } catch {
     return null;
   }
