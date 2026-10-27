@@ -171,16 +171,22 @@ function FallbackCoast() {
 
 function Roads() {
   const roads = useGeo("roads");
-  const lines = useMemo(() => {
-    if (!roads) return [];
-    const out: [number, number, number][][] = [];
+  // every road as segment pairs in one line object: a single draw call instead of one per road
+  const segments = useMemo(() => {
+    if (!roads) return null;
+    const lines: number[][][] = [];
     for (const f of roads.features) {
-      const segs = f.geometry.type === "LineString" ? [f.geometry.coordinates as number[][]] : f.geometry.type === "MultiLineString" ? (f.geometry.coordinates as number[][][]) : [];
-      for (const s of segs) out.push(s.map(([lon, lat]) => { const [x, z] = project(lat, lon); return [x, 0.7, z] as [number, number, number]; }));
+      if (f.geometry.type === "LineString") lines.push(f.geometry.coordinates as number[][]);
+      else if (f.geometry.type === "MultiLineString") lines.push(...(f.geometry.coordinates as number[][][]));
     }
-    return out.slice(0, 600);
+    const out: [number, number, number][] = [];
+    for (const l of lines.slice(0, 600)) {
+      const pts = l.map(([lon, lat]) => { const [x, z] = project(lat, lon); return [x, 0.7, z] as [number, number, number]; });
+      for (let i = 1; i < pts.length; i++) out.push(pts[i - 1], pts[i]);
+    }
+    return out.length ? out : null;
   }, [roads]);
-  return <>{lines.map((l, i) => <Line key={i} points={l} color="#3b5168" lineWidth={1} transparent opacity={0.7} />)}</>;
+  return segments ? <Line segments points={segments} color="#3b5168" lineWidth={1} transparent opacity={0.7} /> : null;
 }
 
 const STATUS_COLOR: Record<string, string> = { normal: "#4fb8a4", watch: "#e0a646", disrupted: "#e57373" };

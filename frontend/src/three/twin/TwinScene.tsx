@@ -1,9 +1,10 @@
 "use client";
 
+import { PerformanceMonitor } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Bloom, BrightnessContrast, EffectComposer, HueSaturation, N8AO, SMAA, ToneMapping, Vignette } from "@react-three/postprocessing";
 import { ToneMappingMode, type BloomEffect, type BrightnessContrastEffect } from "postprocessing";
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { Runtime } from "@/core/runtime";
 import { Airfield, buildAirfield } from "./Airfield";
@@ -45,7 +46,7 @@ function SceneContent({ rt, icao, labels }: { rt: Runtime; icao: string; labels:
   );
 }
 
-function Effects() {
+function Effects({ ao }: { ao: boolean }) {
   const bloom = useRef<BloomEffect>(null);
   const grade = useRef<BrightnessContrastEffect>(null);
   useFrame(() => {
@@ -53,9 +54,10 @@ function Effects() {
     // a slight lift by day only: at night it would grey the blacks the lights stand out against
     if (grade.current) grade.current.brightness = 0.03 * (1 - twinState.night);
   });
+  // SMAA smooths the edges; multisampling on top of it would pay for anti-aliasing twice
   return (
-    <EffectComposer multisampling={4} enableNormalPass={false}>
-      <N8AO halfRes aoRadius={9} distanceFalloff={1.2} intensity={3.4} quality="medium" />
+    <EffectComposer multisampling={0} enableNormalPass={false}>
+      {ao ? <N8AO halfRes aoRadius={9} distanceFalloff={1.2} intensity={3.4} quality="medium" /> : <></>}
       <Bloom ref={bloom} luminanceThreshold={0.95} luminanceSmoothing={0.15} mipmapBlur intensity={0.6} radius={0.7} />
       <SMAA />
       {/* filmic contrast and colour; a light touch of saturation keeps sand, grass and liveries vivid */}
@@ -73,19 +75,31 @@ function Ready({ onReady }: { onReady?: () => void }) {
   return null;
 }
 
+/**
+ * Ambient occlusion and a sharper pixel ratio cost more than an integrated GPU can spare (N8AO alone takes ~85 ms
+ * a frame on Iris Xe graphics), so the twin starts without them and turns them on once frames are fast. The
+ * verdict carries over to the next airport and the next visit, so the view does not re-measure each time.
+ */
+let richGraphics = false;
+
 export default function TwinScene({ rt, icao, labels, onReady }: { rt: Runtime; icao: string; labels: React.RefObject<HTMLCanvasElement | null>; onReady?: () => void }) {
+  const [rich, setRich] = useState(richGraphics);
+  const choose = (on: boolean) => { richGraphics = on; setRich(on); };
   return (
     <Canvas
       shadows={{ type: THREE.PCFShadowMap }}
       flat
-      dpr={[1, 1.5]}
+      dpr={rich ? [1, 1.5] : 1}
       gl={{ antialias: false, stencil: false, powerPreference: "high-performance" }}
       camera={{ fov: 38, near: 2, far: 90000, position: [2400, 1800, 2400] }}
       onCreated={(state) => { (window as unknown as { __twin: unknown }).__twin = state; }}
     >
+      {/* each verdict repeats while it holds; after a few the monitor stops and the last one stays */}
+      <PerformanceMonitor bounds={(hz) => (hz > 100 ? [60, 95] : [40, 56])} flipflops={3}
+        onIncline={() => choose(true)} onDecline={() => choose(false)} />
       <Suspense fallback={null}>
         <SceneContent key={icao} rt={rt} icao={icao} labels={labels} />
-        <Effects />
+        <Effects ao={rich} />
         <Ready onReady={onReady} />
       </Suspense>
     </Canvas>
