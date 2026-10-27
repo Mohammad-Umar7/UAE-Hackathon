@@ -2,7 +2,7 @@
 
 import { CameraControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { AirportInfo } from "@/core/airports/registry";
 import { useOps } from "@/store/ops";
@@ -23,6 +23,15 @@ export function CameraRig({ ap, center, radius }: { ap: AirportInfo; center: P2;
   const tmp = useRef(new THREE.Vector3());
 
   const rwHeading = ap.runwayEnds[ap.arrivalEnd]?.heading ?? 0;
+  // the overview looks at the gates, where the aircraft are, from close enough to read them (the whole airfield,
+  // runways included, was 4-5 km away); 80 % of the stands fit in the view
+  const apron = useMemo(() => {
+    const ss = Object.values(ap.stands);
+    if (!ss.length) return { x: center[0], y: center[1], r: radius };
+    const x = ss.reduce((a, s) => a + s.x, 0) / ss.length, y = ss.reduce((a, s) => a + s.y, 0) / ss.length;
+    const ds = ss.map((s) => Math.hypot(s.x - x, s.y - y)).sort((a, b) => a - b);
+    return { x, y, r: Math.max(320, ds[Math.floor(ds.length * 0.8)]) };
+  }, [ap, center, radius]);
 
   // presets (a freshly opened airport always starts from its strategic overview)
   const fresh = useRef(true);
@@ -38,8 +47,9 @@ export function CameraRig({ ap, center, radius }: { ap: AirportInfo; center: P2;
     }
     if (mode === "strategic" || (first && mode !== "topdown" && mode !== "cinematic")) {
       const az = ((rwHeading + 145) * Math.PI) / 180;
-      const d = radius * 1.55;
-      c.setLookAt(tx + Math.sin(az) * d * 0.75, d * 0.62, tz - Math.cos(az) * d * 0.75, tx, 0, tz, true);
+      const d = THREE.MathUtils.clamp(apron.r * 1.45, 650, 2300);
+      const ax = apron.x, az2 = -apron.y;
+      c.setLookAt(ax + Math.sin(az) * d * 0.78, d * 0.56, az2 - Math.cos(az) * d * 0.78, ax, 0, az2, true);
     } else if (mode === "topdown") {
       c.setLookAt(tx, radius * 2.35, tz + 1, tx, 0, tz, true);
     } else if (mode === "cinematic") {
@@ -47,7 +57,7 @@ export function CameraRig({ ap, center, radius }: { ap: AirportInfo; center: P2;
       const d = radius * 0.8;
       c.setLookAt(tx + Math.sin(az) * d, radius * 0.18, tz - Math.cos(az) * d, tx, 20, tz, true);
     }
-  }, [mode, center, radius, rwHeading, ap.icao, setCamera]);
+  }, [mode, center, radius, rwHeading, ap.icao, setCamera, apron]);
 
   // fly to a newly selected aircraft or stand; aircraft may appear a few frames later (assets loading)
   const pending = useRef<{ visit: string | null; stand: string | null } | null>(null);

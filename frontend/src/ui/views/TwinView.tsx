@@ -27,6 +27,7 @@ function Loading() {
 export default function TwinView() {
   const rt = useRuntime();
   const airport = useOps((s) => s.airport);
+  const expert = useOps((s) => s.detail === "expert");
   const labels = useRef<HTMLCanvasElement>(null);
   return (
     <div className="relative h-full overflow-hidden bg-[#0b1622]">
@@ -34,20 +35,48 @@ export default function TwinView() {
       <canvas ref={labels} className="pointer-events-none absolute inset-0 h-full w-full" />
       <div className="pointer-events-none absolute left-3 top-3 flex w-[372px] flex-col gap-2">
         <div className="pointer-events-auto"><AirportTabs dark /></div>
-        <StatusCard icao={airport} />
+        {expert ? <StatusCard icao={airport} /> : <StatusLine icao={airport} />}
       </div>
       <div className="pointer-events-none absolute right-3 top-3 flex flex-col items-end gap-2">
         <Controls />
         <Details />
       </div>
-      <div className="pointer-events-none absolute bottom-3 left-3 flex w-[372px] flex-col items-start gap-2">
-        <RunwayCard icao={airport} />
-        <Legend />
-      </div>
+      {expert ? (
+        <div className="pointer-events-none absolute bottom-3 left-3 flex w-[372px] flex-col items-start gap-2">
+          <RunwayCard icao={airport} />
+          <Legend />
+        </div>
+      ) : (
+        <div className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-black/35 px-3 py-1 text-[11px] text-white/70 backdrop-blur-sm">
+          Click a plane or a gate for details · drag to look around · scroll to zoom
+        </div>
+      )}
       <PlanBar icao={airport} />
       <div className="pointer-events-none absolute bottom-1.5 right-3 text-right text-[10px] leading-snug text-white/45">
         Map data © OpenStreetMap contributors (ODbL)<br />original 3D models · synthetic flights and fictional airlines
       </div>
+    </div>
+  );
+}
+
+/** Simple mode: one line instead of the status card — where, what the weather is, how the runways are coping. */
+function StatusLine({ icao }: { icao: string }) {
+  const rt = useRuntime();
+  const sum = rt.airportSummary(icao);
+  const p = PROFILES[icao];
+  const wx = sum.weather;
+  const holding = sum.sample?.holding ?? 0;
+  const tone = sum.status === "normal" ? "#3fc2a6" : sum.status === "watch" ? "#f0b04a" : "#ef6b6b";
+  return (
+    <div className="hud pointer-events-auto flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 text-[12px]">
+      <span className="h-2.5 w-2.5 rounded-full" style={{ background: tone, boxShadow: `0 0 0 3px ${tone}33` }} />
+      <span className="font-semibold">{p.city}</span>
+      {wx && <span className="text-white/75">{plainWeather(wx)}</span>}
+      <span className="text-white/40">·</span>
+      <span className={sum.rate < p.arrCapacity ? "text-[#f2b14c]" : "text-white/75"}>{Math.round(sum.rate)} of {p.arrCapacity} landings/h</span>
+      {holding > 0 && <><span className="text-white/40">·</span><span className="text-[#f2b14c]">{holding} circling</span></>}
+      {/* fog is already in the weather words; show at most one other disruption */}
+      {sum.incidents.filter((i) => i.type !== "FOG").slice(0, 1).map((i) => <span key={i.id} className="pill pill-red">{plainIncident(i)}</span>)}
     </div>
   );
 }
@@ -107,6 +136,7 @@ const MODES: { id: CameraMode; label: string; icon: typeof Camera }[] = [
 
 function Controls() {
   const { camera, setCamera, overlays, setOverlay, selectedVisit } = useOps();
+  const expert = useOps((s) => s.detail === "expert");
   const toggles: { k: keyof Overlays; label: string; icon: typeof Camera }[] = [
     { k: "labels", label: "Labels", icon: Tag }, { k: "stands", label: "Stands", icon: Crosshair }, { k: "routes", label: "Routes", icon: Route },
   ];
@@ -116,21 +146,21 @@ function Controls() {
   return (
     <div className="hud pointer-events-auto flex flex-col gap-1.5 p-1.5">
       <div className="flex gap-1">
-        {MODES.map((m) => (
+        {MODES.filter((m) => expert || m.id !== "inspect").map((m) => (
           <button key={m.id} className="hud-btn" data-on={camera === m.id} disabled={m.id === "follow" && !selectedVisit}
-            title={m.id === "follow" && !selectedVisit ? "Select an aircraft to follow" : m.label} onClick={() => setCamera(m.id)}>
-            <m.icon size={13} /> {m.label}
+            title={m.id === "follow" && !selectedVisit ? "Click a plane first, then follow it" : m.label} onClick={() => setCamera(m.id)}>
+            <m.icon size={13} /> {!expert && m.id === "strategic" ? "Overview" : m.label}
           </button>
         ))}
       </div>
       <div className="flex gap-1">
         {toggles.map((t) => (
           <button key={t.k} className="hud-btn" data-on={Boolean(overlays[t.k])} onClick={() => setOverlay(t.k, !overlays[t.k] as never)}>
-            <t.icon size={13} /> {t.label}
+            <t.icon size={13} /> {!expert && t.k === "stands" ? "Gates" : t.label}
           </button>
         ))}
-        <span className="mx-1 w-px self-stretch bg-white/10" />
-        {light.map((l) => (
+        {expert && <span className="mx-1 w-px self-stretch bg-white/10" />}
+        {expert && light.map((l) => (
           <button key={l.v} className="hud-btn" data-on={overlays.lighting === l.v} title={`Lighting: ${l.label}`} onClick={() => setOverlay("lighting", l.v)}>
             <l.icon size={13} />{l.v === "auto" ? " Sim time" : ""}
           </button>
@@ -324,18 +354,30 @@ function PlanBar({ icao }: { icao: string }) {
   const here = p.plan.decisions.filter((d) => d.airport === icao || d.to === icao);
   const count = (a: string) => here.filter((d) => d.action === a).length;
   const done = p.approvals.filter((a) => a.decision !== "PENDING").length;
+  const expert = useOps.getState().detail === "expert";
+  const city = PROFILES[icao].city;
   return (
     <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2">
       <div className="hud pointer-events-auto flex items-center gap-3 px-3 py-2">
-        <span className={`pill ${STATUS_PILL[p.status]}`}>{p.status.toLowerCase()}</span>
-        <div className="text-[12px]">
-          <span className="font-semibold">{p.id} v{p.version}</span> <span className="text-white/60">· {p.label}</span>
-          <div className="text-[10.5px] text-white/60">
-            {here.length} actions at {PROFILES[icao].iata}: {count("assign_stand")} stand changes · {count("divert")} diversions · {count("tow")} tows · {count("landing_slot")} slots
-            {isOpen(p) ? ` · approvals ${done}/${p.approvals.length}` : ""}
+        <span className={`pill ${STATUS_PILL[p.status]}`}>{expert ? p.status.toLowerCase() : isOpen(p) ? "waiting for approval" : p.status === "COMMITTED" ? "running" : p.status.toLowerCase()}</span>
+        {expert ? (
+          <div className="text-[12px]">
+            <span className="font-semibold">{p.id} v{p.version}</span> <span className="text-white/60">· {p.label}</span>
+            <div className="text-[10.5px] text-white/60">
+              {here.length} actions at {PROFILES[icao].iata}: {count("assign_stand")} stand changes · {count("divert")} diversions · {count("tow")} tows · {count("landing_slot")} slots
+              {isOpen(p) ? ` · approvals ${done}/${p.approvals.length}` : ""}
+            </div>
           </div>
-        </div>
-        <button className="hud-btn" onClick={() => { select({ selectedProposal: key }); setView("workbench"); }}>Review &amp; approve <ArrowUpRight size={12} /></button>
+        ) : (
+          <div className="text-[12px]">
+            <span className="font-semibold">Recovery plan</span> <span className="text-white/60">· violet marks show what changes at {city}</span>
+            <div className="text-[10.5px] text-white/60">
+              {[count("assign_stand") ? `${count("assign_stand")} gate changes` : "", count("divert") ? `${count("divert")} flights to or from other airports` : "", count("landing_slot") ? `${count("landing_slot")} landing times` : ""].filter(Boolean).join(" · ")}
+              {isOpen(p) ? ` · ${done} of ${p.approvals.length} approved` : ""}
+            </div>
+          </div>
+        )}
+        <button className="hud-btn" onClick={() => { select({ selectedProposal: key }); setView("workbench"); }}>{expert ? <>Review &amp; approve</> : isOpen(p) ? "Review and decide" : "See the plan"} <ArrowUpRight size={12} /></button>
       </div>
     </div>
   );
