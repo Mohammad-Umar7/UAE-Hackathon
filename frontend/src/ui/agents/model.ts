@@ -26,7 +26,7 @@ export const NODES: GNode[] = [
   { id: "sh:OMAA", x: 1010, y: 135, label: "AUH Airport Ops", sub: "Zayed International", color: "#1d3557", kind: "stakeholder" },
   { id: "sh:OMDB", x: 1010, y: 215, label: "DXB Airport Ops", sub: "Dubai International", color: "#1d3557", kind: "stakeholder" },
   { id: "sh:OMSJ", x: 1010, y: 295, label: "SHJ Airport Ops", sub: "Sharjah International", color: "#1d3557", kind: "stakeholder" },
-  { id: "sh:AIRLINES", x: 1010, y: 375, label: "Airline Ops Reps", sub: "fictional carriers", color: "#1d3557", kind: "stakeholder" },
+  { id: "sh:AIRLINES", x: 1010, y: 375, label: "Airline Ops Reps", sub: "one per airline", color: "#1d3557", kind: "stakeholder" },
   { id: "sh:ATC", x: 1010, y: 455, label: "ATC Reviewer", sub: "authorised human", color: "#1d3557", kind: "stakeholder" },
 ];
 

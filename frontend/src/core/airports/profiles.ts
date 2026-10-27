@@ -44,7 +44,7 @@ export const PROFILES: Record<string, AirportProfile> = {
     resources: { ambulift: 4, wb_handling: 16, nb_handling: 18, deck_loader: 3, tug_heavy: 10, bus: 18 },
     maxDiversionsPerHour: 5, standBufferMin: 10,
     zoneRules: [[/terminal\s*a|midfield|pier/i, "TERMINAL_A"], [/cargo/i, "CARGO"], [/general aviation|executive|royal|vip/i, "GA"]],
-    airlineZones: { SQR: ["TERMINAL_A"], GFL: ["TERMINAL_A", "REMOTE"], MPX: ["TERMINAL_A"], BRL: ["TERMINAL_A"], DCW: ["TERMINAL_A"] },
+    airlineZones: { ETD: ["TERMINAL_A"], GFA: ["TERMINAL_A", "REMOTE"], QTR: ["TERMINAL_A"], IGO: ["TERMINAL_A"] },
     demandScale: 1,
   },
   OMDB: {
@@ -55,7 +55,7 @@ export const PROFILES: Record<string, AirportProfile> = {
     maxDiversionsPerHour: 6, standBufferMin: 10,
     zoneRules: [[/concourse\s*a\b|^A\d/i, "T3_A"], [/concourse\s*b\b|^B\d/i, "T3_B"], [/concourse\s*c\b|^C\d/i, "T3_C"],
       [/concourse\s*d\b|^D\d/i, "T1_D"], [/terminal\s*2|^F\d/i, "T2"], [/cargo/i, "CARGO"], [/general aviation|executive|royal|vip/i, "GA"]],
-    airlineZones: { MJL: ["T3_A", "T3_B", "T3_C"], DNE: ["T2", "T3_C"], MPX: ["T1_D"], BRL: ["T1_D"], DCW: ["T1_D", "T2"], SQR: ["T1_D"], SHR: ["T1_D", "T2"] },
+    airlineZones: { UAE: ["T3_A", "T3_B", "T3_C"], FDB: ["T2", "T3_C"], BAW: ["T1_D"], QTR: ["T1_D"], IGO: ["T1_D", "T2"], SVA: ["T1_D"], AXB: ["T1_D", "T2"] },
     demandScale: 1,
   },
   OMSJ: {
@@ -65,7 +65,7 @@ export const PROFILES: Record<string, AirportProfile> = {
     resources: { ambulift: 2, wb_handling: 5, nb_handling: 14, deck_loader: 6, tug_heavy: 5, bus: 14 },
     maxDiversionsPerHour: 4, standBufferMin: 10,
     zoneRules: [[/cargo/i, "CARGO"], [/terminal|passenger/i, "TERMINAL"], [/general aviation|executive/i, "GA"]],
-    airlineZones: { SHR: ["TERMINAL"], DCW: ["TERMINAL"], NJC: ["CARGO"], SLK: ["CARGO"] },
+    airlineZones: { ABY: ["TERMINAL"], IGO: ["TERMINAL"], ETH: ["CARGO"] },
     demandScale: 1,
   },
 };

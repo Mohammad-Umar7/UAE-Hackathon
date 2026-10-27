@@ -12,10 +12,10 @@ offline pipelines consume. Data sources are documented in detail in [DATA_SOURCE
 | Signature terminals and towers (when present) | `frontend/public/assets/airports/*.glb` | Procedurally generated for this project by `pipeline/blender/airports` from OSM footprints and public reference facts | Project licence; footprints derived from OSM (ODbL) |
 
 The aircraft are original models *inspired by* aircraft categories (A320neo-class, 787-9-class, A380-class, 747-8F-class,
-G650-class, ATR 72-class). They are not replicas of any manufacturer's product and carry fictional liveries only. The
-11 airlines in the simulation (Saqr Airways, Majlis Air, Dune Air, Sahra Air, Gulfline Regional, Najm Cargo, Falconet
-Executive, Meridian Pacific, Borealis Airlines, Deccan Wings, Silk Freight) and their emblems are fictional and drawn
-procedurally at runtime.
+G650-class, ATR 72-class). They are not replicas of any manufacturer's product. The simulation names real airlines
+(Etihad, Emirates, flydubai, Air Arabia, Qatar Airways, British Airways and others) with their real flight numbers;
+their liveries are simplified colour schemes and their tail emblems simple shapes drawn procedurally at runtime, not
+the airlines' logos or trademarks.
 
 ## Textures and lighting
 

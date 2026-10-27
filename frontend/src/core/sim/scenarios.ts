@@ -5,6 +5,7 @@
  */
 
 import { AIRCRAFT, type TypeKey } from "../aircraft";
+import { AIRLINES, flightBoundFor } from "../airlines";
 import { RESOURCE_LABELS } from "../airports/profiles";
 import type { Registry } from "../airports/registry";
 import type { Incident, IncidentType, Restriction, RestrictionKind, World } from "../types";
@@ -173,14 +174,15 @@ export function makeStandClosure(ctx: ScenarioContext, icao: string, stands: str
 
 export function makeInflux(ctx: ScenarioContext, icao: string, start: number, n: number, source: Incident["source"] = "scenario"): Incident {
   const types: TypeKey[] = ["wb", "nb", "wb", "nb", "vla", "wb", "nb", "wb"];
-  const airlines: Record<string, string[]> = { wb: ["MPX", "BRL", "MJL"], nb: ["DCW", "BRL", "DNE"], vla: ["MJL"] };
+  const airlines: Record<string, string[]> = { wb: ["BAW", "QTR", "UAE"], nb: ["IGO", "QTR", "FDB"], vla: ["UAE"] };
   const origins = ["OTHH", "OBBI", "OKKK", "OOMS"];
   const specs = Array.from({ length: n }, (_, i) => {
     const t = types[i % types.length];
     const al = airlines[t][i % airlines[t].length];
+    const origin = origins[i % origins.length];
     return {
-      id: `${icao}-X${String(i + 1).padStart(2, "0")}`, callsign: `${al}${870 + i * 3}`, airline: al, type: t,
-      origin: origins[i % origins.length], eta: start + (25 + 9 * i) * M, pax: Math.floor(AIRCRAFT[t].seats * 0.85),
+      id: `${icao}-X${String(i + 1).padStart(2, "0")}`, callsign: flightBoundFor(al, origin, i) ?? `${AIRLINES[al].iata}${870 + i * 3}`, airline: al, type: t,
+      origin, eta: start + (25 + 9 * i) * M, pax: Math.floor(AIRCRAFT[t].seats * 0.85),
       fuel_min: 25 + (i % 3) * 10, ground_min: 150, prm: i === 1 ? 2 : 0,
     };
   });
@@ -238,7 +240,7 @@ function buildNightfall(ctx: ScenarioContext) {
   }
   // reported with the fog, so the evening's first plan has to protect these passengers too (and nothing before the
   // fog keeps the agents busy while the demo fast-forwards to it)
-  const prm = pickInbound(ctx, "OMAA", s + 65 * M, s + 105 * M, ["wb"], "SQR");
+  const prm = pickInbound(ctx, "OMAA", s + 65 * M, s + 105 * M, ["wb"], "ETD");
   if (prm) makeAccessibility(ctx, "OMAA", s + 40 * M, prm, 3);
   makeResourceOutage(ctx, "OMSJ", "ambulift", 2, s - 20 * M, s + 6 * H,
     "Both ambulifts unserviceable (hydraulic lift fault) — recorded in the Sharjah local equipment log only.", false, "local_log");

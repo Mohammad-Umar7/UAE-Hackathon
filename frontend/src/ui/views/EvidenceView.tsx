@@ -11,7 +11,7 @@ const PROVENANCE: [string, string, string][] = [
   ["Taxiways, aprons, stands, building footprints", "verified_public / derived", "OpenStreetMap (ODbL); stand limits derived from spacing"],
   ["Stand capabilities, jet bridges, services", "derived", "Heuristics from public geometry — requires operator validation"],
   ["Runway capacities, diversion limits, resources", "synthetic", "Plausible planning values for the demo"],
-  ["Flight schedules, carriers, passengers", "synthetic", "Seeded generator; fictional carriers only"],
+  ["Flight schedules, passengers", "synthetic", "Seeded generator: real carriers and flight numbers, generated timings and loads"],
   ["Weather observations and forecasts", "synthetic", "Locally generated tracks (no weather API)"],
   ["Incidents and restrictions", "synthetic / human_entered / stakeholder_reported", "Scenario inputs, Scenario Lab, coordination"],
   ["Aircraft dimensions", "verified_public", "Rounded public figures for the aircraft categories"],

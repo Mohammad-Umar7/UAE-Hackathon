@@ -1,26 +1,27 @@
 /**
  * Seeded synthetic schedule + original stand plan.
  *
- * Generates fictional-carrier turnarounds for each airport, then builds a conflict-free stand plan
- * with a first-fit interval allocator that respects stand compatibility, airline zone preferences
- * and a stand buffer. Flights that cannot be placed are dropped (this is the airport's published
- * plan for the synthetic day). Provenance of everything produced here: synthetic.
+ * Generates turnarounds for each airport flown by real carriers under their real flight numbers, then builds a
+ * conflict-free stand plan with a first-fit interval allocator that respects stand compatibility, airline zone
+ * preferences and a stand buffer. Flights that cannot be placed are dropped (this is the airport's published
+ * plan for the synthetic day). Timings, loads and stands are synthetic; the airlines and their routes are real.
  */
 
 import { AIRCRAFT, type TypeKey } from "../aircraft";
 import { AIRLINES } from "../airlines";
+import { ROUTES, type Route } from "../routes";
 import { standAccepts, type AirportInfo, type Registry } from "../airports/registry";
 import { Rng } from "../rng";
 import type { Visit, World } from "../types";
 import { blankVisit } from "./engine";
 
 const MIX: Record<string, [string, TypeKey, number][]> = {
-  OMAA: [["SQR", "wb", 30], ["SQR", "nb", 26], ["SQR", "vla", 5], ["GFL", "reg", 8], ["MPX", "wb", 6], ["BRL", "wb", 5],
-    ["BRL", "nb", 4], ["DCW", "nb", 8], ["NJC", "cargo", 3], ["FCX", "biz", 5]],
-  OMDB: [["MJL", "wb", 34], ["MJL", "vla", 14], ["DNE", "nb", 22], ["MPX", "wb", 6], ["BRL", "wb", 5], ["BRL", "nb", 4],
-    ["DCW", "nb", 7], ["SQR", "nb", 3], ["SHR", "nb", 2], ["SLK", "cargo", 2], ["FCX", "biz", 3]],
-  OMSJ: [["SHR", "nb", 46], ["DCW", "nb", 12], ["NJC", "cargo", 14], ["SLK", "cargo", 8], ["GFL", "reg", 6], ["DNE", "nb", 4],
-    ["FCX", "biz", 4]],
+  OMAA: [["ETD", "wb", 30], ["ETD", "nb", 26], ["ETD", "vla", 5], ["GFA", "reg", 8], ["QTR", "wb", 6], ["QTR", "wb", 5],
+    ["QTR", "nb", 4], ["IGO", "nb", 8], ["CSS", "cargo", 3], ["ROJ", "biz", 5]],
+  OMDB: [["UAE", "wb", 34], ["UAE", "vla", 14], ["FDB", "nb", 22], ["BAW", "wb", 6], ["QTR", "wb", 5], ["QTR", "nb", 4],
+    ["IGO", "nb", 7], ["SVA", "nb", 3], ["AXB", "nb", 2], ["ETH", "cargo", 2], ["ROJ", "biz", 3]],
+  OMSJ: [["ABY", "nb", 46], ["IGO", "nb", 12], ["ETH", "cargo", 14], ["ETH", "cargo", 8], ["OMS", "reg", 6], ["AXB", "nb", 4],
+    ["ROJ", "biz", 4]],
 };
 
 const PROFILE_BY_HOUR: Record<number, number> = {
@@ -49,6 +50,39 @@ export interface ScheduleConfig {
   density?: number;
 }
 
+/**
+ * Real flight numbers in a seeded order per airline, airport and aircraft class: every flight is used once before
+ * any repeats. A hub carrier lands from one city and leaves for another; other carriers fly out and back.
+ */
+class RealFlights {
+  private queues = new Map<string, { list: { r: Route; f: number }[]; i: number }>();
+  constructor(private seed: number) {}
+
+  private take(airline: string, icao: string, type: TypeKey, dir: string) {
+    // a carrier listed elsewhere only (freighters calling at another UAE airport) flies its routes from there
+    const all = ROUTES[airline]?.[icao] ?? Object.values(ROUTES[airline] ?? {})[0];
+    if (!all?.length) return null;
+    const key = `${airline}:${icao}:${type}:${dir}`;
+    let q = this.queues.get(key);
+    if (!q) {
+      const fit = all.filter((r) => r.cls === type);
+      const list = (fit.length ? fit : all).flatMap((r) => r.out.map((_, f) => ({ r, f })));
+      const rng = new Rng(`${this.seed}:flights:${key}`);
+      for (let i = list.length - 1; i > 0; i--) { const j = rng.int(0, i); [list[i], list[j]] = [list[j], list[i]]; }
+      this.queues.set(key, (q = { list, i: 0 }));
+    }
+    return q.list[q.i++ % q.list.length];
+  }
+
+  legs(airline: string, icao: string, type: TypeKey): { arr: [string, string]; dep: [string, string] } | null {
+    const hub = AIRLINES[airline]?.kind === "hub";
+    const a = this.take(airline, icao, type, hub ? "in" : "both");
+    if (!a) return null;
+    const d = hub ? this.take(airline, icao, type, "out")! : a;
+    return { arr: [a.r.back[a.f % a.r.back.length], a.r.other], dep: [d.r.out[d.f], d.r.other] };
+  }
+}
+
 function routeFor(type: TypeKey, rng: Rng): string {
   if (type === "vla" || type === "wb") return rng.pick([...ORIGINS.long, ...ORIGINS.medium.slice(0, 6)]);
   if (type === "cargo") return rng.pick([...ORIGINS.long.slice(0, 12), ...ORIGINS.medium]);
@@ -63,6 +97,7 @@ export function generateSchedule(w: World, airports: Registry, cfg: ScheduleConf
     w.resources[icao] = { ...ap.profile.resources };
   }
   const flightNo: Record<string, number> = {};
+  const real = new RealFlights(w.seed);
   let regSeq = 0;
   const nextFlight = (airline: string) => {
     const n = (flightNo[airline] = (flightNo[airline] ?? 0) + 1);
@@ -86,13 +121,13 @@ export function generateSchedule(w: World, airports: Registry, cfg: ScheduleConf
       const [airline, type] = rng.weighted(mix, mix.map((m) => m[2]));
       arrivals.push([t, airline, type]);
     }
-    counts[icao] = allocate(w, ap, arrivals, rng, cfg, nextFlight, nextReg);
+    counts[icao] = allocate(w, ap, arrivals, rng, cfg, nextFlight, nextReg, real);
   }
   return counts;
 }
 
 function allocate(w: World, ap: AirportInfo, arrivals: [number, string, TypeKey][], rng: Rng, cfg: ScheduleConfig,
-  nextFlight: (a: string) => string, nextReg: (a: string) => string): number {
+  nextFlight: (a: string) => string, nextReg: (a: string) => string, real: RealFlights): number {
   const icao = ap.icao;
   const buffer = ap.profile.standBufferMin * 60;
   const busy: Record<string, [number, number][]> = {};
@@ -118,9 +153,13 @@ function allocate(w: World, ap: AirportInfo, arrivals: [number, string, TypeKey]
     if (!chosen) return;
     const { st, sibt, sobt, occ } = chosen;
     busy[st.id].push(occ);
-    const origin = routeFor(type, rng);
-    const dest = routeFor(type, rng);
-    const fnIn = nextFlight(airline), fnOut = nextFlight(airline);
+    // drawn even when a real route replaces them, so every later draw (stands, passengers) stays the same for a seed
+    let origin = routeFor(type, rng);
+    let dest = routeFor(type, rng);
+    let fnIn: string, fnOut: string;
+    const legs = real.legs(airline, icao, type);
+    if (legs) [[fnIn, origin], [fnOut, dest]] = [legs.arr, legs.dep];
+    else [fnIn, fnOut] = [nextFlight(airline), nextFlight(airline)];
     const paxIn = Math.floor(t.seats * rng.uniform(0.72, 0.95));
     const paxOut = Math.floor(t.seats * rng.uniform(0.7, 0.95));
     const prm = t.seats > 0 && rng.next() < 0.18 ? rng.int(1, 3) : 0;

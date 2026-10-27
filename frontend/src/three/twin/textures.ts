@@ -203,22 +203,23 @@ function drawEmblem(g: CanvasRenderingContext2D, code: string, accent: string, l
     g.closePath();
     g.fill();
   };
+  // simple shapes in each carrier's colours, not its logo
   switch (code) {
-    case "SQR": { // stylised falcon wing sweep
-      g.beginPath();
-      g.moveTo(-r * 0.9, r * 0.55);
-      g.quadraticCurveTo(-r * 0.1, -r * 0.2, r * 0.95, -r * 0.85);
-      g.quadraticCurveTo(r * 0.35, -r * 0.05, r * 0.2, r * 0.75);
-      g.quadraticCurveTo(-r * 0.2, r * 0.25, -r * 0.9, r * 0.55);
-      g.fill();
-      g.fillStyle = light;
-      g.beginPath();
-      g.arc(r * 0.42, -r * 0.42, r * 0.09, 0, Math.PI * 2);
-      g.fill();
+    case "ETD": { // geometric facets
+      for (let k = 0; k < 6; k++) {
+        g.globalAlpha = 0.45 + 0.09 * k;
+        g.beginPath(); g.moveTo(-r + k * r * 0.33, r); g.lineTo(-r * 0.6 + k * r * 0.33, -r); g.lineTo(-r * 0.2 + k * r * 0.33, r); g.closePath(); g.fill();
+      }
+      g.globalAlpha = 1;
       break;
     }
-    case "MJL": star(8, r, r * 0.62); g.fillStyle = light; star(8, r * 0.42, r * 0.26, -Math.PI / 2 + Math.PI / 8); break;
-    case "DNE": {
+    case "UAE": { // the UAE flag's colours
+      const w = r * 1.6, h = r * 0.9;
+      g.fillStyle = "#D71921"; g.fillRect(-w / 2, -h / 2, w * 0.26, h);
+      for (const [k, c] of ["#00843D", "#FFFFFF", "#111111"].entries()) { g.fillStyle = c; g.fillRect(-w / 2 + w * 0.26, -h / 2 + (k * h) / 3, w * 0.74, h / 3); }
+      break;
+    }
+    case "FDB": {
       g.lineWidth = r * 0.16;
       for (let k = 0; k < 3; k++) {
         g.beginPath();
@@ -229,36 +230,40 @@ function drawEmblem(g: CanvasRenderingContext2D, code: string, accent: string, l
       }
       break;
     }
-    case "SHR": {
+    case "ABY": {
       g.beginPath(); g.arc(0, -r * 0.1, r * 0.48, Math.PI, 0); g.fill();
       g.beginPath(); g.moveTo(-r, r * 0.55); g.quadraticCurveTo(0, r * 0.05, r, r * 0.55); g.lineTo(r, r * 0.8); g.lineTo(-r, r * 0.8); g.fill();
       break;
     }
-    case "GFL": {
+    case "GFA": case "OMS": {
       g.lineWidth = r * 0.2;
       g.beginPath(); g.arc(0, 0, r * 0.75, Math.PI * 0.15, Math.PI * 1.55); g.stroke();
       g.beginPath(); g.arc(0, 0, r * 0.32, Math.PI * 0.15, Math.PI * 1.55); g.stroke();
       break;
     }
-    case "NJC": star(5, r, r * 0.42); break;
-    case "FCX": {
+    case "SVA": case "CSS": star(5, r, r * 0.42); break;
+    case "ROJ": {
       g.beginPath();
       g.moveTo(0, -r); g.lineTo(r * 0.75, r * 0.75); g.lineTo(0, r * 0.35); g.lineTo(-r * 0.75, r * 0.75); g.closePath(); g.fill();
       break;
     }
-    case "MPX": {
-      g.lineWidth = r * 0.11;
-      g.beginPath(); g.arc(0, 0, r * 0.85, 0, Math.PI * 2); g.stroke();
-      g.beginPath(); g.ellipse(0, 0, r * 0.38, r * 0.85, 0, 0, Math.PI * 2); g.stroke();
-      g.beginPath(); g.moveTo(-r * 0.85, 0); g.lineTo(r * 0.85, 0); g.stroke();
+    case "BAW": { // a red and white ribbon on the blue tail
+      g.lineWidth = r * 0.22;
+      for (const [k, c] of [accent, "#FFFFFF"].entries()) {
+        g.strokeStyle = c; g.beginPath(); g.moveTo(-r * 0.95, r * (0.55 - k * 0.3)); g.bezierCurveTo(-r * 0.2, -r * (0.2 + k * 0.3), r * 0.3, r * (0.4 - k * 0.3), r * 0.95, -r * (0.45 + k * 0.15)); g.stroke();
+      }
       break;
     }
-    case "BRL": {
+    case "QTR": {
       g.lineWidth = r * 0.14;
       for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(0, r * 0.9, r * (0.55 + k * 0.32), Math.PI * 1.15, Math.PI * 1.85); g.stroke(); }
       break;
     }
-    case "DCW": {
+    case "IGO": { // a field of dots
+      for (let y = -2; y <= 2; y++) for (let x = -2; x <= 2; x++) { g.beginPath(); g.arc(x * r * 0.38, y * r * 0.38, r * (0.07 + 0.02 * ((x + y + 4) % 3)), 0, Math.PI * 2); g.fill(); }
+      break;
+    }
+    case "AXB": {
       g.beginPath();
       g.moveTo(-r * 0.95, r * 0.25);
       g.quadraticCurveTo(0, -r * 0.95, r * 0.95, -r * 0.35);
@@ -267,7 +272,7 @@ function drawEmblem(g: CanvasRenderingContext2D, code: string, accent: string, l
       g.fill();
       break;
     }
-    default: { // SLK and any new carrier: silk ribbon
+    default: { // ETH and any new carrier: a ribbon
       g.lineWidth = r * 0.22;
       g.beginPath();
       g.moveTo(-r * 0.9, r * 0.5);

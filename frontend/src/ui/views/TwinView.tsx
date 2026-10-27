@@ -62,7 +62,7 @@ export default function TwinView() {
       )}
       <PlanBar icao={airport} />
       <div className="pointer-events-none absolute bottom-1.5 right-3 text-right text-[10px] leading-snug text-white/45">
-        Map data © OpenStreetMap contributors (ODbL)<br />original 3D models · synthetic flights and fictional airlines
+        Map data © OpenStreetMap contributors (ODbL)<br />original 3D models · real airlines, synthetic schedule
       </div>
     </div>
   );
@@ -211,7 +211,7 @@ function AircraftCard({ id, onClose, onFollow, onGantt }: { id: string; onClose:
         <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-md" style={{ background: al?.livery.tail ?? "#334" }}><Plane size={15} className="text-white" /></div>
         <div className="min-w-0 flex-1">
           <div className="text-[15px] font-semibold leading-tight">{callsignOf(v)}</div>
-          <div className="muted text-[11px]">{al?.name ?? v.airline} (fictional) · {a.label} · {v.reg}</div>
+          <div className="muted text-[11px]">{al?.name ?? v.airline} · {a.label} · {v.reg}</div>
         </div>
         <button className="hud-btn !px-1.5" onClick={onClose} aria-label="Close"><X size={13} /></button>
       </div>

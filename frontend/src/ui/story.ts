@@ -89,7 +89,7 @@ export function planShort(p: Proposal): string {
     n("landing_slot") ? plural(n("landing_slot"), "landing time") : ""].filter(Boolean).join(", ");
 }
 
-/** Who said no, in plain words ("Sharjah's airport controller", "Saqr Airways"). */
+/** Who said no, in plain words ("Sharjah's airport controller", "Etihad Airways"). */
 export function whoSaid(slot: ApprovalSlot): string {
   if (slot.type === "AIRPORT_CONTROLLER" && slot.scope) return `${city(slot.scope)}'s airport controller`;
   if (slot.type === "AIRLINE_REP") return slot.label.split(" — ").pop() ?? "An airline";

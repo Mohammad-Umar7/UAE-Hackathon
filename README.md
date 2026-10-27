@@ -14,12 +14,14 @@ Everything runs **in the browser, offline**: a deterministic simulator, the agen
 a Web Worker, approvals with a hash-chained audit log, and a 3D digital twin of each airport built from OpenStreetMap
 data and original Blender models.
 
-> All flights, airlines (11 fictional carriers) and operational numbers are **synthetic**. Airport geometry comes from
-> OpenStreetMap and public aeronautical information; nothing here represents real airline or airport operational data.
+> The airlines and their flight numbers are real carriers serving these airports (Etihad, Emirates, flydubai, Air
+> Arabia and others), but the day built from them is **synthetic**: timings, passenger numbers, stands, disruptions and
+> every operational number are generated. Airport geometry comes from OpenStreetMap and public aeronautical
+> information; nothing here represents real airline or airport operational data.
 
 ![3D view of Abu Dhabi airport as thick fog rolls in at dusk, with the recovery plan previewed in violet](docs/images/twin-auh-fog-night.jpg)
 
-<sup>Screen captures of the running prototype (Operation Nightfall, seed 7; synthetic traffic, fictional airlines).</sup>
+<sup>Screen captures of the running prototype (Operation Nightfall, seed 7; synthetic traffic, taken before real airline names replaced fictional ones).</sup>
 
 | | |
 |---|---|
@@ -164,7 +166,8 @@ All runs are reproducible from scenario id + seed + recorded human inputs.
   it issues no clearances.
 * **Transparency** — every message, tool call, constraint, rejected option and reason is inspectable; the audit log is
   hash-chained and tamper-evident; runs are deterministic and replayable.
-* **Honest data** — synthetic flights and fictional airlines are labelled; provenance is shown for restrictions
+* **Honest data** — the synthetic day is labelled as such (real airlines and flight numbers, generated timings and
+  loads); provenance is shown for restrictions
   (`verified_public`, `synthetic`, `derived`, `human_entered`, `stakeholder_reported`).
 * **Equity of outcomes** — passengers with reduced mobility are a hard constraint (accessible boarding), not a
   weight to trade away.

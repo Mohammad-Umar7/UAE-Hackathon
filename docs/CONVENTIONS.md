@@ -156,7 +156,7 @@ Models are original procedural creations *inspired by* these categories. They ar
 
 ## 6. Data provenance labels
 
-Every operational value carries one of: `verified_public` (with source), `synthetic`, `human_entered`, `derived`. Synthetic flight data uses fictional carriers only. Never present synthetic data as real airline or airport operational data.
+Every operational value carries one of: `verified_public` (with source), `synthetic`, `human_entered`, `derived`. Synthetic schedules use real carriers and their real flight numbers, with generated timings, loads and stands. Never present synthetic data as real airline or airport operational data.
 
 ## 7. Hard rules
 

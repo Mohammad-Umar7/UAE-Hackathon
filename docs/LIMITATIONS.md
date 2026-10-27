@@ -6,8 +6,8 @@ its models are simplified, so results are read in the right light.
 ## Data
 
 * **Flights are synthetic.** Schedules, passenger counts, connections, passengers with reduced mobility and fuel
-  endurance are generated deterministically from a seed. The 11 airlines are fictional. Nothing represents real
-  airline, airport or air-navigation operational data.
+  endurance are generated deterministically from a seed. The airlines and their flight numbers are real; when and
+  how those flights operate here is not. Nothing represents real airline, airport or air-navigation operational data.
 * **Capacities are modelled values** (arrival/departure rates, diversion acceptance per hour, handling teams,
   ambulifts). They are plausible planning figures, not declared or official capacities.
 * **Airport geometry comes from OpenStreetMap** and is cross-checked against the GCAA AIP for runways and thresholds.

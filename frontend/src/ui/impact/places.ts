@@ -1,4 +1,4 @@
-/** City names for the origin airports used by the synthetic schedules (real airports, fictional flights). */
+/** City names for the airports the schedules fly to and from (real airports and routes, synthetic timings). */
 export const ORIGIN_CITY: Record<string, string> = {
   EGLL: "London", LFPG: "Paris", EDDF: "Frankfurt", EHAM: "Amsterdam", LIRF: "Rome", LEMD: "Madrid", KJFK: "New York",
   KIAD: "Washington", WSSS: "Singapore", VHHH: "Hong Kong", RJTT: "Tokyo", YSSY: "Sydney", ZBAA: "Beijing", FAOR: "Johannesburg",
@@ -7,6 +7,27 @@ export const ORIGIN_CITY: Record<string, string> = {
   HECA: "Cairo", OEJN: "Jeddah", OERK: "Riyadh", LCLK: "Larnaca", LGAV: "Athens", UBBB: "Baku", UTTT: "Tashkent",
   VCBI: "Colombo", VNKT: "Kathmandu", HAAB: "Addis Ababa", OJAI: "Amman",
   OTHH: "Doha", OBBI: "Bahrain", OKKK: "Kuwait", OOMS: "Muscat", OOSA: "Salalah", OEDF: "Dammam", OIII: "Tehran", OISS: "Shiraz",
+  EGKK: "London Gatwick", EGCC: "Manchester", EDDM: "Munich", KLAX: "Los Angeles", KSFO: "San Francisco", KIAH: "Houston",
+  KDFW: "Dallas", KORD: "Chicago", CYYZ: "Toronto", FIMP: "Mauritius", ZSPD: "Shanghai", YMML: "Melbourne", NZAA: "Auckland",
+  VOHS: "Hyderabad", VOCI: "Kochi", VGHS: "Dhaka",
+  EDDH: "Hamburg", EDDL: "Dusseldorf", EGBB: "Birmingham", EGSS: "London Stansted", EIDW: "Dublin",
+  EKCH: "Copenhagen", EPKK: "Krakow", EPWA: "Warsaw", FACT: "Cape Town", FSIA: "Seychelles", GMMN: "Casablanca",
+  HHAS: "Asmara", HKMO: "Mombasa", HTZA: "Zanzibar", KATL: "Atlanta", KBOS: "Boston", KCLT: "Charlotte",
+  LEBL: "Barcelona", LFMN: "Nice", LIMC: "Milan Malpensa", LIME: "Milan Bergamo", LIRN: "Naples", LKPR: "Prague",
+  LLBG: "Tel Aviv", LOWW: "Vienna", LROP: "Bucharest", LSGG: "Geneva", LTAC: "Ankara",
+  LTFJ: "Istanbul Sabiha Gokcen", LUKK: "Chisinau", LYBE: "Belgrade", OAKB: "Kabul", OEGS: "Qassim", OEHL: "Hail",
+  OEMA: "Madinah", OETB: "Tabuk", OLBA: "Beirut", OPFA: "Faisalabad", OPMT: "Multan", OPPS: "Peshawar",
+  OPQT: "Quetta", OPST: "Sialkot", ORBI: "Baghdad", ORER: "Erbil", ORMM: "Basra", ORNI: "Najaf", OSAP: "Aleppo",
+  OSDI: "Damascus", RCTP: "Taipei Taoyuan", RJAA: "Tokyo Narita", RJBB: "Osaka Kansai", RPLL: "Manila",
+  SBGR: "Sao Paulo", UAAA: "Almaty", UACC: "Astana", UCFM: "Bishkek", UDYZ: "Yerevan", UGTB: "Tbilisi",
+  ULLI: "St Petersburg", UMMS: "Minsk", UNNT: "Novosibirsk", URML: "Makhachkala", URMM: "Mineralnye Vody",
+  USSS: "Yekaterinburg", UTAA: "Ashgabat", UTDD: "Dushanbe", UUDD: "Moscow Domodedovo", UUEE: "Moscow Sheremetyevo",
+  UUWW: "Moscow Vnukovo", UWKD: "Kazan", UWUU: "Ufa", VAAH: "Ahmedabad", VAPO: "Pune", VASU: "Surat",
+  VDTI: "Phnom Penh", VEBN: "Varanasi", VEGT: "Guwahati", VGEG: "Chattogram", VIAR: "Amritsar", VICG: "Chandigarh",
+  VIJP: "Jaipur", VILK: "Lucknow", VOCB: "Coimbatore", VOCL: "Kozhikode", VOGO: "Goa", VOKN: "Kannur",
+  VOML: "Mangaluru", VOTR: "Tiruchirappalli", VOTV: "Thiruvananthapuram", VRMM: "Male", VTBD: "Bangkok Don Mueang",
+  VTSG: "Krabi", VTSP: "Phuket", VVNB: "Hanoi", WADD: "Denpasar", WIII: "Jakarta", YBBN: "Brisbane", YPPH: "Perth",
+  ZHEC: "Ezhou",
   OMAA: "Abu Dhabi", OMDB: "Dubai", OMSJ: "Sharjah",
 };
 

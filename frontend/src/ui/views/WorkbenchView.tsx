@@ -123,7 +123,7 @@ function Explanation({ p }: { p: Proposal }) {
         <Block title="Why (shared picture)" items={ex.why.length ? ex.why : ["No active restrictions"]} />
         <Block title="Measured impact (simulation)" items={ex.delayImpact} />
         <Block title="Hard constraints respected" items={ex.constraints} />
-        <Block title="Affected carriers (fictional)" items={ex.affected} />
+        <Block title="Affected carriers" items={ex.affected} />
         <Block title="Evidence" items={ex.evidence} />
       </div>
     </div>

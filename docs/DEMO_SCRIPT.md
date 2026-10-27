@@ -35,6 +35,6 @@ in the top bar); use → / Space to advance, ← to go back, Esc to leave. Stay 
 
 * Airports: OMAA/AUH Zayed International, OMDB/DXB Dubai International, OMSJ/SHJ Sharjah International; layouts from
   OpenStreetMap, runways and thresholds cross-checked with the GCAA AIP.
-* Synthetic: flights, 11 fictional airlines, capacities, weather. Real: geometry, sun position, optimisation,
+* Synthetic: the day's schedule (real airlines and flight numbers, generated timings and loads), capacities, weather. Real: geometry, sun position, optimisation,
   agents' workflow, approvals and audit.
 * Optimiser: HiGHS mixed-integer programming (WebAssembly), three objective variants solved in parallel web workers.
