@@ -236,14 +236,14 @@ function Traffic({ rt }: { rt: Runtime }) {
 
 interface ArcSpec { from: string; to: string; color: string; dashed: boolean; n: number; status: string }
 
-/** Coordination arcs between airports for the latest proposal (pending / rejected / committed). */
+/** Coordination arcs between airports: the plan now running and the one waiting for approval (else the latest). */
 function arcsOf(rt: Runtime): ArcSpec[] {
   const props = Object.values(rt.proposals).sort((a, b) => b.createdAt - a.createdAt);
-  const p = props.find(isOpen) ?? props[0];
-  if (!p) return [];
+  const shown = [props.find((p) => p.status === "COMMITTED"), props.find(isOpen)].filter((p) => p !== undefined);
+  if (!shown.length && props[0]) shown.push(props[0]);
   const arcs: ArcSpec[] = [];
   const seen = new Set<string>();
-  for (const d of p.plan.decisions) {
+  for (const p of shown) for (const d of p.plan.decisions) {
     if (d.action !== "divert" || !d.to) continue;
     const k = `${d.airport}>${d.to}`;
     if (seen.has(k)) continue;
