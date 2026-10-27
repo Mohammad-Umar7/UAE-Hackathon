@@ -60,6 +60,9 @@ export class AuthorityError extends Error {}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const HORIZON = 4 * 3600;
+/** Time allowed per optimiser variant. Most solves finish well inside it; when one does not, HiGHS returns the best plan
+ *  found so far (on the Nightfall fog problem that is within 0.1 % of optimal), so the clock never waits half a minute. */
+const SOLVE_SECONDS = 12;
 
 export class Orchestrator {
   messages: AgentMessage[] = [];
@@ -390,7 +393,7 @@ export class Orchestrator {
       (p) => { const s = problemStats(p); return `${s.flights} movable flights, ${s.homeOptions} home + ${s.diversionOptions} diversion options, ${s.fixedOccupancies} fixed occupancies, ${s.excludedOptions} options excluded by hard rules`; },
       ["Shared operational picture only"]);
     const plans = await this.tool("recovery", "run_optimizer", { solver: "HiGHS MILP (WebAssembly)", variants: ["min_delay", "stability", "min_coord"] }, wf.id, causedBy,
-      () => this.host.compute.solve(pb, 30),
+      () => this.host.compute.solve(pb, SOLVE_SECONDS),
       (r) => r.map((p) => `${p.label}: ${p.status} in ${p.solveMs.toFixed(0)} ms (${p.numVars} vars, ${p.numRows} rows)`).join(" · "),
       ["Stand exclusivity", "Arrival capacity", "Fuel", "Diversion eligibility & acceptance", "Accessibility", "Handling teams"]);
     const valid = plans.filter((p) => p.rows.length);

@@ -130,7 +130,9 @@ export class Engine {
 
   nextEventTime(): number | null { return this.q.peek()?.[0] ?? null; }
 
-  /** Process events up to `target`. Returns true if `stop()` halted early (clock stays at that event). */
+  /** Process events up to `target`. Returns true if `stop()` halted early (clock stays at that event). `stop()` is asked once
+   *  every event at an instant has been processed, so what happens together (fog and the restrictions and requirements
+   *  that come with it) reaches the agents together. */
   advanceTo(target: number, stop?: () => boolean): boolean {
     for (;;) {
       const top = this.q.peek();
@@ -144,7 +146,10 @@ export class Engine {
       this.eventCount++;
       const handler = (this as unknown as Record<string, (k: string, d: Record<string, unknown>) => void>)[`on_${kind}`];
       handler.call(this, key, data);
-      if (stop && stop()) return true;
+      if (stop) {
+        const next = this.q.peek();
+        if ((!next || next[0] > t) && stop()) return true;
+      }
     }
     this.w.now = Math.max(this.w.now, target);
     return false;
