@@ -169,7 +169,9 @@ export function workflowName(rt: Runtime, wf: Workflow): string {
   const rank = { severe: 0, high: 1, moderate: 2, low: 3 } as const;
   const incs = rt.orchestrator.messages.filter((m) => m.thread === wf.id && m.type === "DisruptionNotice")
     .flatMap((m) => (m.payload.incidents as Incident[] | undefined) ?? []);
-  const worst = [...incs].sort((a, b) => rank[a.severity] - rank[b.severity])[0];
+  // a workflow also takes on disruptions that start at its airports later (the fog joins the first plan's workflow)
+  const active = Object.values(rt.world.incidents).filter((i) => i.shared && i.status === "active" && wf.airports.includes(i.airport));
+  const worst = [...incs, ...active].sort((a, b) => rank[a.severity] - rank[b.severity])[0];
   return worst ? plainIncident(worst) : wf.title;
 }
 
