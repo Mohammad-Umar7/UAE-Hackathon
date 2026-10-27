@@ -18,7 +18,7 @@ import type { Pt } from "../airports/graph";
 import { diversionMinutes } from "../airports/profiles";
 import { holdNodeForEntry, landingExit, standAccepts, type Registry, type StandInfo } from "../airports/registry";
 import { rngFor } from "../rng";
-import type { DomainEvent, FlightLeg, Incident, Restriction, Visit, World } from "../types";
+import type { DomainEvent, FlightLeg, Incident, Phase, Restriction, Visit, World } from "../types";
 import {
   activeRestrictions, callsignOf, nextId, resourceAvailable, restrictionsOverlapping, setPhase, touch,
 } from "../world";
@@ -30,6 +30,7 @@ const HOLD_FIX_LEAD_S = 600;
 export const ACTIVATION_LEAD_S = 5400;
 const AMAN_TICK_S = 300;
 export const PRM_AMBULIFT_S = 25 * 60;
+const ARRIVING = new Set<Phase>(["SCHEDULED", "INBOUND", "HOLDING", "APPROACH", "LANDING", "TAXI_IN", "WAITING_STAND"]);
 
 export interface Policy {
   name: string;
@@ -369,6 +370,23 @@ export class Engine {
     return [true, ""];
   }
 
+  /** When stand `sid` and the stands that conflict with it are clear of the current occupants and of every
+   *  aircraft due on them before `v` (estimated turnaround plus the stand buffer). */
+  private standClearAhead(v: Visit, sid: string, arriving: Visit[]): number {
+    const ids = new Set([sid, ...(this.standInfo(v.airport, sid)?.conflicts ?? [])]);
+    let clear = this.w.now;
+    for (const s of ids) {
+      const occ = this.w.stands[`${v.airport}:${s}`]?.occupant;
+      if (occ && occ !== v.id) clear = Math.max(clear, this.expectedClearTime(v.airport, s));
+    }
+    for (const o of arriving) {
+      if (o === v || !ids.has(o.stand!) || o.eldt! >= v.eldt!) continue;
+      const on = o.eldt! + (this.standInfo(o.airport, o.stand!)?.taxiIn ?? 420);
+      clear = Math.max(clear, o.dep ? Math.max(o.dep.sched, on + o.minTat) + 360 : Infinity);
+    }
+    return clear - 30 * this.ap[v.airport].profile.standBufferMin;
+  }
+
   /** Tactical first-fit choice (local, no network coordination). */
   greedyStand(v: Visit, tArrive: number, exclude?: Set<string>): string | null {
     const ap = this.ap[v.airport];
@@ -407,18 +425,17 @@ export class Engine {
     times.sort((a, b) => a - b);
     const pending = Object.values(w.visits).filter((v) => v.airport === icao && v.arr && v.eta !== null
       && (v.phase === "SCHEDULED" || v.phase === "INBOUND" || v.phase === "HOLDING"));
-    const fixed = pending.filter((v) => v.slotFixed && v.eldt !== null);
+    const fixed = pending.filter((v) => v.slotFixed && v.eldt !== null).sort((a, b) => a.eldt! - b.eldt! || (a.id < b.id ? -1 : 1));
     const free = pending.filter((v) => !(v.slotFixed && v.eldt !== null))
       .sort((a, b) => (a.priority ? 0 : 1) - (b.priority ? 0 : 1) || a.eta! - b.eta! || (a.id < b.id ? -1 : 1));
-    for (const v of fixed) { insort(times, v.eldt!); inc(bucketOf(v.eldt!)); }
-    const horizonEnd = w.now + 18 * 3600;
-    for (const v of free) {
-      let t = Math.max(v.eta!, w.now + approachDuration(v.type) + 30);
+    // earliest landing at or after `from` within the capacity buckets and runway spacing (gives up past `limit`)
+    const place = (from: number, limit: number) => {
+      let t = from;
       for (let guard = 0; guard < 400; guard++) {
         const b = bucketOf(t);
         if ((used.get(b) ?? 0) >= bucketCapacity(w, prof, b, "arr")) {
           t = (b + 1) * BUCKET_S + 1;
-          if (t > horizonEnd) break;
+          if (t > limit) break;
           continue;
         }
         const i = bisectLeft(times, t);
@@ -428,6 +445,25 @@ export class Engine {
         if (clash === null) break;
         t = clash;
       }
+      return t;
+    };
+    // A plan's landing slot fixes the order and the latest landing time. Like a real arrival manager, a
+    // planned flight still lands earlier when its own estimate, the capacity buckets, runway spacing and
+    // its stand (clear of every aircraft planned on it first) allow it.
+    const arriving = Object.values(w.visits).filter((o) => o.airport === icao && o.arr && o.stand && o.eldt !== null && ARRIVING.has(o.phase));
+    for (const v of fixed) {
+      const slot = v.eldt!;
+      const st = v.stand ? this.standInfo(icao, v.stand) : null;
+      const from = Math.max(v.eta!, w.now + approachDuration(v.type) + 30, st ? this.standClearAhead(v, st.id, arriving) - st.taxiIn : 0);
+      let t = slot;
+      if (from < slot - 60) { const e = place(from, slot); if (e < slot - 60) t = e; }
+      insort(times, t);
+      inc(bucketOf(t));
+      if (t !== slot) { v.eldt = t; touch(w, "visit", v.id, "eldt"); }
+    }
+    const horizonEnd = w.now + 18 * 3600;
+    for (const v of free) {
+      const t = place(Math.max(v.eta!, w.now + approachDuration(v.type) + 30), horizonEnd);
       insort(times, t);
       inc(bucketOf(t));
       if (v.eldt === null || Math.abs(v.eldt - t) > 1) {
