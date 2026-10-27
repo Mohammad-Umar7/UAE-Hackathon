@@ -35,16 +35,18 @@ export function Sequence({ thread }: { thread: string | null }) {
   const msgs = rows.slice(-120);
   const laneW = 112;
   const rowH = 22;
-  const W = LANES.length * laneW;
+  const G = 40; // time gutter on the left, so timestamps never sit on another lane's arrows
+  const cx = (lane: number) => G + lane * laneW + laneW / 2;
+  const W = G + LANES.length * laneW;
   const H = 34 + msgs.length * rowH + 10;
   return (
     <div className="scroll-x scroll-y h-full">
       <svg width={W} height={Math.max(H, 120)} className="block">
         {LANES.map((l, i) => (
           <g key={l.id}>
-            <line x1={i * laneW + laneW / 2} x2={i * laneW + laneW / 2} y1={26} y2={H} stroke="var(--line-2)" strokeDasharray="3 4" />
-            <rect x={i * laneW + 6} y={4} width={laneW - 12} height={20} rx={6} fill="var(--bg-2)" />
-            <text x={i * laneW + laneW / 2} y={18} textAnchor="middle" style={{ fontSize: 10.5, fontWeight: 600 }} className="fill-[var(--ink-2)]">{l.label}</text>
+            <line x1={cx(i)} x2={cx(i)} y1={26} y2={H} stroke="var(--line-2)" strokeDasharray="3 4" />
+            <rect x={G + i * laneW + 6} y={4} width={laneW - 12} height={20} rx={6} fill="var(--bg-2)" />
+            <text x={cx(i)} y={18} textAnchor="middle" style={{ fontSize: 10.5, fontWeight: 600 }} className="fill-[var(--ink-2)]">{l.label}</text>
           </g>
         ))}
         {msgs.map(({ m, n, ids }, k) => {
@@ -57,10 +59,10 @@ export function Sequence({ thread }: { thread: string | null }) {
           return (
             <g key={m.id} className="cursor-pointer" onClick={() => setInspect({ kind: "message", id: m.id })}>
               {sel && <rect x={0} y={y - 11} width={W} height={rowH} fill="var(--navy-soft)" />}
-              <text x={from * laneW + laneW / 2 - 8} y={y + 3} textAnchor="end" className="mono fill-[var(--faint)]" style={{ fontSize: 8.5 }}>{fmtTime(m.t)}</text>
-              <circle cx={from * laneW + laneW / 2} cy={y} r={3.5} fill={color} />
+              <text x={G - 6} y={y + 3} textAnchor="end" className="mono fill-[var(--faint)]" style={{ fontSize: 8.5 }}>{fmtTime(m.t)}</text>
+              <circle cx={cx(from)} cy={y} r={3.5} fill={color} />
               {tos.map((t) => {
-                const x1 = from * laneW + laneW / 2, x2 = t * laneW + laneW / 2;
+                const x1 = cx(from), x2 = cx(t);
                 const dir = x2 > x1 ? 1 : -1;
                 return (
                   <g key={t}>
@@ -69,8 +71,8 @@ export function Sequence({ thread }: { thread: string | null }) {
                   </g>
                 );
               })}
-              {tos.length === 0 && <circle cx={from * laneW + laneW / 2} cy={y} r={6} fill="none" stroke={color} />}
-              <text x={Math.min(...[from, ...tos]) * laneW + laneW / 2 + 6} y={y - 4} style={{ fontSize: 9.5, fontWeight: 600 }} fill={color}>{m.type}{n > 1 ? ` ×${n}` : ""}</text>
+              {tos.length === 0 && <circle cx={cx(from)} cy={y} r={6} fill="none" stroke={color} />}
+              <text x={cx(Math.min(...[from, ...tos])) + 6} y={y - 4} style={{ fontSize: 9.5, fontWeight: 600 }} fill={color}>{m.type}{n > 1 ? ` ×${n}` : ""}</text>
             </g>
           );
         })}
