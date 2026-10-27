@@ -49,6 +49,13 @@ export function CameraRig({ ap, center, radius }: { ap: AirportInfo; center: P2;
       const az = ((rwHeading + 145) * Math.PI) / 180;
       const d = THREE.MathUtils.clamp(apron.r * 1.45, 650, 2300);
       const ax = apron.x, az2 = -apron.y;
+      if (first) {
+        // arriving from the national map: start high above the airfield and come down to the gates, slowly
+        c.setLookAt(ax + Math.sin(az) * 600, Math.max(5200, radius * 3), az2 - Math.cos(az) * 600, ax, 0, az2, false);
+        c.smoothTime = 1.1;
+        const settle = () => { c.smoothTime = 0.45; c.removeEventListener("rest", settle); };
+        c.addEventListener("rest", settle);
+      }
       c.setLookAt(ax + Math.sin(az) * d * 0.78, d * 0.56, az2 - Math.cos(az) * d * 0.78, ax, 0, az2, true);
     } else if (mode === "topdown") {
       c.setLookAt(tx, radius * 2.35, tz + 1, tx, 0, tz, true);

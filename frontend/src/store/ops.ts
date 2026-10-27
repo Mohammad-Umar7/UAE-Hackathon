@@ -34,6 +34,8 @@ interface OpsState {
   detail: "simple" | "expert";
   /** the welcome card that explains the story (shown on start, reopened from the top bar) */
   welcome: boolean;
+  /** the opening shot: the whole UAE, then a flight down to the three airports once the welcome card closes */
+  intro: "wide" | "flying" | "done";
   /** a request for the AI agents page to follow a workflow step by step from a moment (the guided demo sends it) */
   follow: { thread: string | null; from: number; nonce: number } | null;
   /** how far the AI agents page has got in telling the story (done: it has shown where things stand now) */
@@ -51,6 +53,7 @@ interface OpsState {
   setPresentation(p: Partial<OpsState["presentation"]>): void;
   setDetail(d: OpsState["detail"]): void;
   setWelcome(on: boolean): void;
+  setIntro(i: OpsState["intro"]): void;
   setFollow(f: { thread: string | null; from: number } | null): void;
   setFollowAt(f: OpsState["followAt"]): void;
   toast(text: string, tone?: OpsState["toasts"][number]["tone"]): void;
@@ -76,6 +79,7 @@ export const useOps = create<OpsState>((set, get) => ({
   presentation: { active: false, step: 0 },
   detail: "simple",
   welcome: true,
+  intro: "wide",
   follow: null,
   followAt: null,
   toasts: [],
@@ -101,7 +105,8 @@ export const useOps = create<OpsState>((set, get) => ({
   setCamera: (camera) => set({ camera }),
   setPresentation: (p) => set({ presentation: { ...get().presentation, ...p } }),
   setDetail: (detail) => set({ detail }),
-  setWelcome: (welcome) => set({ welcome }),
+  setWelcome: (welcome) => set({ welcome, ...(!welcome && get().intro === "wide" ? { intro: "flying" as const } : {}) }),
+  setIntro: (intro) => set({ intro }),
   setFollow: (f) => set({ follow: f ? { ...f, nonce: (get().follow?.nonce ?? 0) + 1 } : null }),
   setFollowAt: (followAt) => {
     const a = get().followAt;

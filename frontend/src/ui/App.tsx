@@ -30,7 +30,7 @@ export default function App() {
         const rt = new Runtime(registry, compute);
         rt.load("nightfall", 7);
         useOps.getState().attach(rt, sources);
-        if (/[?&]intro=0\b/.test(window.location.search)) useOps.getState().setWelcome(false); // screenshots and rehearsals
+        if (/[?&]intro=0\b/.test(window.location.search)) { useOps.getState().setWelcome(false); useOps.getState().setIntro("done"); } // screenshots and rehearsals
         (window as unknown as { skypact: Runtime; skypactUi: typeof useOps }).skypact = rt;
         (window as unknown as { skypactUi: typeof useOps }).skypactUi = useOps; // inspection handle for demos/tests
         void detectLlm().then((s) => { rt.llm = s; rt.notify(); });
