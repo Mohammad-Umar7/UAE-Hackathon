@@ -29,7 +29,8 @@ interface OpsState {
   theme: "light" | "dark";
   overlays: Overlays;
   camera: CameraMode;
-  presentation: { active: boolean; step: number };
+  /** the guided story: Operation Nightfall unless `story` names another scenario to play */
+  presentation: { active: boolean; step: number; story?: string };
   /** simple: plain-language views for a first-time audience; expert: every number, log and table */
   detail: "simple" | "expert";
   /** the welcome card that explains the story (shown on start, reopened from the top bar) */
@@ -103,7 +104,8 @@ export const useOps = create<OpsState>((set, get) => ({
   },
   setOverlay: (k, v) => set({ overlays: { ...get().overlays, [k]: v } }),
   setCamera: (camera) => set({ camera }),
-  setPresentation: (p) => set({ presentation: { ...get().presentation, ...p } }),
+  // starting a story without naming one plays the signature demo (Operation Nightfall)
+  setPresentation: (p) => set({ presentation: { ...get().presentation, ...(p.active && !get().presentation.active && !("story" in p) ? { story: undefined } : {}), ...p } }),
   setDetail: (detail) => set({ detail }),
   setWelcome: (welcome) => set({ welcome, ...(!welcome && get().intro === "wide" ? { intro: "flying" as const } : {}) }),
   setIntro: (intro) => set({ intro }),
