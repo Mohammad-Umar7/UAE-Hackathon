@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useOps } from "@/store/ops";
+import { AutoNav } from "./AutoNav";
 import { SideNav } from "./SideNav";
 import { StoryBar } from "./StoryBar";
 import { TopBar } from "./TopBar";
@@ -42,6 +43,7 @@ export function Shell() {
       <Presentation />
       <Welcome />
       <Toasts />
+      <AutoNav />
     </div>
   );
 }
