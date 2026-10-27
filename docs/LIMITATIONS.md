@@ -20,7 +20,8 @@ its models are simplified, so results are read in the right light.
 
 * **No ATC function.** SKYPACT proposes landing-sequence targets and diversions for review by authorised ATC staff and
   never issues clearances. Arrival management uses 15-minute capacity buckets and does not model wake-turbulence
-  separation, approach procedures or airspace structure.
+  separation, approach procedures or airspace structure. A landing-sequence target fixes a flight's order and its
+  latest landing time; the simulated arrival manager still lands it earlier when capacity, spacing and its stand allow.
 * **Ground movement** follows the taxi graph with a nose-gear point-mass model (curvature-limited speeds, accelerations,
   pushback and tows). Taxiing aircraft are not deconflicted from each other on the ground.
 * **Turnarounds** are limited by minimum turnaround time, handling teams and ambulifts; individual ground vehicles
@@ -35,9 +36,18 @@ its models are simplified, so results are read in the right light.
   holding, and a 3-hour planning horizon. The branch-and-bound search is bounded by a node limit for determinism. Each candidate
   shows its solver status: “Optimal” means proven within a 0.5 % relative gap for this model; otherwise the
   node limit stopped the search first and the plan is not proven optimal.
+* Each flight is offered its **current stand plus a few ranked alternatives** (stands other flights already hold rank
+  lower) to keep the model small enough to solve in seconds. In heavy disruption a flight near the end of the planning
+  horizon can be left with a long delay on its own stand where an airport would simply use another free stand; the
+  next planning cycle revisits it.
+* **Projections** compare three policies from the same state. The plan projection applies the plan's decisions and
+  handles everything the plan does not cover exactly like the local-only baseline, so the difference between the two
+  is the value of network coordination. Total delay is dominated by runway capacity and moves little; the plans'
+  measurable effect is mostly on airborne holding, crew fuel diversions and stand conflicts.
 * Agents are **deterministic programs** with explicit tools, permissions and message contracts. The optional local
-  language model only writes the plan briefing, and every number it mentions is checked against the plan; it never
-  makes or changes a decision.
+  language model only writes the plan briefing: it is shown only if every number in it is a digit taken from the
+  plan's facts, stated changes go in the right direction and it stays short and in the third person; otherwise the
+  deterministic briefing is shown. It never makes or changes a decision.
 * When stakeholders are not operated by a person, their responses come from **simulated policies** that use only
   that stakeholder's local information. They illustrate the coordination protocol; they are not models of real people.
 
