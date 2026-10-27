@@ -8,6 +8,7 @@ import { hm, SCENARIOS, type LabIncidentSpec } from "@/core/sim/scenarios";
 import type { IncidentType } from "@/core/types";
 import { fmtTime } from "@/core/world";
 import { useOps, useRuntime } from "@/store/ops";
+import { ScenarioPicker } from "./ScenarioPicker";
 
 const TYPES: { id: IncidentType; label: string; hint: string }[] = [
   { id: "FOG", label: "Heavy fog", hint: "Low-visibility procedures; arrival capacity restricted" },
@@ -22,6 +23,12 @@ const TYPES: { id: IncidentType; label: string; hint: string }[] = [
 ];
 
 export default function LabView() {
+  const expert = useOps((s) => s.detail === "expert");
+  return expert ? <ScenarioLab /> : <ScenarioPicker />;
+}
+
+/** Expert mode: every catalogue scenario, seeds, and disruptions injected into the running simulation. */
+function ScenarioLab() {
   const rt = useRuntime();
   const { role, toast, setView } = useOps();
   const [spec, setSpec] = useState<LabIncidentSpec>({ type: "FOG", airport: "OMAA", start_offset_min: 5, duration_min: 150, severity: "high" });
