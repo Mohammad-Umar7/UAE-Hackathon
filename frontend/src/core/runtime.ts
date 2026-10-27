@@ -180,7 +180,7 @@ export class Runtime {
     const tStart = performance.now();
     void this.compute.projectMany(preCommit, [
       { key: "noAction", policy: "no_action" }, { key: "localGreedy", policy: "local_greedy" },
-      { key: "plan", policy: "live", decisions },
+      { key: "plan", policy: "local_greedy", decisions },
     ], 4 * 3600).then((r) => {
       this.evidence.push({ proposal: `${p.id} v${p.version}`, t, wall: Date.now(), noAction: r.noAction, localGreedy: r.localGreedy, plan: r.plan,
         computeMs: Math.round(performance.now() - tStart) });

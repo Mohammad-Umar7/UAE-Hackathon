@@ -38,8 +38,9 @@ describe.skipIf(!process.env.SKYPACT_DEBUG)("debug agents", () => {
       console.log(`PROPOSAL ${p.id} v${p.version} ${p.status} ${p.label} decisions=${p.plan.decisions.length} created=${fmtTime(p.createdAt, true)} stale=${p.staleReason ?? "-"} kpis=${JSON.stringify(p.plan.kpis)}`);
       for (const d of p.plan.decisions.slice(0, 12)) console.log(`   ${d.action} ${d.callsign} ${d.airport}${d.to ? "→" + d.to : ""} ${d.stand ?? ""} ${d.eldt ? fmtTime(d.eldt) : ""}`);
     }
-    for (const e of rt.evidence) console.log("EVIDENCE", e.proposal, "noAction", e.noAction.totalDelayMin, e.noAction.airborneHoldingMin, e.noAction.fuelDiversions,
-      "| local", e.localGreedy.totalDelayMin, "| plan", e.plan.totalDelayMin, e.plan.airborneHoldingMin, e.plan.fuelDiversions);
+    const fmt = (p: { totalDelayMin: number; paxDelayHours: number; airborneHoldingMin: number; groundWaitMin: number; standConflicts: number; fuelDiversions: number }) =>
+      `delay ${p.totalDelayMin.toFixed(0)} pax ${p.paxDelayHours.toFixed(0)} hold ${p.airborneHoldingMin.toFixed(0)} wait ${p.groundWaitMin.toFixed(0)} conflicts ${p.standConflicts} fuelDiv ${p.fuelDiversions}`;
+    for (const e of rt.evidence) console.log("EVIDENCE", e.proposal, "| none", fmt(e.noAction), "| local", fmt(e.localGreedy), "| plan", fmt(e.plan));
     console.log("audit ok", rt.audit.verify().ok, rt.audit.entries.length, "outcome", JSON.stringify(rt.outcome()));
   }, 1800000);
 });

@@ -45,14 +45,14 @@ export function PlanComparison({ p }: { p: Proposal }) {
       <div className="panel-h">
         <div>
           <div className="panel-t">Candidate plans vs baselines</div>
-          <div className="text-[11px] text-muted">Each column is a deterministic simulation from the same state (shared picture). {p.recommendedReason}</div>
+          <div className="text-[11px] text-muted">Each column is a deterministic simulation from the same state (shared picture); a candidate plan handles whatever it does not cover exactly like the local-only baseline. {p.recommendedReason}</div>
         </div>
       </div>
       <div className="scroll-x">
-        <table className="table min-w-[860px]">
+        <table className="table min-w-[760px]">
           <thead>
             <tr>
-              <th className="w-[190px]">Metric</th>
+              <th className="w-[150px]">Metric</th>
               {cols.map((c) => (
                 <th key={c.key} className={c.chosen ? "!bg-[var(--teal-soft)]" : ""}>
                   <div className="flex items-center gap-1 normal-case tracking-normal">

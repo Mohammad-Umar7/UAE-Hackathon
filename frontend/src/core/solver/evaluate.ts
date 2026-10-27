@@ -5,7 +5,9 @@
  *
  *   no_action    — planned stands kept; aircraft wait for their stand; crews divert on minimum fuel
  *   local_greedy — each airport reassigns its own stands first-fit (no network coordination)
- *   plan         — the recovery plan's decisions applied, then normal operations
+ *   plan         — local_greedy plus the recovery plan's decisions: whatever the plan does not cover is
+ *                  handled exactly as in the local-only baseline, so plan vs local-only isolates the
+ *                  value of network coordination
  */
 
 import type { Registry } from "../airports/registry";

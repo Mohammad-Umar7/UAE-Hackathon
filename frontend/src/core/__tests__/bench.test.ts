@@ -65,7 +65,7 @@ describe.skipIf(!process.env.SKYPACT_BENCH)("benchmarks (real layouts)", () => {
     const base = project(w2, aps, "no_action", 4 * 3600);
     const tBase = ms(t);
     t = performance.now();
-    const withPlan = project(w2, aps, "live", 4 * 3600, plans[0].decisions);
+    const withPlan = project(w2, aps, "local_greedy", 4 * 3600, plans[0].decisions);
     rows.push(["4 h look-ahead projection (fast mode)", `${tBase.toFixed(0)} ms no-action · ${ms(t).toFixed(0)} ms with plan`]);
     rows.push(["Projected outcome: no action → plan", `delay ${base.totalDelayMin} → ${withPlan.totalDelayMin} min · holding ${base.airborneHoldingMin} → ${withPlan.airborneHoldingMin} min · stand conflicts ${base.standConflicts} → ${withPlan.standConflicts} · fuel diversions ${base.fuelDiversions} → ${withPlan.fuelDiversions}`]);
 

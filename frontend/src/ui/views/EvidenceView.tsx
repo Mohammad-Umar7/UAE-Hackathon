@@ -54,7 +54,7 @@ export default function EvidenceView() {
         <Kpi label="Total delay so far (arr + dep)" value={`${num(outcome.totalDelayMin)} min`} sub={`${outcome.arrivals} arrivals · ${outcome.departures} departures since ${fmtTime(rt.scenario.start)}`} />
         <Kpi label="Airborne holding" value={`${num(outcome.airborneHoldingMin)} min`} sub={`${outcome.groundWaitMin.toFixed(0)} min ground wait for stands`} />
         <Kpi label="Diversions" value={`${outcome.diversionsCoordinated} coordinated · ${outcome.diversionsUnplanned} unplanned`} sub="unplanned = crew minimum-fuel decision" />
-        <Kpi label="Passengers needing assistance — service delays" value={String(outcome.prmServiceDelays)} sub={`${outcome.prmWaitMin} min total waiting for an ambulift`} tone={outcome.prmServiceDelays ? "red" : undefined} />
+        <Kpi label="Passengers needing assistance — service delays" value={String(outcome.prmServiceDelays)} sub={`${Math.round(outcome.prmWaitMin)} min total waiting for an ambulift`} tone={outcome.prmServiceDelays ? "red" : undefined} />
       </div>
 
       <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-3">
@@ -85,7 +85,7 @@ export default function EvidenceView() {
                   </div>
                 );
               })}
-              <p className="text-[11px] leading-relaxed text-faint">Baselines: “no coordinated action” keeps planned stands, aircraft wait for them, and crews divert when holding fuel runs out; “local-only” lets each airport reassign its own stands first-fit without network coordination. All three use the same synthetic inputs and censor flights not completed within the horizon.</p>
+              <p className="text-[11px] leading-relaxed text-faint">Baselines: “no coordinated action” keeps planned stands, aircraft wait for them, and crews divert when holding fuel runs out; “local-only” lets each airport reassign its own stands first-fit without network coordination; the SKYPACT plan applies its decisions and handles everything else exactly like local-only, so the difference between the two is the value of network coordination. All three use the same synthetic inputs and censor flights not completed within the horizon.</p>
             </div>
           ) : <div className="p-6 text-center text-muted">Run Operation Nightfall and approve a plan to generate measured before/after evidence.</div>}
         </div>

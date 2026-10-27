@@ -399,7 +399,7 @@ export class Orchestrator {
       return;
     }
     const jobs = [{ key: "noAction", policy: "no_action" as const, sharedOnly: true }, { key: "localGreedy", policy: "local_greedy" as const, sharedOnly: true },
-      ...valid.map((p) => ({ key: p.variant, policy: "live" as const, decisions: p.decisions, sharedOnly: true }))];
+      ...valid.map((p) => ({ key: p.variant, policy: "local_greedy" as const, decisions: p.decisions, sharedOnly: true }))];
     const evals = await this.tool("recovery", "evaluate_plans", { horizonMin: HORIZON / 60, baselines: ["no_action", "local_greedy"], candidates: valid.length }, wf.id, causedBy,
       () => this.host.compute.projectMany(slimWorld(this.w), jobs, HORIZON),
       (r) => valid.map((p) => `${p.variant}: ${r[p.variant].totalDelayMin.toFixed(0)} min`).join(" · ") + ` · baseline ${r.noAction.totalDelayMin.toFixed(0)} / local ${r.localGreedy.totalDelayMin.toFixed(0)} min`);
