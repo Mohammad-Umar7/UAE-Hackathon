@@ -109,6 +109,7 @@ function Problem({ p }: { p: Proposal }) {
 }
 
 function Effects({ p }: { p: Proposal }) {
+  const setView = useOps((s) => s.setView);
   const fx = planEffects(p);
   if (!fx.length) return null;
   return (
@@ -116,6 +117,7 @@ function Effects({ p }: { p: Proposal }) {
       <div className="panel-h">
         <div className="panel-t">What it should achieve</div>
         <span className="text-[11px] text-muted">simulated 4 hours ahead from the same starting point, against doing nothing</span>
+        <button className="btn btn-sm ml-auto" onClick={() => setView("evidence")}>See before &amp; after <ChevronRight size={13} /></button>
       </div>
       <div className="grid grid-cols-4 gap-3 p-4">
         {fx.map((e) => {
