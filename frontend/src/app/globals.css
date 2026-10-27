@@ -151,6 +151,9 @@ html, body {
 .panel-t { font-size: 12px; font-weight: 600; letter-spacing: 0.01em; color: var(--ink); }
 .eyebrow { font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .hair { border-color: var(--line); }
+/* the logo is drawn for light surfaces; on the dark theme it sits on a light disc */
+:root[data-theme="dark"] .logo-mark { background: #f4f6f8; border-radius: 999px; }
+:root[data-theme="dark"] .logo-mark > img { transform: scale(0.84); }
 
 .btn {
   display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 7px;
