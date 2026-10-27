@@ -284,8 +284,13 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
     const restricted = restrictionEnd[v.airport] !== null;
     const st = v.stand ? ap.stands[v.stand] : undefined;
     const eldt = v.eldt ?? v.eta ?? now;
+    // an airborne flight whose earliest plannable landing (as the flight variables below compute it) is already
+    // past its fuel endurance is beyond any plan: the crew diverts on its own, and no alternate is closer
+    const earliest = t0 + 60 * Math.max(rel(v.eta!, t0), rel(now, t0) + Math.ceil(approachDuration(v.type) / 60) + 1);
+    const beyondFuel = (v.phase === "INBOUND" || v.phase === "HOLDING") && v.fuelEndurance !== null
+      && earliest > v.eta! + v.fuelEndurance + 120;
     let reason = "";
-    if (scope.includes(v.airport) && inHorizon) {
+    if (scope.includes(v.airport) && inHorizon && !beyondFuel) {
       if (restricted) reason = "arrival capacity restricted";
       else if (predicted.has(v.id)) reason = `projected stand conflict at ${v.stand ?? "—"} (look-ahead)`;
       else if (!st) reason = "no stand assigned";
@@ -471,7 +476,8 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
     visits: Object.fromEntries(flights.map((f) => [f.visit, { phase: w.visits[f.visit].phase, stand: f.currentStand, eta: w.visits[f.visit].eta }])),
   };
   const conflicts: Record<string, string[]> = {};
-  for (const icao of scope) for (const st of Object.values(airports[icao].stands)) if (st.conflicts.length) conflicts[`${icao}:${st.id}`] = [...st.conflicts];
+  // every airport, not only the scope: diversions use the alternates' stands
+  for (const [icao, ap] of Object.entries(airports)) for (const st of Object.values(ap.stands)) if (st.conflicts.length) conflicts[`${icao}:${st.id}`] = [...st.conflicts];
   return {
     t0, horizon: H, scope, flights, fixed, tows, caps, fixedLandings, divLimit, ambulift, wb, restrictionEnd, forbidden, conflicts, snapshot,
     buildMs: performance.now() - tStart,
