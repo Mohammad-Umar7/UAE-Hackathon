@@ -12,6 +12,8 @@ import { isOpen, type Proposal } from "@/core/approvals/workflow";
 import type { Runtime } from "@/core/runtime";
 import { fmtTime } from "@/core/world";
 import { useOps, type CameraMode, type View } from "@/store/ops";
+import { followStart } from "../agents/follow";
+import { comparisons } from "../impact/compare";
 
 interface Step {
   id: string;
@@ -36,6 +38,12 @@ const newestOpen = (rt: Runtime): [string, Proposal] | null =>
   Object.entries(rt.proposals).filter(([, p]) => isOpen(p)).sort((a, b) => b[1].createdAt - a[1].createdAt)[0] ?? null;
 const hasMessage = (rt: Runtime, type: string) => rt.orchestrator.messages.some((m) => m.type === type);
 const othersDecided = (p: Proposal) => p.approvals.filter((a) => a.key !== "NATIONAL_SUPERVISOR").every((a) => a.decision !== "PENDING");
+/** a plan made after the fog began, answered by everyone except the supervisor */
+const fogPlanReady = (rt: Runtime) => {
+  const fog = Object.values(rt.world.incidents).find((i) => i.airport === "OMAA" && i.type === "FOG" && i.status !== "scheduled");
+  const o = newestOpen(rt);
+  return Boolean(fog && o && o[1].createdAt >= fog.start && othersDecided(o[1]));
+};
 
 const STEPS: Step[] = [
   {
@@ -47,34 +55,33 @@ const STEPS: Step[] = [
     },
   },
   {
-    id: "fog", title: "18:00 · thick fog at Abu Dhabi", view: "twin", airport: "OMAA", camera: "strategic", lighting: "auto", speed: 90,
-    until: (rt) => fogActive(rt) && rt.world.now >= rt.scenario.start + 46 * 60,
+    id: "fog", title: "18:00 · thick fog at Abu Dhabi", view: "twin", airport: "OMAA", camera: "strategic", lighting: "auto", speed: 120,
+    // stop as the fog arrives, so the agents' response happens in front of the audience in the next step
+    until: fogActive,
     waiting: "Fast-forwarding to the fog…", done: "The fog is in: low-visibility rules are on.",
     body: "In fog, planes must land further apart: Abu Dhabi can now land 12 planes an hour instead of 30, so arriving aircraft start circling while they wait.",
   },
   {
-    id: "agents", title: "The AI agents get to work", view: "agents", speed: 60,
-    until: (rt) => hasMessage(rt, "PlanCandidates"), waiting: "The agents are working — the clock waits for them…", done: "The agents have a plan ready.",
-    body: "One agent spots the fog, another predicts the knock-on effects, and the planning agent uses a mathematical optimiser to build recovery plans. Every step is listed on the right; click an agent to see its job.",
+    id: "agents", title: "Watch the agents handle it", view: "agents", speed: 15,
+    enter: (rt) => {
+      const c = comparisons(rt)[0];
+      useOps.getState().setFollow({ thread: c?.thread ?? null, from: followStart(rt, c?.thread ?? null, c?.cause ?? null) });
+    },
+    // wait for the agents and for the camera to finish telling it (or for the presenter to stop following)
+    until: (rt) => fogPlanReady(rt) && (useOps.getState().followAt?.done ?? true),
+    waiting: "The agents are working; the camera follows each one as it acts…", done: "Everyone except you has approved. Your turn next.",
+    body: "The camera follows each agent as it acts and shows what it found: the weather agent warns, the airport agent predicts what happens if nobody acts, the planning agent builds a plan with an optimiser, the safety agent checks it, and people are asked to approve.",
   },
   {
     id: "plans", title: "Before & after, predicted", view: "evidence",
-    body: "Left: what the simulator predicts if nobody acts: planes stack up circling and crews divert on low fuel. Middle: the plan the agents built, re-checked by a separate safety agent. Right: the same evening with the plan. Below: how it unfolds hour by hour, and what each agent did.",
-  },
-  {
-    id: "local", title: "Sharjah knows something the system didn't", view: "agents", speed: 60,
-    // with another seed every stakeholder may simply approve; the tour then moves on instead of waiting
-    until: (rt) => { const o = newestOpen(rt); return hasMessage(rt, "LocalInformationShared") || Boolean(o && othersDecided(o[1])); },
-    waiting: "Waiting for the people in charge to answer…",
-    done: (rt) => (hasMessage(rt, "LocalInformationShared") ? "Local information shared — the agents are re-planning." : "Every stakeholder approved — no hidden local constraint this time."),
-    body: "Sharjah's airport controller sees that an earlier version sent wheelchair passengers there, but their wheelchair lifts are broken. They said no, that fact was shared with everyone, and the agents re-planned.",
+    body: "First one real flight: without SKYPACT it circles in the fog until its fuel runs low and has to divert; with the plan it goes to another airport early, with a gate waiting. Below: the same comparison for every flight, and how the evening unfolds hour by hour.",
   },
   {
     id: "approve", title: "People decide", view: "workbench", speed: 60, approve: true,
     enter: (rt) => { const o = newestOpen(rt); if (o) useOps.getState().select({ selectedProposal: o[0] }); },
     until: (rt) => { const o = newestOpen(rt); return Boolean(o && othersDecided(o[1])); },
     waiting: "Collecting approvals…", done: "Everyone else has approved — your turn.",
-    body: "Airports, airlines and air-traffic control approve. The final yes belongs to the national supervisor — that's you.",
+    body: "Airports, airlines and air-traffic control have approved; the final yes belongs to the national supervisor — that's you. People can say no: earlier this evening two plans were turned down because Sharjah's wheelchair lifts and large-aircraft ground crews were out of service, and the agents re-planned (see “Earlier versions”).",
   },
   {
     id: "execute", title: "The plan runs", view: "twin", airport: "OMAA", camera: "strategic", speed: 30,
