@@ -26,7 +26,7 @@ interface Step {
   /** keep running until this is true (then pause), with a short status for the presenter */
   until?: (rt: Runtime) => boolean;
   waiting?: string;
-  done?: string;
+  done?: string | ((rt: Runtime) => string);
   enter?: (rt: Runtime) => void;
   approve?: boolean;
 }
@@ -64,8 +64,10 @@ const STEPS: Step[] = [
   },
   {
     id: "local", title: "Local knowledge changes the plan", view: "agents", speed: 60,
-    until: (rt) => hasMessage(rt, "LocalInformationShared"),
-    waiting: "Waiting for the stakeholders to respond…", done: "Local information shared — the agents are re-planning.",
+    // with another seed every stakeholder may simply approve; the tour then moves on instead of waiting
+    until: (rt) => { const o = newestOpen(rt); return hasMessage(rt, "LocalInformationShared") || Boolean(o && othersDecided(o[1])); },
+    waiting: "Waiting for the stakeholders to respond…",
+    done: (rt) => (hasMessage(rt, "LocalInformationShared") ? "Local information shared — the agents are re-planning." : "Every stakeholder approved — no hidden local constraint this time."),
     body: "Stakeholders answer from their own knowledge. Sharjah's controller knows something the network does not: an ambulift and wide-body handling teams are out of service. The rejection reveals it, the information is shared, and the agents re-plan around it.",
   },
   {
@@ -82,7 +84,7 @@ const STEPS: Step[] = [
   },
   {
     id: "evidence", title: "Measured, not claimed", view: "evidence",
-    body: "Outcomes are projected from the same pre-commit state for three policies: no action, each airport alone, and the coordinated plan. Delay, airborne holding, uncoordinated diversions and assistance for passengers with reduced mobility are compared side by side.",
+    body: "Outcomes are projected from the same pre-commit state for three policies: no action, each airport alone, and the coordinated plan on top of what each airport does alone, so the difference is the value of coordination. Delay, airborne holding, uncoordinated diversions and assistance for passengers with reduced mobility are compared side by side.",
   },
   {
     id: "replay", title: "Replayable and auditable", view: "replay",
@@ -180,7 +182,7 @@ export default function Presentation() {
             {step.until && (
               <div className="mt-2 flex items-center gap-1.5 text-[11.5px]">
                 {status === "waiting" ? <Loader2 size={13} className="animate-spin text-[#e0a646]" /> : <Check size={13} className="text-[#4fb8a4]" />}
-                <span className={status === "waiting" ? "text-[#e0a646]" : "text-[#7fd1bf]"}>{status === "waiting" ? step.waiting : step.done}</span>
+                <span className={status === "waiting" ? "text-[#e0a646]" : "text-[#7fd1bf]"}>{status === "waiting" ? step.waiting : typeof step.done === "function" ? step.done(runtime) : step.done}</span>
               </div>
             )}
           </div>
