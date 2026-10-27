@@ -30,11 +30,11 @@ export function CoordinationLog({ thread, showActions = true, compact = false, l
   if (showActions) o.actions.forEach((a) => { if (!thread || a.thread === thread) rows.push({ kind: "action", a, seq: a.wall * 10 }); });
   rows.sort((x, y) => x.seq - y.seq);
   const shown = rows.slice(-limit);
-  const end = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (stick.current && end.current) end.current.scrollIntoView({ block: "end" });
+    // scroll only the log itself (scrollIntoView would also scroll the panels that contain it)
+    if (stick.current && box.current) box.current.scrollTop = box.current.scrollHeight;
   }, [shown.length]);
   return (
     <div ref={box} className="scroll-y h-full" onScroll={(e) => {
@@ -83,7 +83,6 @@ export function CoordinationLog({ thread, showActions = true, compact = false, l
           );
         })}
       </ol>
-      <div ref={end} />
     </div>
   );
 }
