@@ -204,7 +204,7 @@ export class Engine {
       if (r.end > now) this.schedule(r.end, "restriction_end", r.id, {}, 1);
     }
     for (const inc of Object.values(w.incidents)) {
-      if (inc.status === "scheduled") this.schedule(Math.max(inc.start, now), "incident_start", inc.id, {}, 0);
+      if (inc.status === "scheduled") this.schedule(Math.max(inc.start, now), "incident_start", inc.id, {}, 1);
       else if (inc.status === "active" && inc.end > now) this.schedule(inc.end, "incident_end", inc.id, {}, 1);
     }
     for (const icao of Object.keys(this.ap)) { this.poolJobs[icao] = {}; this.depSlots[icao] = []; }
@@ -298,7 +298,9 @@ export class Engine {
   }
 
   scheduleIncident(inc: Incident) {
-    if (inc.status === "scheduled") this.schedule(Math.max(inc.start, this.w.now), "incident_start", inc.id, {}, 0);
+    // same priority as weather and restrictions, which are queued first: at the same instant the airport's weather report
+    // and the restriction apply before the incident is announced, so whoever reacts to it sees them
+    if (inc.status === "scheduled") this.schedule(Math.max(inc.start, this.w.now), "incident_start", inc.id, {}, 1);
   }
 
   // ================================================================= helpers
