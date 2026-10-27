@@ -39,6 +39,8 @@ export function Labels({ ap, canvas }: { ap: AirportInfo; canvas: React.RefObjec
   const labels = useOps((s) => s.overlays.labels);
   const standsOn = useOps((s) => s.overlays.stands);
   const selected = useOps((s) => s.selectedVisit);
+  // simple mode labels only what is happening (moving, waiting, in trouble, being re-planned), never every parked aircraft
+  const expert = useOps((s) => s.detail === "expert");
   const { size } = useThree();
   const v3 = useMemo(() => new THREE.Vector3(), []);
   useEffect(() => {
@@ -98,17 +100,20 @@ export function Labels({ ap, canvas }: { ap: AirportInfo; canvas: React.RefObjec
       const a = project(v3.x, v3.y, v3.z);
       if (!a) continue;
       const [sub, tone] = describe(visit, pose.kind);
+      if (!expert && !sel && tone === "stand") continue;
       const pri = (sel ? 1e6 : 0) + (tone === "alert" ? 5e4 : tone === "hold" ? 3e4 : tone === "move" || tone === "dep" ? 2e4 : 0) - d;
       items.push({ x: a[0], y: a[1] - 26, ax: a[0], ay: a[1], title: callsignOf(visit), sub: `${visit.type.toUpperCase()} · ${sub}`, tone, pri, sel });
     }
     for (const m of planMarks) {
       const a = project(m.x, m.y, m.z);
-      if (a) items.push({ x: a[0], y: a[1] - 10, ax: a[0], ay: a[1], title: m.text, sub: m.approved ? "approved plan" : "proposed by the planning agent", tone: "plan", pri: 4e4, sel: false });
+      if (a) items.push({ x: a[0], y: a[1] - 10, ax: a[0], ay: a[1], title: m.text, sub: expert ? (m.approved ? "approved plan" : "proposed by the planning agent") : m.approved ? "approved move" : "planned move", tone: "plan", pri: 4e4, sel: false });
     }
     items.sort((p, q) => q.pri - p.pri);
     g.textAlign = "left";
     g.textBaseline = "alphabetic";
+    let shown = 0;
     for (const it of items) {
+      if (!expert && !it.sel && shown >= 12) break;
       g.font = `650 ${it.sel ? 12.5 : 11.5}px "Inter Variable", Inter, sans-serif`;
       const tw = g.measureText(it.title).width;
       g.font = `500 10px "Inter Variable", Inter, sans-serif`;
@@ -116,6 +121,7 @@ export function Labels({ ap, canvas }: { ap: AirportInfo; canvas: React.RefObjec
       const w = Math.max(tw, sw) + 18, h = it.sel ? 34 : 31;
       const x = Math.round(it.x - w / 2), y = Math.round(it.y - h);
       if (!free(x, y, w, h)) continue;
+      shown++;
       const col = TONE[it.tone];
       g.strokeStyle = col;
       g.globalAlpha = 0.85;

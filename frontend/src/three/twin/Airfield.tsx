@@ -13,6 +13,9 @@ import { airfieldLightGeometry, airfieldLightMaterial } from "./lights";
 import { facadeTextures, poolTexture, surfaceSet, type SurfaceSet } from "./textures";
 import { twinState } from "./state";
 
+/** Desert sand around the airfield: warm and a little saturated, so the paved areas stand out against it. */
+const SAND = "#ddbf8f";
+
 /** Everything static about one airport's airfield, built once per layout. */
 export function buildAirfield(ap: AirportInfo, replaced: Set<string> = new Set()) {
   const layout = ap.layout;
@@ -120,22 +123,22 @@ export function Airfield({ data, center }: { data: AirfieldData; center: P2 }) {
       color, roughness, metalness: 0, map: set?.map ?? null, normalMap: set?.normalMap ?? null,
       normalScale: new THREE.Vector2(normalScale, normalScale), roughnessMap: set?.roughnessMap ?? null,
     }), order);
-    const ground = std("#d8c39f", surf?.sand, 1, 0, 0.8) as THREE.MeshStandardMaterial;
+    const ground = std(SAND, surf?.sand, 1, 0, 0.8) as THREE.MeshStandardMaterial;
     macroVariation(ground, 0.071, 0.0123);
     const paint = (color: string) => layer(new THREE.MeshStandardMaterial({ color, roughness: 0.62, metalness: 0 }), 8);
     return {
       ground,
-      green: std("#7f9658", surf?.sand, 0.95, 1, 0.3),
-      water: layer(new THREE.MeshStandardMaterial({ color: "#2d5f73", roughness: 0.12, metalness: 0.1 }), 1),
+      green: std("#6f9f45", surf?.sand, 0.95, 1, 0.3),
+      water: layer(new THREE.MeshStandardMaterial({ color: "#1f7fa3", roughness: 0.12, metalness: 0.1 }), 1),
       parking: std("#6c6d6c", surf?.asphalt2, 0.9, 2),
       roads: std("#55585b", surf?.asphalt2, 0.85, 3),
       shoulder: std("#a39c8c", surf?.asphalt2, 0.95, 2),
-      apron: std("#b3b0a8", surf?.concrete, 0.82, 4, 0.5),
-      taxi: std("#6b6d70", surf?.asphalt, 0.82, 5),
-      runway: std("#505357", surf?.asphalt, 0.8, 6),
+      apron: std("#c4c1b8", surf?.concrete, 0.82, 4, 0.5),
+      taxi: std("#5c6066", surf?.asphalt, 0.82, 5),
+      runway: std("#43474d", surf?.asphalt, 0.8, 6),
       white: paint("#ecebe6"),
-      yellow: paint("#e3b12a"),
-      red: paint("#c63a2f"),
+      yellow: paint("#f6c22a"),
+      red: paint("#d93a2c"),
     };
   }, [surf]);
   useEffect(() => () => Object.values(mats).forEach((m) => m.dispose()), [mats]);
@@ -156,7 +159,7 @@ export function Airfield({ data, center }: { data: AirfieldData; center: P2 }) {
       const m = mats[k] as THREE.MeshStandardMaterial;
       m.roughness = THREE.MathUtils.lerp(k === "apron" ? 0.82 : 0.85, 0.18, wet);
     }
-    (mats.ground as THREE.MeshStandardMaterial).color.set("#d8c39f").multiplyScalar(1 - 0.18 * wet);
+    (mats.ground as THREE.MeshStandardMaterial).color.set(SAND).multiplyScalar(1 - 0.18 * wet);
     const u = lightMat.uniforms;
     u.uTime.value = clock.elapsedTime;
     u.uScatter.value = s.scatter;

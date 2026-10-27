@@ -18,7 +18,7 @@ const LIGHTING_TIME: Record<string, number> = { day: 13 * 3600, dusk: 17.82 * 36
 const C = (h: string) => new THREE.Color(h);
 const FOG_DAY = C("#d3d6d6"), FOG_DUSK = C("#c7b39f"), FOG_NIGHT = C("#252c36"), FOG_GLOW = C("#8a8d92");
 const SUN_LOW = C("#ffad66"), SUN_HIGH = C("#fff4e6");
-const SKY_DAY = C("#bcd3ee"), SKY_NIGHT = C("#2c3a55"), GROUND_DAY = C("#cdb48c"), GROUND_NIGHT = C("#1e2329");
+const SKY_DAY = C("#b3d2f5"), SKY_NIGHT = C("#34466b"), GROUND_DAY = C("#d9b582"), GROUND_NIGHT = C("#262b33");
 
 export function Atmosphere({ rt, icao }: { rt: Runtime; icao: string }) {
   const { scene } = useThree();
@@ -107,7 +107,7 @@ export function Atmosphere({ rt, icao }: { rt: Runtime; icao: string }) {
     if (hemi.current) {
       hemi.current.color.copy(SKY_DAY).lerp(SKY_NIGHT, night);
       hemi.current.groundColor.copy(GROUND_DAY).lerp(GROUND_NIGHT, night);
-      hemi.current.intensity = 0.55 * day + 0.42 * night + 2.5 * f.level;
+      hemi.current.intensity = 0.7 * day + 0.55 * night + 2.5 * f.level;
     }
     if (amb.current) amb.current.intensity = 0.06 + 0.62 * night; // apron flood lighting fill at night
     scene.environmentIntensity = (0.12 + 0.88 * day) * (1 - 0.45 * overcast);
@@ -116,7 +116,7 @@ export function Atmosphere({ rt, icao }: { rt: Runtime; icao: string }) {
     if (sk?.uniforms) {
       sk.uniforms.sunPosition.value.copy(tmp.dir).multiplyScalar(1000);
       sk.uniforms.turbidity.value = 6 + 6 * overcast + (vis < 3000 ? 4 : 0);
-      sk.uniforms.rayleigh.value = 1.6 - 0.8 * overcast;
+      sk.uniforms.rayleigh.value = 2.2 - 1.1 * overcast;
       sk.uniforms.mieCoefficient.value = 0.006 + 0.01 * overcast;
     }
   });

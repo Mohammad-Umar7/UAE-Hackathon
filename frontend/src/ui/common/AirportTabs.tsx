@@ -9,7 +9,7 @@ export function AirportTabs({ dark = false }: { dark?: boolean }) {
   const rt = useRuntime();
   const { airport, setAirport } = useOps();
   return (
-    <div className={`flex items-center gap-0.5 rounded-lg p-0.5 ${dark ? "bg-white/5 border border-white/10" : "border border-line bg-panel"}`}>
+    <div className={`flex items-center gap-0.5 rounded-lg p-0.5 ${dark ? "border border-white/10 bg-[rgba(12,18,28,0.82)] backdrop-blur-md" : "border border-line bg-panel"}`}>
       {Object.keys(rt.airports).map((icao) => {
         const sum = rt.airportSummary(icao);
         const on = airport === icao;

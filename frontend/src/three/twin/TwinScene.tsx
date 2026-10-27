@@ -1,9 +1,9 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Bloom, EffectComposer, N8AO, SMAA, ToneMapping, Vignette } from "@react-three/postprocessing";
+import { Bloom, BrightnessContrast, EffectComposer, HueSaturation, N8AO, SMAA, ToneMapping, Vignette } from "@react-three/postprocessing";
 import { ToneMappingMode, type BloomEffect } from "postprocessing";
-import { useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { Runtime } from "@/core/runtime";
 import { Airfield, buildAirfield } from "./Airfield";
@@ -54,12 +54,21 @@ function Effects() {
       <Bloom ref={bloom} luminanceThreshold={0.95} luminanceSmoothing={0.15} mipmapBlur intensity={0.6} radius={0.7} />
       <SMAA />
       <ToneMapping mode={ToneMappingMode.AGX} />
-      <Vignette offset={0.32} darkness={0.42} />
+      {/* AgX keeps highlights in range but washes colour out; give the colour and contrast back after it */}
+      <HueSaturation saturation={0.26} />
+      <BrightnessContrast brightness={0.02} contrast={0.14} />
+      <Vignette offset={0.38} darkness={0.28} />
     </EffectComposer>
   );
 }
 
-export default function TwinScene({ rt, icao, labels }: { rt: Runtime; icao: string; labels: React.RefObject<HTMLCanvasElement | null> }) {
+/** Mounts only once everything beside it in the same Suspense boundary has loaded. */
+function Ready({ onReady }: { onReady?: () => void }) {
+  useEffect(() => { onReady?.(); }, [onReady]);
+  return null;
+}
+
+export default function TwinScene({ rt, icao, labels, onReady }: { rt: Runtime; icao: string; labels: React.RefObject<HTMLCanvasElement | null>; onReady?: () => void }) {
   return (
     <Canvas
       shadows={{ type: THREE.PCFShadowMap }}
@@ -69,8 +78,11 @@ export default function TwinScene({ rt, icao, labels }: { rt: Runtime; icao: str
       camera={{ fov: 38, near: 2, far: 90000, position: [2400, 1800, 2400] }}
       onCreated={(state) => { (window as unknown as { __twin: unknown }).__twin = state; }}
     >
-      <SceneContent key={icao} rt={rt} icao={icao} labels={labels} />
-      <Effects />
+      <Suspense fallback={null}>
+        <SceneContent key={icao} rt={rt} icao={icao} labels={labels} />
+        <Effects />
+        <Ready onReady={onReady} />
+      </Suspense>
     </Canvas>
   );
 }

@@ -5,7 +5,7 @@ import {
   Plane, Route, Sun, Sunset, Tag, X,
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { AIRCRAFT } from "@/core/aircraft";
 import { AIRLINES } from "@/core/airlines";
 import { PROFILES } from "@/core/airports/profiles";
@@ -29,10 +29,19 @@ export default function TwinView() {
   const airport = useOps((s) => s.airport);
   const expert = useOps((s) => s.detail === "expert");
   const labels = useRef<HTMLCanvasElement>(null);
+  const [ready, setReady] = useState(false);
+  const onReady = useCallback(() => setReady(true), []);
   return (
     <div className="relative h-full overflow-hidden bg-[#0b1622]">
-      <TwinScene rt={rt} icao={airport} labels={labels} />
+      <TwinScene rt={rt} icao={airport} labels={labels} onReady={onReady} />
       <canvas ref={labels} className="pointer-events-none absolute inset-0 h-full w-full" />
+      {/* the first visit loads textures and the sky: cover the empty canvas until the airfield is there */}
+      <div className={`pointer-events-none absolute inset-0 z-10 grid place-items-center bg-[#0b1622] transition-opacity duration-500 ${ready ? "opacity-0" : "opacity-100"}`}>
+        <div className="flex flex-col items-center gap-3 text-white/70">
+          <span className="h-6 w-6 animate-spin rounded-full border-2 border-white/15 border-t-[#5fd4bd]" />
+          <span className="text-[13px]">Loading {PROFILES[airport].city} in 3D…</span>
+        </div>
+      </div>
       <div className="pointer-events-none absolute left-3 top-3 flex w-[372px] flex-col gap-2">
         <div className="pointer-events-auto"><AirportTabs dark /></div>
         {expert ? <StatusCard icao={airport} /> : <StatusLine icao={airport} />}
