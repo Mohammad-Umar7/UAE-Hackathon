@@ -4,8 +4,9 @@ import { Info } from "lucide-react";
 import { useState } from "react";
 import { AGENT_ORDER, AGENTS } from "@/core/agents/definitions";
 import { fmtTime } from "@/core/world";
-import { useRuntime } from "@/store/ops";
+import { useOps, useRuntime } from "@/store/ops";
 import { AgentGraph } from "../agents/AgentGraph";
+import { AgentsStage } from "../agents/AgentsStage";
 import { CoordinationLog } from "../agents/CoordinationLog";
 import { Sequence } from "../agents/Sequence";
 
@@ -14,6 +15,12 @@ const WF_TONE: Record<string, string> = {
 };
 
 export default function AgentsView() {
+  const expert = useOps((s) => s.detail === "expert");
+  return expert ? <ExpertAgents /> : <AgentsStage />;
+}
+
+/** Expert mode: the coordination graph, the swim-lane sequence or agent roster, and the full message and tool log. */
+function ExpertAgents() {
   const rt = useRuntime();
   const o = rt.orchestrator;
   const [thread, setThread] = useState<string | null>(null);

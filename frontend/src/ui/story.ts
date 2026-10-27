@@ -5,11 +5,12 @@
  */
 
 import { AGENTS } from "@/core/agents/definitions";
-import type { AgentMessage } from "@/core/agents/types";
+import type { AgentMessage, Workflow } from "@/core/agents/types";
 import { isOpen, type ApprovalSlot, type Proposal } from "@/core/approvals/workflow";
 import type { Runtime } from "@/core/runtime";
 import type { Incident, WeatherObs } from "@/core/types";
 import { fmtTime } from "@/core/world";
+import { endpoints, type NodeId } from "./agents/model";
 
 const CITY: Record<string, string> = { OMAA: "Abu Dhabi", OMDB: "Dubai", OMSJ: "Sharjah" };
 export const city = (icao: string) => CITY[icao] ?? icao;
@@ -18,6 +19,17 @@ export const city = (icao: string) => CITY[icao] ?? icao;
 export const PLAIN_AGENT: Record<keyof typeof AGENTS, string> = {
   weather: "Weather agent", airport_ops: "Airport agent", airline_ops: "Airline agent", atc: "Air-traffic agent",
   recovery: "Planning agent", validation: "Safety-check agent", coordination: "Coordination agent",
+};
+
+/** What each agent is for, in one or two plain sentences. */
+export const PLAIN_JOB: Record<keyof typeof AGENTS, string> = {
+  weather: "Watches the weather and incident reports for all three airports and raises the alarm when something changes.",
+  airport_ops: "Works out what a disruption means for each airport: runways, gates, and what happens over the next 4 hours if nobody acts.",
+  airline_ops: "Speaks for the airlines: which flights are affected, which passengers have connections, and where each airline can be handled.",
+  atc: "Brings the runway limits into the plan and flags it for real air-traffic controllers. It never gives instructions to pilots.",
+  recovery: "Builds recovery plans with a mathematical optimiser: for every affected flight, which gate, which landing time, or which nearby airport.",
+  validation: "Double-checks every plan against every safety rule, independently of the planner, and withdraws plans that go out of date.",
+  coordination: "Sends the plan to the people who must approve it, collects their answers, and starts the plan only when everyone has said yes.",
 };
 
 const POOL: Record<string, string> = { ambulift: "Wheelchair lifts", wb_handling: "Ground crews for large aircraft", nb_handling: "Ground crews", deck_loader: "Cargo loaders" };
@@ -152,7 +164,14 @@ export function storyNow(rt: Runtime, role: string): StoryNow {
   return { tone: "calm", text: "All three airports are operating normally.", cta: rt.running ? undefined : { label: "Run the clock", go: "run" } };
 }
 
-export interface StoryStep { id: string; t: number; color: string; who: string; text: string; tone?: "bad" | "good"; n: number }
+/** A workflow's name in plain words: the first disruption it was opened for ("Thick fog at Abu Dhabi"). */
+export function workflowName(rt: Runtime, wf: Workflow): string {
+  const notice = rt.orchestrator.messages.find((m) => m.thread === wf.id && m.type === "DisruptionNotice");
+  const first = (notice?.payload.incidents as Incident[] | undefined)?.[0];
+  return first ? plainIncident(first) : wf.title;
+}
+
+export interface StoryStep { id: string; t: number; color: string; who: string; text: string; tone?: "bad" | "good"; n: number; from: NodeId; nodes: NodeId[] }
 
 /** The agents' work as a short story: one line per step, repeated exchanges merged ("14 approvals came in"). */
 export function agentStory(rt: Runtime, thread: string | null): StoryStep[] {
@@ -164,12 +183,15 @@ export function agentStory(rt: Runtime, thread: string | null): StoryStep[] {
     if (!s) continue;
     if (s.key === lastKey && out.length) {
       const prev = out[out.length - 1];
+      const e = endpoints(m);
+      prev.nodes = [...new Set([...prev.nodes, e.from, ...e.to])];
       prev.n++;
       prev.text = s.merge ? s.merge(prev.n) : prev.text;
       continue;
     }
     lastKey = s.key;
-    out.push({ id: m.id, t: m.t, color: s.color, who: s.who, text: s.text, tone: s.tone, n: 1 });
+    const e = endpoints(m);
+    out.push({ id: m.id, t: m.t, color: s.color, who: s.who, text: s.text, tone: s.tone, n: 1, from: e.from, nodes: [e.from, ...e.to] });
   }
   return out;
 }
@@ -204,7 +226,7 @@ function stepOf(m: AgentMessage): { key: string; who: string; color: string; tex
     }
     case "ValidationResult": {
       const n = ((p.approvals as unknown[] | undefined) ?? []).length;
-      return { key: `${m.type}${m.id}`, ...agent("validation"), text: `Re-checked every safety rule independently: passed. ${n ? `${plural(n, "person")} must now approve.` : ""}`, tone: "good" };
+      return { key: `${m.type}${m.id}`, ...agent("validation"), text: `Re-checked every safety rule independently: passed. ${n ? `${plural(n, "person", "people")} must now approve.` : ""}`, tone: "good" };
     }
     case "CoordinationRequest":
       return { key: m.type, ...agent("coordination"), text: "Sent the plan to 1 person for approval.", merge: (n) => `Sent the plan to ${n} people for approval: airport controllers, airlines, air-traffic control and the supervisor.` };
