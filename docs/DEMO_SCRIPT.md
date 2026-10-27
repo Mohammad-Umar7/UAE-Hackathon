@@ -20,6 +20,9 @@ back, Esc to leave. Every step drives the live system; you can take over at any 
 
 * If the network is slow to produce a proposal, stay on step 3 and open a tool call in the log (parameters, result,
   duration) — it shows the agents working.
+* The optimiser step holds the clock for roughly 10 seconds on a laptop (three mixed-integer programs of about
+  10,000 binary variables, one per web worker). Talk over it, or open the `run_optimizer` call afterwards: the
+  inspector shows the first lines of the model sent to HiGHS.
 * If a plan goes stale while you talk, that is the system working: point at the reason (“inputs changed”) and the new
   version.
 * To show the twin in detail: click an aircraft (drawer with A-CDM times), **Follow**, or switch **Day / Dusk /
