@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, ChevronDown, Cpu, FastForward, Moon, Pause, Play, Presentation, RotateCcw, SkipForward, Sun, UserRound } from "lucide-react";
+import { Bot, ChevronDown, Cpu, FastForward, FlaskConical, Moon, Pause, Play, Presentation, RotateCcw, SkipForward, Sun, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AGENTS } from "@/core/agents/definitions";
 import { roleOf, SWITCHABLE_ROLES } from "@/core/approvals/roles";
@@ -13,7 +13,7 @@ const SPEEDS = [1, 10, 30, 60, 120];
 
 export function TopBar() {
   const rt = useRuntime();
-  const { role, setRole, theme, setTheme, setPresentation, presentation, setView, detail } = useOps();
+  const { role, setRole, theme, setTheme, setPresentation, presentation, view, setView, detail } = useOps();
   const expert = detail === "expert";
   const [roleOpen, setRoleOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -27,7 +27,7 @@ export function TopBar() {
   const myPending = Object.values(rt.proposals).filter(isOpen).flatMap((p) => p.approvals.filter((a) => a.key === role && a.decision === "PENDING"));
   const r = roleOf(role);
   return (
-    <header className="relative z-30 flex h-[52px] shrink-0 items-center gap-3 border-b border-line bg-panel px-3">
+    <header className="relative z-30 flex h-[52px] shrink-0 items-center gap-3 glass border-b border-line px-3">
       <div className="flex items-center gap-2.5 pr-2">
         <Logo size={28} />
         <div className="leading-tight">
@@ -36,10 +36,13 @@ export function TopBar() {
         </div>
       </div>
       <div className="h-7 w-px bg-line" />
-      <button className="btn btn-ghost h-8 max-w-[260px]" onClick={() => setView("lab")} title="Scenario Lab">
-        <span className="pill pill-navy">{rt.scenario.code}</span>
-        <span className="truncate font-semibold">{rt.scenario.title}</span>
-        {expert && <span className="mono text-faint">seed {rt.seed}</span>}
+      <button className={`btn h-9 max-w-[300px] gap-2 pl-2 pr-2.5 ${view === "lab" ? "btn-active" : "btn-ghost"}`} onClick={() => setView("lab")} title="Scenarios: start another scenario or add a disruption yourself">
+        <FlaskConical size={15} className="shrink-0 text-muted" />
+        <span className="min-w-0 text-left leading-tight">
+          <span className="block text-[10px] font-medium uppercase tracking-wider text-faint">Scenario</span>
+          <span className="block truncate text-[12.5px] font-semibold">{rt.scenario.title}{expert ? ` · seed ${rt.seed}` : ""}</span>
+        </span>
+        <ChevronDown size={13} className="shrink-0 text-muted" />
       </button>
 
       {/* clock */}

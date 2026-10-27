@@ -48,7 +48,7 @@ export default function ReplayView() {
     <div className="flex h-full flex-col gap-3 p-3">
       <div className="flex items-center gap-3">
         <div>
-          <div className="text-[16px] font-semibold tracking-tight">Scenario replay</div>
+          <div className="text-[16px] font-semibold tracking-tight">Audit</div>
           <div className="text-[12px] text-muted">The run is deterministic: replaying the scenario with the same seed and the recorded human inputs reproduces the same timeline.</div>
         </div>
         <div className="ml-auto flex items-center gap-2">

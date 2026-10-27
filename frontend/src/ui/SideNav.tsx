@@ -1,6 +1,6 @@
 "use client";
 
-import { Boxes, ChartColumnBig, CircleHelp, FlaskConical, GitCompareArrows, HistoryIcon as History, LayoutDashboard, Network, SquareChartGantt, Vote } from "lucide-react";
+import { Boxes, ChartColumnBig, CircleHelp, GitCompareArrows, LayoutDashboard, Network, ScrollText, SquareChartGantt, Vote } from "lucide-react";
 import { isOpen } from "@/core/approvals/workflow";
 import { useOps, useRuntime, type View } from "@/store/ops";
 
@@ -17,8 +17,7 @@ const MAIN: Item[] = [
 const EVIDENCE_EXPERT: Item = { id: "evidence", label: "Evidence", icon: ChartColumnBig, hint: "Measured before/after, optimiser statistics, oversight figures and data provenance" };
 const MORE: Item[] = [
   { id: "timeline", label: "Gate plan", icon: SquareChartGantt, hint: "Which aircraft is at which gate, hour by hour" },
-  { id: "lab", label: "Scenarios", icon: FlaskConical, hint: "Start another scenario or add a disruption yourself" },
-  { id: "replay", label: "Replay", icon: History, hint: "Replay the evening exactly from the recorded inputs" },
+  { id: "replay", label: "Audit", icon: ScrollText, hint: "Every input and decision, recorded: replay the evening exactly as it happened" },
 ];
 
 export function SideNav() {
@@ -41,7 +40,7 @@ export function SideNav() {
     );
   };
   return (
-    <nav className="flex w-[76px] shrink-0 flex-col items-stretch gap-0.5 border-r border-line bg-panel px-1.5 py-2">
+    <nav className="flex w-[76px] shrink-0 flex-col items-stretch gap-0.5 glass border-r border-line px-1.5 py-2">
       {MAIN.map((i) => button(i.id === "evidence" && detail === "expert" ? EVIDENCE_EXPERT : i))}
       <div className="mx-2 mb-1 mt-2 border-t border-line pt-1.5 text-center text-[9px] font-semibold uppercase tracking-wider text-faint">More</div>
       {MORE.map((i) => button(i, true))}
