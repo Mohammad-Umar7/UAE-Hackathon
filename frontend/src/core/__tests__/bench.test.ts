@@ -67,7 +67,9 @@ describe.skipIf(!process.env.SKYPACT_BENCH)("benchmarks (real layouts)", () => {
     t = performance.now();
     const withPlan = project(w2, aps, "local_greedy", 4 * 3600, plans[0].decisions);
     rows.push(["4 h look-ahead projection (fast mode)", `${tBase.toFixed(0)} ms no-action · ${ms(t).toFixed(0)} ms with plan`]);
-    rows.push(["Projected outcome: no action → plan", `delay ${base.totalDelayMin} → ${withPlan.totalDelayMin} min · holding ${base.airborneHoldingMin} → ${withPlan.airborneHoldingMin} min · stand conflicts ${base.standConflicts} → ${withPlan.standConflicts} · fuel diversions ${base.fuelDiversions} → ${withPlan.fuelDiversions}`]);
+    const local = project(w2, aps, "local_greedy", 4 * 3600);
+    const triple = (k: "totalDelayMin" | "paxDelayHours" | "airborneHoldingMin" | "standConflicts" | "fuelDiversions") => `${base[k]} / ${local[k]} / ${withPlan[k]}`;
+    rows.push(["Projected outcome (no action / local-only / plan)", `delay ${triple("totalDelayMin")} min · pax delay ${triple("paxDelayHours")} h · holding ${triple("airborneHoldingMin")} min · stand conflicts ${triple("standConflicts")} · fuel diversions ${triple("fuelDiversions")}`]);
 
     console.log(`\n| Measurement | Result |\n|---|---|\n${rows.map(([a, b]) => `| ${a} | ${b} |`).join("\n")}\n`);
   }, 600000);
