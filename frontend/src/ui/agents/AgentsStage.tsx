@@ -10,11 +10,12 @@ import { agentStory, PLAIN_AGENT, PLAIN_JOB, whoSaid, workflowName, type StorySt
 import { AgentConstellation, cameraOn, SPOTS } from "./AgentConstellation";
 import { AgentStory } from "./AgentStory";
 import { FollowCaption } from "./FollowCaption";
-import { followBeats, followStart } from "./follow";
+import { followBeats, followStart, impactFacts } from "./follow";
 import { slotNode } from "./model";
 
-const BEAT_MS = 4800; // time on each step while following the agents
-const FLY_MS = 1500; // a message's flight across the scene
+// time on each step while following the agents: a short sentence, or a sentence and its numbers
+const BEAT_MS = 2300, BEAT_FACTS_MS = 3200;
+const FLY_MS = 1000; // a message's flight across the scene
 
 type Follow = { thread: string | null; from: number; i: number; since: number; playing: boolean };
 
@@ -78,11 +79,13 @@ export function AgentsStage() {
   }, [follow]);
 
   // advance at reading pace; when caught up with the agents, wait for their next step
+  const dwellOf = (b: (typeof beats)[number] | undefined) => (b && (b.facts.length || b.spark) ? BEAT_FACTS_MS : BEAT_MS);
+  const dwell = follow ? dwellOf(beats[Math.min(follow.i, beats.length - 1)]) : BEAT_MS;
   useEffect(() => {
     if (!follow?.playing || follow.i >= beats.length - 1) return;
-    const id = window.setTimeout(() => setFollow((f) => f && { ...f, i: f.i + 1, since: Date.now() }), Math.max(0, follow.since + BEAT_MS - Date.now()));
+    const id = window.setTimeout(() => setFollow((f) => f && { ...f, i: f.i + 1, since: Date.now() }), Math.max(0, follow.since + dwell - Date.now()));
     return () => clearTimeout(id);
-  }, [follow, beats.length]);
+  }, [follow, beats.length, dwell]);
 
   const go = (i: number) => setFollow((f) => f && { ...f, i: Math.max(0, Math.min(beats.length - 1, i)), since: Date.now() });
   const beat = follow && beats.length ? beats[Math.min(follow.i, beats.length - 1)] : null;
@@ -92,6 +95,10 @@ export function AgentsStage() {
   const caughtUp = follow !== null && follow.i >= beats.length - 1;
   const demo = useOps((s) => s.presentation.active);
   const camera = beat ? cameraOn(beat.who, beat.to) : null;
+  // once the planning step has been told, its headline effect stays in view
+  const planTold = follow ? beats.slice(0, follow.i + 1).some((b) => b.kind === "PlanCandidates") : false;
+  const planned = planTold ? comparisons(rt).find((c) => c.thread === follow?.thread)?.p : undefined;
+  const value = planned && beat?.kind !== "PlanCandidates" ? impactFacts(planned)[0] ?? null : null;
 
   // tell the guided demo how far the story has got (it waits for the last step before moving on)
   const at = follow ? Math.min(follow.i, beats.length - 1) + 1 : 0;
@@ -101,7 +108,7 @@ export function AgentsStage() {
 
   return (
     <div className="flex h-full flex-col gap-3 p-3">
-      <div className="flex flex-wrap items-end gap-3">
+      {!(demo && following) && <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-0">
           <div className="text-[18px] font-semibold tracking-tight">AI agents at work</div>
           <div className="text-[12.5px] text-muted">Seven software agents, each with one job, pass messages and use tools to build a plan. People make the decision.</div>
@@ -121,19 +128,19 @@ export function AgentsStage() {
             <button className="btn btn-sm" onClick={() => setFollow(null)}><Square size={11} /> Stop following</button>
           )}
         </div>
-      </div>
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_400px] gap-3">
+      </div>}
+      <div className={`grid min-h-0 flex-1 gap-3 ${following ? "grid-cols-1" : "grid-cols-[minmax(0,1fr)_400px]"}`}>
         <div className="relative min-h-0 overflow-hidden rounded-[14px] border border-[#1c2a3c]"
           style={{ background: "radial-gradient(120% 95% at 35% 15%, #19304a 0%, #0d1a2a 55%, #08111b 100%)" }}>
           <div className="absolute inset-0 opacity-[0.22]" style={{ backgroundImage: "radial-gradient(rgba(160,190,230,0.35) 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
           <div className="absolute inset-0 p-3">
             <AgentConstellation thread={follow ? follow.thread : thread} selected={selected} focus={focus} onSelect={(id) => { setSelected(id); }}
               replay={beat && beat.msgs.length ? { msgs: beat.msgs, t: Math.min(1, elapsed / FLY_MS) } : null}
-              camera={camera && { ...camera, ay: demo ? 300 : 185 }} />
+              camera={camera && { ...camera, ay: demo ? 330 : 300 }} />
           </div>
           {beat && follow ? (
-            <FollowCaption beat={beat} index={Math.min(follow.i, beats.length - 1)} total={beats.length} playing={follow.playing} top={demo}
-              waiting={caughtUp && (working || rt.running)} progress={caughtUp ? 1 : Math.min(1, elapsed / BEAT_MS)}
+            <FollowCaption beat={beat} index={Math.min(follow.i, beats.length - 1)} total={beats.length} playing={follow.playing} top value={value}
+              waiting={caughtUp && (working || rt.running)} progress={caughtUp ? 1 : Math.min(1, elapsed / dwell)}
               onPrev={() => go(follow.i - 1)} onNext={() => go(follow.i + 1)} onClose={() => setFollow(null)}
               onToggle={() => setFollow((f) => f && { ...f, playing: !f.playing, since: Date.now() })} />
           ) : follow ? (
@@ -146,7 +153,7 @@ export function AgentsStage() {
             </div>
           )}
         </div>
-        <div className="panel flex min-h-0 flex-col overflow-hidden">
+        {!following && <div className="panel flex min-h-0 flex-col overflow-hidden">
           {selected ? (
             <AgentCard id={selected} thread={thread} onBack={() => setSelected(null)} />
           ) : (
@@ -163,7 +170,7 @@ export function AgentsStage() {
               </div>
             </>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   );

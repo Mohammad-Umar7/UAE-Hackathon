@@ -25,6 +25,8 @@ export interface Beat {
   /** the messages to animate on the scene while this beat is shown */
   msgs: AgentMessage[];
   name: string;
+  /** the message type told (or "final" for where things stand now) */
+  kind: string;
   headline: string;
   facts: Fact[];
   /** aircraft circling over time if nobody acts (the airport agent's prediction) */
@@ -34,6 +36,22 @@ export interface Beat {
 
 const n = (x: number) => Math.round(x).toLocaleString("en-GB");
 const RATE_TYPES = new Set(["FOG", "THUNDERSTORM", "RUNWAY_CLOSURE"]);
+const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
+
+/** The plan's effect against doing nothing, from the same moment (the planning agent's own 4-hour simulations). */
+export function impactFacts(p: Proposal): Fact[] {
+  const pr = p.projections;
+  if (!pr) return [];
+  const a = pr.noAction, b = pr.plan;
+  const facts: Fact[] = [
+    { value: `${n(a.fuelDiversions)} → ${n(b.fuelDiversions)}`, label: "low-fuel emergency diversions", tone: "good" },
+    { value: `${n(a.airborneHoldingMin / 60)} → ${n(b.airborneHoldingMin / 60)} h`, label: "of circling, all planes added up", tone: "good" },
+    { value: `${n(a.standConflicts)} → ${n(b.standConflicts)}`, label: "planes landing to find their gate taken", tone: "good" },
+  ];
+  // a line that is nothing either way says nothing
+  return facts.filter((f) => !/^0 → 0\b/.test(f.value));
+}
+
 const listAnd = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}` : xs[0] ?? "");
 const peopleWord = (type: string) => ({ AIRPORT_CONTROLLER: "airport controllers", AIRLINE_REP: "airlines", ATC_LIAISON: "air-traffic control", NATIONAL_SUPERVISOR: "the supervisor" } as Record<string, string>)[type] ?? "stakeholders";
 
@@ -69,7 +87,7 @@ export function followBeats(rt: Runtime, thread: string | null, from: number, ca
     const b = warn.length ? /visibility (\d+) → (\d+) m/.exec(warn[warn.length - 1].summary) : null;
     if (a && b) {
       const last = warn[warn.length - 1];
-      out.push({ id: last.id, t: warn[0].t, who: "weather", to: [...new Set(warn.flatMap((m) => endpoints(m).to))], msgs: warn, name: PLAIN_AGENT.weather,
+      out.push({ id: last.id, t: warn[0].t, who: "weather", to: [...new Set(warn.flatMap((m) => endpoints(m).to))], msgs: warn, name: PLAIN_AGENT.weather, kind: "DisruptionNotice",
         headline: cause.type === "FOG" ? `Saw fog coming at ${city(cause.airport)}: visibility is falling fast, and warned the other agents`
           : `Saw a storm building at ${city(cause.airport)} and warned the other agents`,
         facts: [{ value: `${n(+b[2])} m`, label: `visibility at ${fmtTime(last.t)}`, tone: "bad" }, { value: `${n(+a[1])} m`, label: "visibility before" },
@@ -78,10 +96,10 @@ export function followBeats(rt: Runtime, thread: string | null, from: number, ca
       seen.add("DisruptionNotice");
     }
   }
-  const agentBeat = (m: AgentMessage, b: Omit<Beat, "id" | "t" | "who" | "to" | "msgs" | "name"> & { msgs?: AgentMessage[] }) => {
+  const agentBeat = (m: AgentMessage, b: Omit<Beat, "id" | "t" | "who" | "to" | "msgs" | "name" | "kind"> & { msgs?: AgentMessage[] }) => {
     const e = endpoints(m);
     const to = [...new Set((b.msgs ?? [m]).flatMap((x) => endpoints(x).to))];
-    out.push({ id: m.id, t: m.t, who: e.from, to, msgs: b.msgs ?? [m], name: PLAIN_AGENT[e.from as keyof typeof PLAIN_AGENT] ?? m.fromLabel ?? "", ...b });
+    out.push({ id: m.id, t: m.t, who: e.from, to, msgs: b.msgs ?? [m], name: PLAIN_AGENT[e.from as keyof typeof PLAIN_AGENT] ?? m.fromLabel ?? "", kind: m.type, ...b });
   };
 
   for (let i = 0; i < msgs.length; i++) {
@@ -155,17 +173,12 @@ export function followBeats(rt: Runtime, thread: string | null, from: number, ca
       }
       case "PlanCandidates": {
         const pp = proposalAfter(m.t);
-        const ds = pp?.plan.decisions ?? [];
-        const c = (a: string) => ds.filter((d) => d.action === a).length;
-        const to = [...new Set(ds.filter((d) => d.action === "divert").map((d) => city(d.to!)))];
-        const facts: Fact[] = pp ? [
-          { value: n(c("divert")), label: `flights sent to ${listOr(to) || "a nearby airport"} before fuel runs low`, tone: "good" },
-          { value: n(c("assign_stand")), label: "aircraft given a different gate" },
-          { value: n(c("landing_slot")), label: "flights given a landing time" },
-        ] : [];
+        const facts = pp ? impactFacts(pp) : [];
+        const to = [...new Set((pp?.plan.decisions ?? []).filter((d) => d.action === "divert").map((d) => city(d.to!)))];
         if (first) {
           const k = ((p.comparison as unknown[] | undefined) ?? []).length || 3;
-          agentBeat(m, { headline: `Built ${k} possible plans with a mathematical optimiser, tested each one 4 hours ahead, and picked the best`, facts, tone: "good" });
+          const sent = to.length ? `, sending flights to ${listOr(to)} early` : "";
+          agentBeat(m, { headline: `Built ${k} plans with an optimiser and picked the best${sent}. Against doing nothing:`, facts, tone: "good" });
         } else {
           agentBeat(m, { headline: rejected ? `Re-planned around it: version ${pp?.version ?? ""} keeps every flight within what each airport can really handle` : `Built an updated plan: version ${pp?.version ?? ""}`, facts });
         }
@@ -195,17 +208,7 @@ export function followBeats(rt: Runtime, thread: string | null, from: number, ca
       }
       case "StakeholderResponse": {
         const d = String(p.decision ?? "");
-        if (d === "APPROVED" || d === "ACKNOWLEDGED") {
-          // approvals arriving together are told once ("12 people approved")
-          const group = [m];
-          while (msgs[i + 1]?.type === "StakeholderResponse" && ["APPROVED", "ACKNOWLEDGED"].includes(String(msgs[i + 1].payload.decision))) group.push(msgs[++i]);
-          const pp = Object.values(rt.proposals).find((x) => x.id === p.proposal && x.version === p.version);
-          const left = pp ? pp.approvals.filter((s) => s.decision === "PENDING").length : 0;
-          out.push({ id: m.id, t: group[group.length - 1].t, who: "sh:AIRLINES", to: [], msgs: group, name: "People in charge",
-            headline: `${group.length} ${group.length === 1 ? "person" : "people"} approved: ${listAnd([...new Set(group.map((g) => { const s = pp?.approvals.find((x) => x.key === g.payload.slot); return s ? peopleWord(s.type) : "a stakeholder"; }))])}`,
-            facts: [{ value: n(group.length), label: "approvals", tone: "good" }, ...(left ? [{ value: n(left), label: "still to answer" }] : [])], tone: "good" });
-          break;
-        }
+        // approvals are told in the closing beat, which updates as they come in
         if (d !== "REJECTED" && d !== "REVISION_REQUESTED") break;
         const slot = Object.values(rt.proposals).flatMap((x) => x.approvals).find((s) => s.key === p.slot);
         const who = slot ? whoSaid(slot) : m.fromLabel ?? "A stakeholder";
@@ -213,7 +216,7 @@ export function followBeats(rt: Runtime, thread: string | null, from: number, ca
         const e = endpoints(m);
         rejected = true;
         out.push({ id: m.id, t: m.t, who: e.from === "coordination" ? slotNode(String(p.slot)) : e.from, to: ["coordination"], msgs: [m],
-          name: who, headline: `Said no${reason ? `: ${reason}` : ""}`, facts: [], tone: "bad" });
+          name: who, kind: m.type, headline: `Said no${reason ? `: ${reason}` : ""}`, facts: [], tone: "bad" });
         break;
       }
       case "LocalInformationShared":
@@ -238,9 +241,11 @@ export function followBeats(rt: Runtime, thread: string | null, from: number, ca
   if (open) {
     const a = approvalState(open, "NATIONAL_SUPERVISOR");
     const lastT = Math.max(open.createdAt, ...open.approvals.map((s) => s.t ?? 0));
-    out.push({ id: `final:${open.id}:${open.version}`, t: lastT, who: "sh:NATIONAL_SUPERVISOR", to: [], msgs: [], name: "People in charge",
-      headline: a.done === a.total - 1 ? "Everyone else has approved. The final yes belongs to the national supervisor: that's you"
-        : `${a.done} of ${a.total} people have approved so far. The plan runs only when every one of them says yes`,
+    const yes = listAnd([...new Set(open.approvals.filter((s) => s.decision === "APPROVED" || s.decision === "ACKNOWLEDGED").map((s) => peopleWord(s.type)))]);
+    out.push({ id: `final:${open.id}:${open.version}`, t: lastT, who: "sh:NATIONAL_SUPERVISOR", to: [], msgs: [], name: "People in charge", kind: "final",
+      headline: !a.done ? "Waiting for the people in charge. Nothing runs until every one of them says yes"
+        : a.done === a.total - 1 ? `${cap(yes)} have approved. The final yes belongs to the national supervisor: you`
+        : `${cap(yes)} have approved. Nothing runs until everyone says yes`,
       facts: [{ value: `${a.done} / ${a.total}`, label: "approvals in", tone: "good" }] });
   }
   return out;

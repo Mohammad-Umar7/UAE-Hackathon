@@ -67,11 +67,11 @@ export function cameraOn(who: string, to: string[]): { x: number; y: number; z: 
   const a = SPOTS[who];
   if (!a) return null;
   // the people answering together: frame their whole column
-  if (a.person && !to.length) return { x: 870, y: 272, z: 1.2 };
+  if (a.person && !to.length) return { x: 870, y: 272, z: 1.15 };
   const pts = to.map((id) => SPOTS[id]).filter(Boolean);
   const mx = pts.length ? pts.reduce((s, p) => s + p.x, 0) / pts.length : a.x;
   const my = pts.length ? pts.reduce((s, p) => s + p.y, 0) / pts.length : a.y;
-  return { x: a.x * 0.68 + mx * 0.32, y: a.y * 0.68 + my * 0.32, z: a.person ? 1.45 : 1.75 };
+  return { x: a.x * 0.68 + mx * 0.32, y: a.y * 0.68 + my * 0.32, z: a.person ? 1.3 : 1.5 };
 }
 
 /** Frame the scene on a point (scene units) at a zoom, keeping the scene edges outside the view. */
@@ -121,9 +121,6 @@ export function AgentConstellation({ thread, selected, focus, onSelect, replay, 
     const prev = decisions.get(n);
     if (!prev || rank(s.decision) > rank(prev)) decisions.set(n, s.decision);
   }
-  const counts = new Map<string, number>();
-  for (const m of msgs) if (!thread || m.thread === thread) { const e = endpoints(m); counts.set(e.from, (counts.get(e.from) ?? 0) + 1); }
-
   const flights: { m: AgentMessage; t: number }[] = replay
     ? replay.msgs.map((m) => ({ m, t: replay.t }))
     : msgs.filter((m) => now >= m.wall && now - m.wall < FLIGHT_MS && (!thread || m.thread === thread)).map((m) => ({ m, t: (now - m.wall) / FLIGHT_MS }));
@@ -144,7 +141,7 @@ export function AgentConstellation({ thread, selected, focus, onSelect, replay, 
           <feGaussianBlur stdDeviation="6" />
         </filter>
       </defs>
-      <g style={{ transform: cameraTransform(camera), transition: "transform 1100ms cubic-bezier(0.22, 0.8, 0.24, 1)" }}>
+      <g style={{ transform: cameraTransform(camera), transition: "transform 800ms cubic-bezier(0.22, 0.8, 0.24, 1)" }}>
       <rect x="862" y="38" width="106" height="488" rx="16" fill="rgba(255,255,255,0.035)" stroke="rgba(255,255,255,0.06)" />
       {STAGES.map(([x, label]) => (
         <text key={label} x={x} y={22} textAnchor="middle" fill="rgba(200,215,235,0.55)" style={{ fontSize: 10.5, fontWeight: 650, letterSpacing: "0.09em" }}>{label.toUpperCase()}</text>
@@ -182,10 +179,10 @@ export function AgentConstellation({ thread, selected, focus, onSelect, replay, 
         const ring = s.person
           ? d === "REJECTED" || d === "REVISION_REQUESTED" ? "#ef6b6b" : d === "APPROVED" || d === "ACKNOWLEDGED" ? "#3fc2a6" : d === "PENDING" ? "#f0b04a" : "rgba(170,195,225,0.35)"
           : s.color;
-        const n = counts.get(id) ?? 0;
+        // an agent shows its role (or that it is working), a person their answer
         const status = s.person
           ? d === "REJECTED" ? "said no" : d === "REVISION_REQUESTED" ? "asked for changes" : d === "APPROVED" ? "approved" : d === "ACKNOWLEDGED" ? "noted" : d === "PENDING" ? "deciding…" : s.sub
-          : working ? "working…" : n ? `${n} message${n === 1 ? "" : "s"}` : s.sub;
+          : working ? "working…" : s.sub;
         const emph = glow.has(id) || working;
         const Icon = s.icon;
         return (
@@ -197,12 +194,6 @@ export function AgentConstellation({ thread, selected, focus, onSelect, replay, 
             {emph && <circle r={s.r + 8} fill={ring} opacity={0.28} filter="url(#ac-glow)" />}
             <circle r={s.r} fill="url(#ac-node)" stroke={selected === id ? "#ffffff" : ring} strokeWidth={selected === id ? 3 : emph ? 2.6 : 2} />
             <Icon x={-s.r * 0.42} y={-s.r * 0.42} width={s.r * 0.84} height={s.r * 0.84} color={s.person ? "#cfe0f5" : "#ffffff"} strokeWidth={1.7} />
-            {!s.person && n > 0 && (
-              <g transform={`translate(${s.r * 0.72}, ${-s.r * 0.86})`}>
-                <rect x={-11} y={-8} width={22} height={16} rx={8} fill={s.color} stroke="#0b1622" strokeWidth={1.5} />
-                <text y={4} textAnchor="middle" fill="#fff" style={{ fontSize: 9.5, fontWeight: 700 }}>{n > 99 ? "99+" : n}</text>
-              </g>
-            )}
             <text y={s.r + 16} textAnchor="middle" fill={emph ? "#ffffff" : "rgba(235,242,250,0.9)"} style={{ fontSize: s.person ? 11 : 12.5, fontWeight: 650 }}>{s.name}</text>
             <text y={s.r + 30} textAnchor="middle" fill={s.person && d ? ring : "rgba(200,215,235,0.6)"} style={{ fontSize: 10.5 }}>{status}</text>
             {working && comp && (
