@@ -57,7 +57,7 @@ export default function CommandView() {
               <span className={`pill ${STATUS_PILL[p.status]}`}>{p.status.toLowerCase()}</span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[12px] font-semibold">{p.id} v{p.version} · {p.label}</span>
-                <span className="block text-[11px] text-muted">{p.plan.decisions.length} actions · {p.approvals.filter((a) => a.decision === "PENDING").length} approvals pending{p.decisionDeadline ? ` · deadline ${fmtTime(p.decisionDeadline.t)}` : ""}</span>
+                <span className="block text-[11px] text-muted">{p.plan.decisions.length} actions · {((n) => `${n} approval${n === 1 ? "" : "s"} pending`)(p.approvals.filter((a) => a.decision === "PENDING").length)}{p.decisionDeadline ? ` · deadline ${fmtTime(p.decisionDeadline.t)}` : ""}</span>
               </span>
             </button>
           ))}

@@ -8,7 +8,7 @@
 
 import { ACTIVATION_LEAD_S, type Decision } from "../sim/engine";
 import type { PlanResult, VariantId } from "../solver/milp";
-import type { Forbidden, Snapshot } from "../solver/problem";
+import { APPROVAL_LEAD_S, type Forbidden, type Snapshot } from "../solver/problem";
 import type { Projection } from "../solver/evaluate";
 import type { ValidationReport } from "../solver/validate";
 import type { World } from "../types";
@@ -105,12 +105,13 @@ export function requiredApprovals(plan: PlanResult, world: World, modes: Record<
   return slots;
 }
 
-/** Earliest operational deadline still ahead in the plan: a diversion that must be decided before minimum
- *  fuel, a ground delay that must reach the crew before take-off, or a landing slot that must reach the
- *  approach controller 15 minutes ahead. Moments already behind the clock bind nothing and are skipped. */
+/** Earliest operational deadline in the plan: a diversion that must be decided before minimum fuel, a ground
+ *  delay that must reach the crew before take-off, or a landing slot that must reach the approach controller
+ *  15 minutes ahead. Moments closer than a realistic approval round (the optimiser's approval lead) cannot be
+ *  met by any approval and are left to normal arrival management, so they do not set the deadline. */
 export function decisionDeadline(plan: PlanResult, world: World): { t: number; note: string } | null {
   let best: { t: number; note: string } | null = null;
-  const consider = (t: number, note: string) => { if (t >= world.now && (!best || t < best.t)) best = { t, note }; };
+  const consider = (t: number, note: string) => { if (t >= world.now + APPROVAL_LEAD_S && (!best || t < best.t)) best = { t, note }; };
   for (const d of plan.decisions) {
     const v = world.visits[d.visit];
     if (!v || v.eta === null) continue;
