@@ -19,16 +19,33 @@ import { cloneWorld } from "../world";
 export type PolicyName = "no_action" | "local_greedy" | "live";
 const POLICIES = { no_action: NO_ACTION_POLICY, local_greedy: LOCAL_GREEDY_POLICY, live: LIVE_POLICY };
 
+/** The projected network state at one moment, sampled every few minutes over the horizon. */
+export interface SeriesPoint {
+  t: number;
+  /** aircraft circling in holding patterns right now (all airports) */
+  circling: number;
+  /** aircraft on the ground waiting for a free stand right now */
+  waiting: number;
+  /** passenger delay so far (pax·h, same definition as the outcome metrics, censored at t) */
+  paxDelayH: number;
+  /** crew minimum-fuel diversions so far */
+  fuelDiversions: number;
+  /** stand conflicts so far */
+  standConflicts: number;
+}
+
 export interface Projection extends OutcomeMetrics {
   policy: PolicyName;
   standConflicts: number;
   fuelDiversions: number;
   events: { kind: string; t: number; airport: string | null; visit?: string; callsign?: string; detail?: string }[];
+  series: SeriesPoint[];
   computeMs: number;
   horizonS: number;
 }
 
 const WATCH = new Set(["STAND_CONFLICT", "WAITING_FOR_STAND", "FUEL_DIVERSION", "DIVERSION", "PRM_SERVICE_DELAY"]);
+const SAMPLE_S = 300;
 
 export function project(world: World, airports: Registry, policy: PolicyName = "no_action", horizonS = 5 * 3600,
   decisions?: Decision[], planId = "plan", sharedOnly = false): Projection {
@@ -43,14 +60,35 @@ export function project(world: World, airports: Registry, policy: PolicyName = "
   eng.rebuildFromState();
   if (decisions?.length) eng.applyDecisions(decisions, planId);
   const events: DomainEvent[] = [];
-  eng.listeners.push((e) => { if (WATCH.has(e.kind)) events.push(e); });
+  let fuel = 0, clashes = 0;
+  eng.listeners.push((e) => {
+    if (!WATCH.has(e.kind)) return;
+    events.push(e);
+    if (e.kind === "FUEL_DIVERSION") fuel++;
+    else if (e.kind === "STAND_CONFLICT") clashes++;
+  });
   const t0 = world.now;
+  const series: SeriesPoint[] = [];
+  const sample = (t: number) => {
+    let circling = 0, waiting = 0;
+    for (const v of Object.values(w.visits)) {
+      if (v.phase === "HOLDING") circling++;
+      else if (v.phase === "WAITING_STAND") waiting++;
+    }
+    series.push({ t, circling, waiting, paxDelayH: outcomeMetrics(w, t0, t).paxDelayHours, fuelDiversions: fuel, standConflicts: clashes });
+  };
+  // advancing in steps processes exactly the same events in the same order as one long run
+  sample(t0);
+  for (let t = t0 + SAMPLE_S; t <= t0 + horizonS; t += SAMPLE_S) {
+    eng.advanceTo(t);
+    sample(t);
+  }
   eng.advanceTo(t0 + horizonS);
   const m = outcomeMetrics(w, t0, t0 + horizonS);
   return {
-    ...m, policy, horizonS,
-    standConflicts: events.filter((e) => e.kind === "STAND_CONFLICT").length,
-    fuelDiversions: events.filter((e) => e.kind === "FUEL_DIVERSION").length,
+    ...m, policy, horizonS, series,
+    standConflicts: clashes,
+    fuelDiversions: fuel,
     events: events.slice(0, 200).map((e) => ({
       kind: e.kind, t: e.t, airport: e.airport, visit: e.data.visit as string | undefined, callsign: e.data.callsign as string | undefined,
       detail: (e.data.reason ?? e.data.to ?? e.data.stand ?? "") as string,

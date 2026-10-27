@@ -342,7 +342,8 @@ export class Orchestrator {
     const material = restricted.length > 0 || conflicts.length > 0 || proj.airborneHoldingMin > 60;
     const assessment = this.say("airport_ops", ["recovery", "airline_ops", "atc"], "ImpactAssessment",
       `${conflicts.filter((c) => c.kind === "STAND_CONFLICT").length} stand conflicts, ${proj.fuelDiversions} fuel-diversion risks, ${proj.airborneHoldingMin.toFixed(0)} min holding predicted without action`,
-      { runway, occupancy: occ, projection: { totalDelayMin: proj.totalDelayMin, holding: proj.airborneHoldingMin, conflicts: proj.standConflicts, fuelDiversions: proj.fuelDiversions }, conflicts: conflicts.slice(0, 30), restricted },
+      { runway, occupancy: occ, projection: { totalDelayMin: proj.totalDelayMin, holding: proj.airborneHoldingMin, conflicts: proj.standConflicts, fuelDiversions: proj.fuelDiversions,
+        paxDelayHours: proj.paxDelayHours, series: proj.series }, conflicts: conflicts.slice(0, 30), restricted },
       causedBy, wf.id);
     if (!full) return material;
     await this.pace(0.6);

@@ -17,6 +17,7 @@ import { outcomeMetrics, type OutcomeMetrics } from "./metrics";
 import { Engine } from "./sim/engine";
 import { buildWorld, injectIncident, type LabIncidentSpec, type LabSpec, type ScenarioDef } from "./sim/scenarios";
 import { hourlyRate } from "./sim/capacity";
+import type { Projection, SeriesPoint } from "./solver/evaluate";
 import type { DomainEvent, Incident, World } from "./types";
 import { callsignOf, fmtTime } from "./world";
 
@@ -33,13 +34,15 @@ export interface Sample {
   airports: Record<string, { inbound: number; holding: number; waiting: number; onStand: number; stands: number; arrRate: number; delayed: number }>;
 }
 
+export type EvidenceRun = OutcomeMetrics & { standConflicts: number; fuelDiversions: number; series?: SeriesPoint[]; events?: Projection["events"] };
+
 export interface CommittedEvidence {
   proposal: string;
   t: number;
   wall: number;
-  noAction: OutcomeMetrics & { standConflicts: number; fuelDiversions: number };
-  localGreedy: OutcomeMetrics & { standConflicts: number; fuelDiversions: number };
-  plan: OutcomeMetrics & { standConflicts: number; fuelDiversions: number };
+  noAction: EvidenceRun;
+  localGreedy: EvidenceRun;
+  plan: EvidenceRun;
   computeMs: number;
 }
 
