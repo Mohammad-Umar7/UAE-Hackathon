@@ -48,7 +48,7 @@ try {
   for (const s of shots) {
     if (s.js) {
       const r = await page.evaluate(async (code) => { const fn = new Function(`return (async () => { ${code} })()`); return fn(); }, s.js);
-      if (r !== undefined) console.log(`[${s.name}]`, JSON.stringify(r).slice(0, 400));
+      if (r !== undefined) console.log(`[${s.name}]`, JSON.stringify(r).slice(0, Number(process.env.SHOT_LOG ?? 400)));
     }
     await new Promise((res) => setTimeout(res, s.wait ?? 3000));
     const file = path.join(outDir, `${s.name}.png`);
