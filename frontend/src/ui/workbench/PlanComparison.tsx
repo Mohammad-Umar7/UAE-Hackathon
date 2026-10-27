@@ -87,7 +87,7 @@ export function PlanComparison({ p }: { p: Proposal }) {
                     const v = vals[i];
                     const isBest = best !== null && v === best && !c.baseline;
                     return (
-                      <td key={c.key} className={`mono text-[12px] ${c.chosen ? "bg-[color-mix(in_oklab,var(--teal-soft)_45%,transparent)]" : ""} ${isBest ? "font-semibold text-[var(--teal)]" : c.baseline ? "text-muted" : ""}`}>
+                      <td key={c.key} className={`mono whitespace-nowrap text-[12px] ${c.chosen ? "bg-[color-mix(in_oklab,var(--teal-soft)_45%,transparent)]" : ""} ${isBest ? "font-semibold text-[var(--teal)]" : c.baseline ? "text-muted" : ""}`}>
                         {typeof v === "number" ? num(v, v % 1 && v < 100 ? 1 : 0) : v}
                       </td>
                     );

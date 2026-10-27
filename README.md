@@ -27,6 +27,8 @@ data and original Blender models.
 | ![Dubai International with a runway closed and diversions arriving](docs/images/twin-dxb-runway-closure.jpg) | ![Agents coordinating, guided presentation](docs/images/agents-presentation.jpg) |
 | ![Recovery workbench: candidates vs baselines, approvals, audit](docs/images/workbench.jpg) | ![Evidence: before/after from the same pre-commit state](docs/images/evidence.jpg) |
 
+![Command view: the three-airport network, live traffic and diversion flows awaiting approval](docs/images/command.jpg)
+
 ---
 
 ## Quick start
@@ -70,10 +72,10 @@ npx eslint src          # lint
 | **Command** | National map (OSM coastline, roads, cities) with live traffic, holding stacks, diversion arcs, airport status cards with METARs, recovery alerts and the agent feed. |
 | **Digital twin** | 3D airport per ICAO: real runways/taxiways/aprons/stands, liveried aircraft moving on the simulator's exact trajectories, docking jet bridges and turnaround vehicles, day/dusk/night lighting from the real sun position, height fog from the reported visibility, runway closures, stand status, taxi routes and plan-preview arcs. Click any aircraft or stand. |
 | **Recovery workbench** | Proposal under approval: candidate plans vs. *no action* and *each airport alone*, “why this plan”, every decision, validation result, approval slots (approve / reject with reason / request revision), plan versions and audit excerpt. |
-| **Agents** | Live coordination graph with animated messages, swim-lane sequence, and an inspectable log of every message and tool call (parameters, results, duration, authority). |
+| **Agents** | Live coordination graph with animated messages, swim-lane sequence of each workflow from detection to commitment, and an inspectable log of every message and tool call (parameters, results, duration, authority, and the model sent to HiGHS). |
 | **Stands (Gantt)** | Per-stand timeline: planned, actual, estimated and proposed occupancy, conflicts and technical holds. |
 | **Scenario lab** | Launch scenarios A–I or Nightfall, change the seed, or inject incidents (fog, storm, runway closure, blocked stand, priority arrival, diversion influx, resource outage, accessibility needs) — alone or simultaneously. |
-| **Evidence** | Outcome metrics of each committed plan against no-action and local-only baselines (same pre-commit state), optimiser statistics, provenance, JSON export. |
+| **Evidence** | Outcome metrics of each committed plan against no-action and local-only baselines (same pre-commit state; the plan is projected on top of the same local handling, so the difference is the value of coordination), optimiser statistics, provenance, JSON export. |
 | **Replay** | Deterministic replay of the whole run from recorded inputs; re-simulate to any time. |
 | **Present** | Guided demo that drives the real system (no staged data); interruptible at any point. |
 
@@ -127,7 +129,8 @@ A time-indexed mixed-integer program per disruption, solved by HiGHS (WebAssembl
   wide-body handling and ambulift capacity;
 * three objective variants — *lowest total delay*, *stability* (fewest changes), *least coordination* — solved
   deterministically (a branch-and-bound node limit bounds the search; a wall-clock limit exists only as a safety net)
-  and compared with *no action* and *local-greedy* policies by projecting the simulator forward from the same state.
+  and compared with *no action* and *local-greedy* policies by projecting the simulator forward from the same state;
+  the plan's projection handles everything outside the plan exactly like the local-greedy policy.
 
 The Validation agent re-derives every constraint independently of the optimiser before approval and again before
 commit; plans whose inputs changed are marked **stale** and re-planned rather than executed.
