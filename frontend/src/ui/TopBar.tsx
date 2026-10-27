@@ -13,7 +13,8 @@ const SPEEDS = [1, 10, 30, 60, 120];
 
 export function TopBar() {
   const rt = useRuntime();
-  const { role, setRole, theme, setTheme, setPresentation, presentation, setView } = useOps();
+  const { role, setRole, theme, setTheme, setPresentation, presentation, setView, detail } = useOps();
+  const expert = detail === "expert";
   const [roleOpen, setRoleOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -38,7 +39,7 @@ export function TopBar() {
       <button className="btn btn-ghost h-8 max-w-[260px]" onClick={() => setView("lab")} title="Scenario Lab">
         <span className="pill pill-navy">{rt.scenario.code}</span>
         <span className="truncate font-semibold">{rt.scenario.title}</span>
-        <span className="mono text-faint">seed {rt.seed}</span>
+        {expert && <span className="mono text-faint">seed {rt.seed}</span>}
       </button>
 
       {/* clock */}
@@ -51,9 +52,11 @@ export function TopBar() {
           <button className="btn h-8 w-8 justify-center p-0" onClick={() => rt.setRunning(!rt.running)} title={rt.running ? "Pause" : "Run"}>
             {rt.running ? <Pause size={15} /> : <Play size={15} />}
           </button>
-          <button className="btn h-8 w-8 justify-center p-0" onClick={() => rt.step(60)} title="Step one minute" disabled={rt.held}>
-            <SkipForward size={15} />
-          </button>
+          {expert && (
+            <button className="btn h-8 w-8 justify-center p-0" onClick={() => rt.step(60)} title="Step one minute" disabled={rt.held}>
+              <SkipForward size={15} />
+            </button>
+          )}
           <div className="flex h-8 items-center rounded-[7px] border border-line-2 bg-panel-2 p-0.5">
             {SPEEDS.map((s) => (
               <button key={s} onClick={() => rt.setSpeed(s)}
@@ -62,20 +65,22 @@ export function TopBar() {
               </button>
             ))}
           </div>
-          <button className="btn h-8 w-8 justify-center p-0" title="Reset scenario (same seed)" onClick={() => rt.reset()}>
-            <RotateCcw size={14} />
-          </button>
+          {expert && (
+            <button className="btn h-8 w-8 justify-center p-0" title="Reset scenario (same seed)" onClick={() => rt.reset()}>
+              <RotateCcw size={14} />
+            </button>
+          )}
         </div>
         <ClockState held={rt.held} running={rt.running} speed={rt.speed} comp={comp ? `${AGENTS[comp.agent].short} · ${comp.tool}` : null} />
       </div>
 
       <div className="flex items-center gap-2">
-        <span className={`pill ${rt.llm?.available ? "pill-teal" : "pill-gray"}`} title={rt.llm?.available ? `Optional local model for briefings (${rt.llm.model}); optimisation, validation and approvals are deterministic` : "No local language model detected — deterministic agents (fully functional)"}>
+        {expert && <span className={`pill ${rt.llm?.available ? "pill-teal" : "pill-gray"}`} title={rt.llm?.available ? `Optional local model for briefings (${rt.llm.model}); optimisation, validation and approvals are deterministic` : "No local language model detected — deterministic agents (fully functional)"}>
           {rt.llm?.available ? <Cpu size={12} /> : <Bot size={12} />}
           <span className="max-[1699px]:hidden">Agents · </span>{rt.llm?.available ? "local LLM" : "deterministic"}
-        </span>
+        </span>}
         <button className={`btn h-8 ${presentation.active ? "btn-primary" : ""}`} onClick={() => setPresentation({ active: !presentation.active, step: presentation.active ? presentation.step : 0 })}>
-          <Presentation size={14} /> Present
+          <Presentation size={14} /> Guided demo
         </button>
         <button className="btn h-8 w-8 justify-center p-0" onClick={() => setTheme(theme === "light" ? "dark" : "light")} title="Toggle theme">
           {theme === "light" ? <Moon size={14} /> : <Sun size={14} />}
