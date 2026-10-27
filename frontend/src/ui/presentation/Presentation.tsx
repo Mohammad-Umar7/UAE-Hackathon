@@ -39,56 +39,56 @@ const othersDecided = (p: Proposal) => p.approvals.filter((a) => a.key !== "NATI
 
 const STEPS: Step[] = [
   {
-    id: "network", title: "One network, three airports", view: "command",
-    body: "SKYPACT gives the national operations centre one live picture of Zayed International, Dubai International and Sharjah. Everything here runs in this browser: a deterministic simulator, seven cooperating AI agents and a mathematical optimiser. Nothing executes without human approval.",
+    id: "network", title: "Three airports, one network", view: "command",
+    body: "Abu Dhabi, Dubai and Sharjah are each other's backup airports. SKYPACT watches all three together. Everything here runs live in this browser, and nothing happens without a person's approval.",
     enter: (rt) => {
       if (rt.scenario.id !== "nightfall" || rt.world.now > rt.scenario.start + 60 || Object.keys(rt.proposals).length) rt.load("nightfall", 7);
       rt.setRunning(false);
     },
   },
   {
-    id: "fog", title: "18:00 · radiation fog at Zayed International", view: "twin", airport: "OMAA", camera: "strategic", lighting: "auto", speed: 120,
+    id: "fog", title: "18:00 · thick fog at Abu Dhabi", view: "twin", airport: "OMAA", camera: "strategic", lighting: "auto", speed: 90,
     until: (rt) => fogActive(rt) && rt.world.now >= rt.scenario.start + 46 * 60,
-    waiting: "Simulating the evening at 120× until the fog forms…", done: "Fog is down: low-visibility procedures in force.",
-    body: "This is the digital twin, built from OpenStreetMap layouts and driven by the simulator. As visibility drops below 550 m, low-visibility procedures switch on, stop bars light and the arrival rate falls from 30 to 12 an hour. Inbound flights begin to hold.",
+    waiting: "Fast-forwarding to the fog…", done: "The fog is in: low-visibility rules are on.",
+    body: "In fog, planes must land further apart: Abu Dhabi can now land 12 planes an hour instead of 30, so arriving aircraft start circling while they wait.",
   },
   {
-    id: "agents", title: "Agents detect, assess and plan", view: "agents", speed: 60,
-    until: (rt) => hasMessage(rt, "PlanCandidates"), waiting: "Agents are working (the clock pauses while they compute)…", done: "Recovery candidates are ready.",
-    body: "The Weather agent raises a disruption notice. Airport Operations measures stand and runway impact, the Airline and ATC agents add their constraints, and the Recovery agent formulates a mixed-integer program and solves it with HiGHS in a web worker. Every message and tool call is inspectable.",
+    id: "agents", title: "The AI agents get to work", view: "agents", speed: 60,
+    until: (rt) => hasMessage(rt, "PlanCandidates"), waiting: "The agents are working — the clock waits for them…", done: "The agents have a plan ready.",
+    body: "One agent spots the fog, another predicts the knock-on effects, and the planning agent uses a mathematical optimiser to build recovery plans. Every step is listed on the right; click an agent to see its job.",
   },
   {
-    id: "plans", title: "Optimised options, compared honestly", view: "workbench",
+    id: "plans", title: "A plan, compared with doing nothing", view: "workbench",
     enter: (rt) => { const o = newestOpen(rt); if (o) useOps.getState().select({ selectedProposal: o[0] }); },
-    body: "Three candidates (minimum delay, stability, minimum coordination) are scored against doing nothing and against each airport acting alone, from the same state. The Validation agent re-derives every constraint independently before anyone is asked to approve.",
+    body: "This is the recommended plan: what it changes and what it should achieve against doing nothing. A separate safety-check agent has re-checked every rule before anyone is asked.",
   },
   {
-    id: "local", title: "Local knowledge changes the plan", view: "agents", speed: 60,
+    id: "local", title: "Sharjah knows something the system didn't", view: "agents", speed: 60,
     // with another seed every stakeholder may simply approve; the tour then moves on instead of waiting
     until: (rt) => { const o = newestOpen(rt); return hasMessage(rt, "LocalInformationShared") || Boolean(o && othersDecided(o[1])); },
-    waiting: "Waiting for the stakeholders to respond…",
+    waiting: "Waiting for the people in charge to answer…",
     done: (rt) => (hasMessage(rt, "LocalInformationShared") ? "Local information shared — the agents are re-planning." : "Every stakeholder approved — no hidden local constraint this time."),
-    body: "Stakeholders answer from their own knowledge. Sharjah's controller knows something the network does not: an ambulift and wide-body handling teams are out of service. The rejection reveals it, the information is shared, and the agents re-plan around it.",
+    body: "Sharjah's airport controller sees that an earlier version sent wheelchair passengers there, but their wheelchair lifts are broken. They said no, that fact was shared with everyone, and the agents re-planned.",
   },
   {
     id: "approve", title: "People decide", view: "workbench", speed: 60, approve: true,
     enter: (rt) => { const o = newestOpen(rt); if (o) useOps.getState().select({ selectedProposal: o[0] }); },
     until: (rt) => { const o = newestOpen(rt); return Boolean(o && othersDecided(o[1])); },
-    waiting: "Collecting approvals from airports, airline and ATC…", done: "Ready for the National Supervisor.",
-    body: "Airport controllers and the airline representative approve; ATC acknowledges, because SKYPACT never issues clearances. The final word belongs to the National Operations Supervisor: that is you.",
+    waiting: "Collecting approvals…", done: "Everyone else has approved — your turn.",
+    body: "Airports, airlines and air-traffic control approve. The final yes belongs to the national supervisor — that's you.",
   },
   {
-    id: "execute", title: "Execution in the twin", view: "twin", airport: "OMAA", camera: "strategic", speed: 30,
-    until: (rt) => hasMessage(rt, "PlanCommitted"), waiting: "Committing the approved plan…", done: "Plan committed and executing.",
-    body: "The committed plan becomes stand reassignments, landing slots and coordinated diversions. Arcs turn teal and aircraft taxi to their new stands. If the situation changes, the plan is flagged stale and re-planned rather than executed blindly.",
+    id: "execute", title: "The plan runs", view: "twin", airport: "OMAA", camera: "strategic", speed: 30,
+    until: (rt) => hasMessage(rt, "PlanCommitted"), waiting: "Starting the approved plan…", done: "The plan is running.",
+    body: "Aircraft move to their new gates and some land at Sharjah or Dubai instead. If anything changes, the plan is withdrawn and re-planned rather than carried out blindly.",
   },
   {
     id: "evidence", title: "Measured, not claimed", view: "evidence",
-    body: "Outcomes are projected from the same pre-commit state for three policies: no action, each airport alone, and the coordinated plan on top of what each airport does alone, so the difference is the value of coordination. Delay, airborne holding, uncoordinated diversions and assistance for passengers with reduced mobility are compared side by side.",
+    body: "The result, measured against doing nothing from the same starting point: far less circling, fewer emergency fuel diversions and shorter passenger delays — on synthetic traffic.",
   },
   {
-    id: "replay", title: "Replayable and auditable", view: "replay",
-    body: "Every input is recorded, so the whole night can be replayed exactly. A SHA-256 hash-chained audit log shows who approved what and when, and detects any tampering. Synthetic flights and fictional airlines are labelled as such throughout.",
+    id: "replay", title: "Every step can be replayed and audited", view: "replay",
+    body: "Every input is recorded, so the evening can be replayed exactly, and a tamper-proof log shows who approved what and when. Flights and airlines are synthetic throughout.",
   },
 ];
 
