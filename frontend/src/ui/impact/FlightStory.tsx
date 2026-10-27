@@ -118,7 +118,14 @@ function Side({ tone, title, steps, land, r, s }: { tone: "bad" | "good"; title:
     const p = ap(icao), left = icao === "OMDB";
     return <text x={p[0] + (left ? -6 : 6)} y={p[1] + 3} textAnchor={left ? "end" : "start"} className="fill-[var(--ink-2)]" style={{ fontSize: 8, fontWeight: 600 }}>{city(icao)}</text>;
   };
-  const away = (() => { const dx = r.loopCentre[0] - r.home[0], dy = r.loopCentre[1] - r.home[1], d = Math.hypot(dx, dy) || 1; return [r.loopCentre[0] + (dx / d) * 20, r.loopCentre[1] + (dy / d) * 20]; })();
+  // the circling label sits beyond the holding circle, kept inside the map
+  const away = (() => {
+    const dx = r.loopCentre[0] - r.home[0], dy = r.loopCentre[1] - r.home[1], d = Math.hypot(dx, dy) || 1;
+    const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+    return [clamp(r.loopCentre[0] + (dx / d) * 20, VB.x + 32, VB.x + VB.w - 32), clamp(r.loopCentre[1] + (dy / d) * 20, VB.y + 10, VB.y + VB.h - 6)];
+  })();
+  // the gate goes under the destination's name (Dubai's name is on the left)
+  const gateLeft = s.with.kind === "divert" && s.with.to === "OMDB";
   return (
     <div className="grid grid-cols-[minmax(0,280px)_minmax(0,1fr)] items-center gap-4 p-4">
       <svg viewBox={`${VB.x} ${VB.y} ${VB.w} ${VB.h}`} className="h-auto w-full rounded-lg" role="img"
@@ -139,7 +146,7 @@ function Side({ tone, title, steps, land, r, s }: { tone: "bad" | "good"; title:
           </>
         )}
         {tone === "good" && s.with.kind === "divert" && s.with.stand && (
-          <text x={r.dest[0] + 6} y={r.dest[1] - 8} className="fill-[var(--chart-good)]" style={{ fontSize: 8, fontWeight: 700 }}>gate {s.with.stand}</text>
+          <text x={r.dest[0] + (gateLeft ? -6 : 6)} y={r.dest[1] + 13} textAnchor={gateLeft ? "end" : "start"} className="fill-[var(--chart-good)]" style={{ fontSize: 8, fontWeight: 700 }}>gate {s.with.stand}</text>
         )}
         {["OMAA", "OMDB", "OMSJ"].map((icao) => {
           const p = ap(icao);
