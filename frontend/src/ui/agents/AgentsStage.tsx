@@ -1,16 +1,22 @@
 "use client";
 
 import { ArrowLeft, Play, Square } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AGENT_ORDER, AGENTS } from "@/core/agents/definitions";
 import { isOpen } from "@/core/approvals/workflow";
-import { useRuntime } from "@/store/ops";
+import { useOps, useRuntime } from "@/store/ops";
+import { comparisons } from "../impact/compare";
 import { agentStory, PLAIN_AGENT, PLAIN_JOB, whoSaid, workflowName, type StoryStep } from "../story";
-import { AgentConstellation, SPOTS } from "./AgentConstellation";
+import { AgentConstellation, cameraOn, SPOTS } from "./AgentConstellation";
 import { AgentStory } from "./AgentStory";
+import { FollowCaption } from "./FollowCaption";
+import { followBeats, followStart } from "./follow";
 import { slotNode } from "./model";
 
-const STEP_MS = 1100;
+const BEAT_MS = 4800; // time on each step while following the agents
+const FLY_MS = 1500; // a message's flight across the scene
+
+type Follow = { thread: string | null; from: number; i: number; since: number; playing: boolean };
 
 const PEOPLE: Record<string, string> = {
   "sh:NATIONAL_SUPERVISOR": "Has the final say: nothing runs until the national supervisor approves. In this demo, that is you.",
@@ -21,36 +27,77 @@ const PEOPLE: Record<string, string> = {
   "sh:ATC": "Real air-traffic controllers review landing times and diversions. SKYPACT never gives instructions to pilots.",
 };
 
-/** The AI agents page in Simple mode: an interactive scene, the story of what happened, and a card per agent. */
+/** The AI agents page in Simple mode: an interactive scene, a camera that can follow the agents step by step,
+ *  the story of what happened, and a card per agent. */
 export function AgentsStage() {
   const rt = useRuntime();
+  const version = useOps((s) => s.version);
+  const request = useOps((s) => s.follow);
   const o = rt.orchestrator;
   const [thread, setThread] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [hover, setHover] = useState<StoryStep | null>(null);
   const [tab, setTab] = useState<"story" | "meet">("story");
-  const [replayStart, setReplayStart] = useState<number | null>(null);
-  const [now, setNow] = useState(0);
+  const [follow, setFollow] = useState<Follow | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const steps = agentStory(rt, thread);
   const total = steps.length;
+  const fThread = follow?.thread ?? null, fFrom = follow?.from ?? 0, following = follow !== null;
+  const beats = useMemo(() => {
+    if (!following) return [];
+    const c = comparisons(rt).find((x) => x.thread === fThread);
+    return followBeats(rt, fThread, fFrom, c?.cause ?? null);
+    // the runtime is mutable: `version` changes whenever it notifies
+  }, [rt, version, following, fThread, fFrom]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const start = useCallback((th: string | null, from?: number) => {
+    const all = comparisons(rt);
+    const c = all.find((x) => x.thread === th) ?? all[0];
+    const t = th ?? c?.thread ?? null;
+    setThread(t);
+    setSelected(null);
+    setTab("story");
+    setFollow({ thread: t, from: from ?? followStart(rt, t, c?.cause ?? null), i: 0, since: Date.now(), playing: true });
+  }, [rt]);
+
+  // the guided demo asks this page to follow a workflow; the request is used once
   useEffect(() => {
-    if (replayStart === null) return;
+    if (!request) return;
+    const id = window.setTimeout(() => { start(request.thread, request.from); useOps.getState().setFollow(null); }, 0);
+    return () => clearTimeout(id);
+  }, [request, start]);
+
+  // smooth frames while a message flies, a slower tick for the progress bar
+  useEffect(() => {
+    if (!follow) return;
     let raf = 0;
-    const loop = () => {
-      const t = Date.now();
-      if (t - replayStart >= total * STEP_MS) { setReplayStart(null); return; }
-      setNow(t);
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, [replayStart, total]);
-  const elapsed = replayStart !== null ? Math.max(0, now - replayStart) : 0;
-  const ri = replayStart !== null ? Math.min(total - 1, Math.floor(elapsed / STEP_MS)) : -1;
-  const step = ri >= 0 ? steps[ri] : null;
-  const msg = step ? o.messages.find((m) => m.id === step.id) ?? null : null;
-  const focus = step ? step.nodes : hover ? hover.nodes : null;
+    const tick = () => { const t = Date.now(); setNow(t); if (t - follow.since < FLY_MS + 150) raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    const id = window.setInterval(() => setNow(Date.now()), 200);
+    return () => { cancelAnimationFrame(raf); clearInterval(id); };
+  }, [follow]);
+
+  // advance at reading pace; when caught up with the agents, wait for their next step
+  useEffect(() => {
+    if (!follow?.playing || follow.i >= beats.length - 1) return;
+    const id = window.setTimeout(() => setFollow((f) => f && { ...f, i: f.i + 1, since: Date.now() }), Math.max(0, follow.since + BEAT_MS - Date.now()));
+    return () => clearTimeout(id);
+  }, [follow, beats.length]);
+
+  const go = (i: number) => setFollow((f) => f && { ...f, i: Math.max(0, Math.min(beats.length - 1, i)), since: Date.now() });
+  const beat = follow && beats.length ? beats[Math.min(follow.i, beats.length - 1)] : null;
+  const elapsed = follow ? now - follow.since : 0;
+  const focus = beat ? [beat.who, ...beat.to] : hover ? hover.nodes : null;
   const working = o.computing !== null || rt.held;
+  const caughtUp = follow !== null && follow.i >= beats.length - 1;
+  const demo = useOps((s) => s.presentation.active);
+  const camera = beat ? cameraOn(beat.who, beat.to) : null;
+
+  // tell the guided demo how far the story has got (it waits for the last step before moving on)
+  const at = follow ? Math.min(follow.i, beats.length - 1) + 1 : 0;
+  const told = Boolean(beat && caughtUp && (beat.id.startsWith("final:") || (!working && !rt.running)));
+  useEffect(() => { useOps.getState().setFollowAt(following ? { step: at, total: beats.length, done: told } : null); }, [following, at, beats.length, told]);
+  useEffect(() => () => useOps.getState().setFollowAt(null), []);
 
   return (
     <div className="flex h-full flex-col gap-3 p-3">
@@ -60,18 +107,18 @@ export function AgentsStage() {
           <div className="text-[12.5px] text-muted">Seven software agents, each with one job, pass messages and use tools to build a plan. People make the decision.</div>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
-          <button className={`btn btn-sm ${thread === null ? "btn-primary" : ""}`} onClick={() => setThread(null)}>Everything</button>
+          <button className={`btn btn-sm ${thread === null ? "btn-primary" : ""}`} onClick={() => { setThread(null); setFollow(null); }}>Everything</button>
           {o.workflows.map((w) => (
-            <button key={w.id} className={`btn btn-sm max-w-[260px] ${thread === w.id ? "btn-primary" : ""}`} onClick={() => setThread(w.id)} title={w.title}>
+            <button key={w.id} className={`btn btn-sm max-w-[260px] ${thread === w.id ? "btn-primary" : ""}`} onClick={() => { setThread(w.id); setFollow(null); }} title={w.title}>
               <span className="truncate">{workflowName(rt, w)}</span>
             </button>
           ))}
-          {replayStart === null ? (
-            <button className="btn btn-sm btn-teal" disabled={!total} onClick={() => { setSelected(null); setTab("story"); setNow(Date.now()); setReplayStart(Date.now()); }}>
-              <Play size={12} /> Replay the conversation
+          {follow === null ? (
+            <button className="btn btn-sm btn-teal" disabled={!total} onClick={() => start(thread)}>
+              <Play size={12} /> Follow the agents, step by step
             </button>
           ) : (
-            <button className="btn btn-sm" onClick={() => setReplayStart(null)}><Square size={11} /> Stop replay</button>
+            <button className="btn btn-sm" onClick={() => setFollow(null)}><Square size={11} /> Stop following</button>
           )}
         </div>
       </div>
@@ -80,11 +127,24 @@ export function AgentsStage() {
           style={{ background: "radial-gradient(120% 95% at 35% 15%, #19304a 0%, #0d1a2a 55%, #08111b 100%)" }}>
           <div className="absolute inset-0 opacity-[0.22]" style={{ backgroundImage: "radial-gradient(rgba(160,190,230,0.35) 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
           <div className="absolute inset-0 p-3">
-            <AgentConstellation thread={thread} selected={selected} focus={focus} onSelect={(id) => { setSelected(id); }} replay={msg ? { msg, t: (elapsed % STEP_MS) / (STEP_MS * 0.8) } : null} />
+            <AgentConstellation thread={follow ? follow.thread : thread} selected={selected} focus={focus} onSelect={(id) => { setSelected(id); }}
+              replay={beat && beat.msgs.length ? { msgs: beat.msgs, t: Math.min(1, elapsed / FLY_MS) } : null}
+              camera={camera && { ...camera, ay: demo ? 300 : 185 }} />
           </div>
-          <div className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-white/[0.07] px-3 py-1 text-[11px] text-white/70 backdrop-blur-sm">
-            {step ? `Replaying step ${ri + 1} of ${total}` : working ? "The agents are working right now — the clock waits for them" : "Click an agent to see what it does · moving dots are messages"}
-          </div>
+          {beat && follow ? (
+            <FollowCaption beat={beat} index={Math.min(follow.i, beats.length - 1)} total={beats.length} playing={follow.playing} top={demo}
+              waiting={caughtUp && (working || rt.running)} progress={caughtUp ? 1 : Math.min(1, elapsed / BEAT_MS)}
+              onPrev={() => go(follow.i - 1)} onNext={() => go(follow.i + 1)} onClose={() => setFollow(null)}
+              onToggle={() => setFollow((f) => f && { ...f, playing: !f.playing, since: Date.now() })} />
+          ) : follow ? (
+            <div className="absolute inset-x-4 bottom-4 rounded-2xl bg-[rgba(7,14,24,0.9)] px-5 py-4 text-[13px] text-white/75">
+              Nothing has happened yet in this part of the evening. Run the clock and the agents will appear here as they act.
+            </div>
+          ) : (
+            <div className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-white/[0.07] px-3 py-1 text-[11px] text-white/70 backdrop-blur-sm">
+              {working ? "The agents are working right now — the clock waits for them" : "Click an agent to see what it does · moving dots are messages"}
+            </div>
+          )}
         </div>
         <div className="panel flex min-h-0 flex-col overflow-hidden">
           {selected ? (
@@ -99,7 +159,7 @@ export function AgentsStage() {
                 <span className="text-[11px] text-muted">{tab === "story" ? `${total} step${total === 1 ? "" : "s"}` : "7 agents · 6 kinds of people"}</span>
               </div>
               <div className="min-h-0 flex-1">
-                {tab === "story" ? <AgentStory thread={thread} activeId={step?.id ?? null} onHover={setHover} /> : <Roster onPick={setSelected} />}
+                {tab === "story" ? <AgentStory thread={thread} activeId={beat?.id ?? null} onHover={setHover} /> : <Roster onPick={setSelected} />}
               </div>
             </>
           )}

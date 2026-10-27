@@ -9,7 +9,7 @@
 import {
   BrainCircuit, CloudSun, MessagesSquare, Plane, RadioTower, ShieldCheck, TowerControl, UserRound, Users, type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AGENTS } from "@/core/agents/definitions";
 import type { AgentMessage } from "@/core/agents/types";
 import { isOpen, type Proposal } from "@/core/approvals/workflow";
@@ -62,13 +62,36 @@ function at(c: ReturnType<typeof curve>, t: number): [number, number] {
   return [u * u * u * x1 + 3 * u * u * t * cx1 + 3 * u * t * t * cx2 + t * t * t * x2, u * u * u * y1 + 3 * u * u * t * cy1 + 3 * u * t * t * cy2 + t * t * t * y2];
 }
 
-export function AgentConstellation({ thread, selected, focus, onSelect, replay }: {
+/** Where the follow camera looks for a step: on whoever acts, leaning towards who hears about it. */
+export function cameraOn(who: string, to: string[]): { x: number; y: number; z: number } | null {
+  const a = SPOTS[who];
+  if (!a) return null;
+  // the people answering together: frame their whole column
+  if (a.person && !to.length) return { x: 870, y: 272, z: 1.2 };
+  const pts = to.map((id) => SPOTS[id]).filter(Boolean);
+  const mx = pts.length ? pts.reduce((s, p) => s + p.x, 0) / pts.length : a.x;
+  const my = pts.length ? pts.reduce((s, p) => s + p.y, 0) / pts.length : a.y;
+  return { x: a.x * 0.68 + mx * 0.32, y: a.y * 0.68 + my * 0.32, z: a.person ? 1.45 : 1.75 };
+}
+
+/** Frame the scene on a point (scene units) at a zoom, keeping the scene edges outside the view. */
+export function cameraTransform(c: { x: number; y: number; z: number; ay?: number } | null): string {
+  if (!c) return "translate(0px, 0px) scale(1)";
+  // the caption covers part of the stage, so the subject sits at `ay` (upper middle by default)
+  const tx = Math.min(0, Math.max(1000 - 1000 * c.z, 500 - c.x * c.z));
+  const ty = Math.min(0, Math.max(545 - 545 * c.z, (c.ay ?? 185) - c.y * c.z));
+  return `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(${c.z})`;
+}
+
+export function AgentConstellation({ thread, selected, focus, onSelect, replay, camera = null }: {
   thread: string | null;
   selected: string | null;
   focus: string[] | null;
   onSelect: (id: string | null) => void;
-  /** a recorded message being replayed, with its flight progress 0..1 (live messages are hidden meanwhile) */
-  replay: { msg: AgentMessage; t: number } | null;
+  /** recorded messages being replayed, with their flight progress 0..1 (live messages are hidden meanwhile) */
+  replay: { msgs: AgentMessage[]; t: number } | null;
+  /** follow mode: where the camera looks (scene units), how close, and where on the stage the subject sits */
+  camera?: { x: number; y: number; z: number; ay?: number } | null;
 }) {
   const rt = useRuntime();
   const [hover, setHover] = useState<string | null>(null);
@@ -88,22 +111,21 @@ export function AgentConstellation({ thread, selected, focus, onSelect, replay }
   }, [lastWall]);
 
   const comp = rt.orchestrator.computing;
-  const open: Proposal | undefined = Object.values(rt.proposals).filter(isOpen).sort((a, b) => b.createdAt - a.createdAt)[0];
-  const decisions = useMemo(() => {
-    const m = new Map<string, string>();
-    const rank = (d: string) => ({ REJECTED: 4, REVISION_REQUESTED: 3, PENDING: 2, ACKNOWLEDGED: 1, APPROVED: 1 } as Record<string, number>)[d] ?? 0;
-    if (open) for (const s of open.approvals) {
-      const n = slotNode(s.key);
-      const prev = m.get(n);
-      if (!prev || rank(s.decision) > rank(prev)) m.set(n, s.decision);
-    }
-    return m;
-  }, [open]);
+  const open: Proposal | undefined = Object.values(rt.proposals).filter((p) => isOpen(p) && (!thread || p.thread === thread))
+    .sort((a, b) => b.createdAt - a.createdAt)[0];
+  // recomputed on every render: approvals arrive by mutating the same proposal object
+  const decisions = new Map<string, string>();
+  const rank = (d: string) => ({ REJECTED: 4, REVISION_REQUESTED: 3, PENDING: 2, ACKNOWLEDGED: 1, APPROVED: 1 } as Record<string, number>)[d] ?? 0;
+  if (open) for (const s of open.approvals) {
+    const n = slotNode(s.key);
+    const prev = decisions.get(n);
+    if (!prev || rank(s.decision) > rank(prev)) decisions.set(n, s.decision);
+  }
   const counts = new Map<string, number>();
   for (const m of msgs) if (!thread || m.thread === thread) { const e = endpoints(m); counts.set(e.from, (counts.get(e.from) ?? 0) + 1); }
 
   const flights: { m: AgentMessage; t: number }[] = replay
-    ? [{ m: replay.msg, t: replay.t }]
+    ? replay.msgs.map((m) => ({ m, t: replay.t }))
     : msgs.filter((m) => now >= m.wall && now - m.wall < FLIGHT_MS && (!thread || m.thread === thread)).map((m) => ({ m, t: (now - m.wall) / FLIGHT_MS }));
   const lit = new Set<string>();
   for (const f of flights) { const e = endpoints(f.m); for (const to of e.to) { lit.add(`${e.from}>${to}`); lit.add(`${to}>${e.from}`); } }
@@ -122,6 +144,7 @@ export function AgentConstellation({ thread, selected, focus, onSelect, replay }
           <feGaussianBlur stdDeviation="6" />
         </filter>
       </defs>
+      <g style={{ transform: cameraTransform(camera), transition: "transform 1100ms cubic-bezier(0.22, 0.8, 0.24, 1)" }}>
       <rect x="862" y="38" width="106" height="488" rx="16" fill="rgba(255,255,255,0.035)" stroke="rgba(255,255,255,0.06)" />
       {STAGES.map(([x, label]) => (
         <text key={label} x={x} y={22} textAnchor="middle" fill="rgba(200,215,235,0.55)" style={{ fontSize: 10.5, fontWeight: 650, letterSpacing: "0.09em" }}>{label.toUpperCase()}</text>
@@ -192,6 +215,7 @@ export function AgentConstellation({ thread, selected, focus, onSelect, replay }
           </g>
         );
       })}
+      </g>
     </svg>
   );
 }

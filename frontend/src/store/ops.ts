@@ -34,6 +34,10 @@ interface OpsState {
   detail: "simple" | "expert";
   /** the welcome card that explains the story (shown on start, reopened from the top bar) */
   welcome: boolean;
+  /** a request for the AI agents page to follow a workflow step by step from a moment (the guided demo sends it) */
+  follow: { thread: string | null; from: number; nonce: number } | null;
+  /** how far the AI agents page has got in telling the story (done: it has shown where things stand now) */
+  followAt: { step: number; total: number; done: boolean } | null;
   toasts: { id: number; tone: "info" | "ok" | "warn" | "bad"; text: string }[];
   attach(rt: Runtime, sources: Record<string, "osm" | "fixture">): void;
   setView(v: View): void;
@@ -47,6 +51,8 @@ interface OpsState {
   setPresentation(p: Partial<OpsState["presentation"]>): void;
   setDetail(d: OpsState["detail"]): void;
   setWelcome(on: boolean): void;
+  setFollow(f: { thread: string | null; from: number } | null): void;
+  setFollowAt(f: OpsState["followAt"]): void;
   toast(text: string, tone?: OpsState["toasts"][number]["tone"]): void;
 }
 
@@ -70,6 +76,8 @@ export const useOps = create<OpsState>((set, get) => ({
   presentation: { active: false, step: 0 },
   detail: "simple",
   welcome: true,
+  follow: null,
+  followAt: null,
   toasts: [],
   attach(rt, sources) {
     set({ runtime: rt, sources });
@@ -94,6 +102,11 @@ export const useOps = create<OpsState>((set, get) => ({
   setPresentation: (p) => set({ presentation: { ...get().presentation, ...p } }),
   setDetail: (detail) => set({ detail }),
   setWelcome: (welcome) => set({ welcome }),
+  setFollow: (f) => set({ follow: f ? { ...f, nonce: (get().follow?.nonce ?? 0) + 1 } : null }),
+  setFollowAt: (followAt) => {
+    const a = get().followAt;
+    if (a?.step !== followAt?.step || a?.total !== followAt?.total || a?.done !== followAt?.done) set({ followAt });
+  },
   toast(text, tone = "info") {
     const id = ++toastSeq;
     set({ toasts: [...get().toasts.slice(-3), { id, tone, text }] });
