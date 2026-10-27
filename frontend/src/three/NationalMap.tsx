@@ -60,7 +60,7 @@ function Land() {
   return (
     <group>
       <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[900, 900]} />
+        <planeGeometry args={[2400, 2400]} />
         <meshStandardMaterial color="#071322" roughness={0.9} metalness={0.05} />
       </mesh>
       {geom ? (
@@ -79,7 +79,7 @@ function Land() {
         </mesh>
       )}
       <Roads />
-      <gridHelper args={[800, 40, "#1e3247", "#14263a"]} position={[0, 0.66, 0]} />
+      <gridHelper args={[1600, 80, "#1e3247", "#14263a"]} position={[0, 0.66, 0]} />
     </group>
   );
 }
@@ -185,6 +185,18 @@ function Roads() {
 
 const STATUS_COLOR: Record<string, string> = { normal: "#4fb8a4", watch: "#e0a646", disrupted: "#e57373" };
 
+/** A runway as a strip of LED light: a crisp core over a soft glow that breathes slowly — present, not glaring. */
+function RunwayLed({ a, b }: { a: [number, number, number]; b: [number, number, number] }) {
+  const glow = useRef<{ material: THREE.Material & { opacity: number } } | null>(null);
+  useFrame(({ clock }) => { if (glow.current) glow.current.material.opacity = 0.2 + 0.06 * Math.sin(clock.elapsedTime * 2.2); });
+  return (
+    <>
+      <Line ref={(l) => { glow.current = l as never; }} points={[a, b]} color="#7fdcff" lineWidth={7} transparent opacity={0.22} depthWrite={false} />
+      <Line points={[a, b]} color="#eaf7ff" lineWidth={1.8} />
+    </>
+  );
+}
+
 function AirportMarker({ rt, icao, onPick }: { rt: Runtime; icao: string; onPick: (icao: string) => void }) {
   const p = PROFILES[icao];
   const [x, z] = project(p.lat, p.lon);
@@ -202,7 +214,7 @@ function AirportMarker({ rt, icao, onPick }: { rt: Runtime; icao: string; onPick
     <group position={[x, 0.8, z]}>
       {Object.values(ap.runwayEnds).filter((_, i) => i % 2 === 0).map((e) => {
         const other = Object.values(ap.runwayEnds).find((o) => o.runwayId === e.runwayId && o.designator !== e.designator)!;
-        return <Line key={e.runwayId} points={[[e.x / 1000, 0.05, -e.y / 1000], [other.x / 1000, 0.05, -other.y / 1000]]} color="#e7eaee" lineWidth={2.2} />;
+        return <RunwayLed key={e.runwayId} a={[e.x / 1000, 0.05, -e.y / 1000]} b={[other.x / 1000, 0.05, -other.y / 1000]} />;
       })}
       <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[3.2, 3.6, 48]} />
@@ -349,10 +361,11 @@ const COUNTRIES: [string, number, number, "uae" | "land" | "sea"][] = [
 ];
 
 /** DOM labels for airports, cities and coordination arcs (positioned by the AnchorProjector). */
-function MapLabels({ rt, anchors, onPick }: { rt: Runtime; anchors: AnchorSet; onPick: (icao: string) => void }) {
+function MapLabels({ rt, anchors, onPick, far }: { rt: Runtime; anchors: AnchorSet; onPick: (icao: string) => void; far: boolean }) {
   useOps((s) => s.version);
   const expert = useOps((s) => s.detail === "expert");
-  const wide = useOps((s) => s.intro !== "done");
+  // the opening shot, or zoomed out to the country: name the countries, not the airports
+  const wide = useOps((s) => s.intro !== "done") || far;
   const fade = `transition-opacity duration-700 ${wide ? "opacity-0" : "opacity-100"}`;
   return (
     <>
@@ -412,6 +425,13 @@ const REST: View3 = { pos: [-20, 170, 150], target: [10, 0, -10] };
 /** The whole UAE, for the opening shot (the country spans about 500 × 390 km around this point). */
 const WIDE: View3 = { pos: [-112, 800, 300], target: [-112, 0, 120] };
 const FLY_S = 3.6, DIVE_S = 1.25;
+/** Zooming out stops at the whole-UAE view of the opening shot. */
+const WIDE_D = Math.hypot(WIDE.pos[0] - WIDE.target[0], WIDE.pos[1] - WIDE.target[1], WIDE.pos[2] - WIDE.target[2]);
+const REST_D = Math.hypot(REST.pos[0] - REST.target[0], REST.pos[1] - REST.target[1], REST.pos[2] - REST.target[2]);
+/** Beyond this the airports are too small to label and the country names take over. */
+const FAR_D = 480;
+/** Where the camera may look: the UAE (about 51.5–56.4°E, 22.6–26.1°N), so dragging never leaves the map. */
+const PAN = { x0: -360, x1: 130, z0: -135, z1: 250 };
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 const lerp3 = (a: number[], b: number[], k: number) => a.map((v, i) => v + (b[i] - v) * k) as [number, number, number];
 
@@ -419,11 +439,13 @@ const lerp3 = (a: number[], b: number[], k: number) => a.map((v, i) => v + (b[i]
  * Drives the camera for the two scripted moves — the opening flight from the whole UAE down to the three
  * airports, and the dive into an airport before its 3D view opens — and keeps the haze in step with the zoom.
  */
-function MapCamera({ rt, dive, onDived }: { rt: Runtime; dive: string | null; onDived: (icao: string) => void }) {
+function MapCamera({ rt, dive, onDived, onFar }: { rt: Runtime; dive: string | null; onDived: (icao: string) => void; onFar: (far: boolean) => void }) {
   const { camera, scene } = useThree();
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null;
   const intro = useOps((s) => s.intro);
   const move = useRef<{ from: View3; to: View3; t: number; dur: number; done: () => void } | null>(null);
+  const far = useRef(false);
+  const zoomedOut = useRef(0);
 
   useEffect(() => {
     if (!controls) return;
@@ -452,13 +474,31 @@ function MapCamera({ rt, dive, onDived }: { rt: Runtime; dive: string | null; on
       controls.target.set(...lerp3(m.from.target, m.to.target, k));
       controls.update();
       if (m.t >= 1) { move.current = null; m.done(); }
+    } else {
+      const t = controls.target;
+      // zooming out eases the view toward the middle of the UAE, so the furthest zoom is the opening shot's framing
+      const k = THREE.MathUtils.smoothstep(camera.position.distanceTo(t), REST_D, WIDE_D);
+      if (k > zoomedOut.current && zoomedOut.current < 1) {
+        const f = (k - zoomedOut.current) / (1 - zoomedOut.current);
+        const dx = (WIDE.target[0] - t.x) * f, dz = (WIDE.target[2] - t.z) * f;
+        t.x += dx; t.z += dz; camera.position.x += dx; camera.position.z += dz;
+      }
+      zoomedOut.current = k;
+      // keep the point the camera looks at on the UAE (and on the ground), moving the camera with it
+      const x = THREE.MathUtils.clamp(t.x, PAN.x0, PAN.x1), z = THREE.MathUtils.clamp(t.z, PAN.z0, PAN.z1);
+      if (x !== t.x || z !== t.z || t.y !== 0) {
+        camera.position.x += x - t.x; camera.position.z += z - t.z; camera.position.y -= t.y;
+        t.set(x, 0, z);
+        controls.update();
+      }
     }
+    const d = camera.position.distanceTo(controls.target);
     const fog = scene.fog as THREE.Fog | null;
     if (fog) {
-      const d = camera.position.distanceTo(controls.target);
       fog.near = d * 1.1;
       fog.far = d * 2.7;
     }
+    if (far.current !== d > FAR_D) { far.current = d > FAR_D; onFar(far.current); }
   });
   return null;
 }
@@ -468,6 +508,7 @@ export function NationalMap({ rt }: { rt: Runtime }) {
   const [start] = useState(() => (useOps.getState().intro === "done" ? REST : WIDE));
   const [dive, setDive] = useState<string | null>(null);
   const [fading, setFading] = useState(false);
+  const [far, setFar] = useState(false);
   const pick = useCallback((icao: string) => { if (useOps.getState().intro === "done") setDive((d) => d ?? icao); }, []);
   const dived = useCallback((icao: string) => {
     setFading(true);
@@ -485,11 +526,11 @@ export function NationalMap({ rt }: { rt: Runtime }) {
       {Object.keys(rt.airports).sort().map((icao) => <AirportMarker key={icao} rt={rt} icao={icao} onPick={pick} />)}
       <Traffic rt={rt} />
       <Arcs rt={rt} />
-      <OrbitControls makeDefault target={start.target} maxPolarAngle={1.2} minDistance={60} maxDistance={420} enableDamping />
-      <MapCamera rt={rt} dive={dive} onDived={dived} />
+      <OrbitControls makeDefault target={start.target} maxPolarAngle={1.2} minDistance={60} maxDistance={WIDE_D + 5} screenSpacePanning={false} zoomToCursor enableDamping />
+      <MapCamera rt={rt} dive={dive} onDived={dived} onFar={setFar} />
       <AnchorProjector set={anchors} />
     </Canvas>
-    <div className="pointer-events-none absolute inset-0 overflow-hidden"><MapLabels rt={rt} anchors={anchors} onPick={pick} /></div>
+    <div className="pointer-events-none absolute inset-0 overflow-hidden"><MapLabels rt={rt} anchors={anchors} onPick={pick} far={far} /></div>
     <div className={`pointer-events-none absolute inset-0 bg-[#0b1622] transition-opacity duration-200 ${fading ? "opacity-100" : "opacity-0"}`} />
     </div>
   );
