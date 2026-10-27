@@ -116,7 +116,7 @@ export function CameraRig({ ap, center, radius }: { ap: AirportInfo; center: P2;
       ref={ref}
       makeDefault
       minDistance={18}
-      maxDistance={radius * 4}
+      maxDistance={radius * 6}
       maxPolarAngle={Math.PI * 0.485}
       smoothTime={0.45}
       draggingSmoothTime={0.12}

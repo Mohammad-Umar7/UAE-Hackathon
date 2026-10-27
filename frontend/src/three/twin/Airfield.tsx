@@ -6,7 +6,7 @@ import * as THREE from "three";
 import type { AirportInfo } from "@/core/airports/registry";
 import {
   apronsOf, buildBuildings, buildHoldMarkings, buildRunwayLights, buildRunways, buildStandMarkings, buildTaxiLights,
-  buildingsOf, clipPolyline, clipRing, contextOf, cropRect, emptyLights, floodMasts, GeoBuilder, holdPositions, inRect, landuseOf, layoutBounds, LIGHT_GROUPS, roadsOf, runwaysOf, taxiwaysOf,
+  buildingsOf, contextOf, emptyLights, floodMasts, GeoBuilder, holdPositions, landuseOf, layoutBounds, LIGHT_GROUPS, roadsOf, runwaysOf, taxiwaysOf,
   type DesignatorLabel, type P2,
 } from "./geometry";
 import { airfieldLightGeometry, airfieldLightMaterial } from "./lights";
@@ -15,11 +15,6 @@ import { twinState } from "./state";
 
 /** Desert sand around the airfield: warm and a little saturated, so the paved areas stand out against it. */
 const SAND = "#ddbf8f";
-/** The 3D view keeps only the aerodrome and this much around it (metres); the rest of the city is left out. */
-const CROP_MARGIN = 200;
-/** Nearest city buildings kept inside that rectangle (Dubai International sits in the middle of the city). */
-const CITY_MAX = 3500;
-const TILE_EDGE = 60;
 
 /** Everything static about one airport's airfield, built once per layout. */
 export function buildAirfield(ap: AirportInfo, replaced: Set<string> = new Set()) {
@@ -41,13 +36,11 @@ export function buildAirfield(ap: AirportInfo, replaced: Set<string> = new Set()
   buildHoldMarkings(holds, yellow, lights);
   buildTaxiLights(tx.centre, lights);
   const masts = floodMasts(stands, lights);
-  // landside context, cut to the rectangle around the aerodrome
+  // landside context, bounded around the airfield
   const bounds = layoutBounds(layout, ap);
-  const crop = cropRect(layout, ap, CROP_MARGIN);
+  const ctxR = bounds.radius + 2600;
   const roads = new GeoBuilder(16), green = new GeoBuilder(30), water = new GeoBuilder(60), parking = new GeoBuilder(12);
-  for (const r of roadsOf(layout)) {
-    for (const pts of clipPolyline(r.points.map((p) => [p[0], p[1]] as P2), crop)) roads.ribbon(pts, Number(r.width_m ?? 8), 0, false, pts.length < 40);
-  }
+  for (const r of roadsOf(layout, bounds.center, ctxR)) roads.ribbon(r.points.map((p) => [p[0], p[1]] as P2), Number(r.width_m ?? 8), 0, false, r.points.length < 40);
   // inside the aerodrome OSM "grass" is the runway strip — sand in the UAE; only landside landscaping is green
   const boundary = ((layout.aerodrome_boundary ?? []) as number[][]).map((p) => [p[0], p[1]] as P2);
   const inAerodrome = (poly: number[][]) => {
@@ -65,22 +58,17 @@ export function buildAirfield(ap: AirportInfo, replaced: Set<string> = new Set()
   for (const l of landuseOf(layout)) {
     const greenKind = (l.kind === "grass" && !inAerodrome(l.polygon)) || l.kind === "landscaping";
     const target = l.kind === "water" ? water : l.kind === "parking" ? parking : greenKind ? green : null;
-    if (!target) continue;
-    const outer = clipRing(l.polygon.map((p) => [p[0], p[1]] as P2), crop);
-    if (outer.length < 3) continue;
-    target.polygon(outer, (l.holes ?? []).map((h) => clipRing(h.map((p) => [p[0], p[1]] as P2), crop)).filter((h) => h.length >= 3), 0);
+    target?.polygon(l.polygon.map((p) => [p[0], p[1]] as P2), (l.holes ?? []).map((h) => h.map((p) => [p[0], p[1]] as P2)), 0);
   }
   const bg = { glass: new GeoBuilder(), concrete: new GeoBuilder(), metal: new GeoBuilder(), roof: new GeoBuilder(30), roofMetal: new GeoBuilder(30) };
   // signature landmark models stand in for these footprints (see Landmarks.tsx)
   buildBuildings(buildingsOf(layout, stands).filter((b) => !replaced.has(b.id ?? "")), bg);
   const ctx = { glass: new GeoBuilder(), concrete: new GeoBuilder(), metal: new GeoBuilder(), roof: new GeoBuilder(30), roofMetal: new GeoBuilder(30) };
-  const context = contextOf(layout, bounds.center, Infinity, Infinity)
-    .filter((c) => c.footprint.every((p) => inRect(p, crop))).slice(0, CITY_MAX)
-    .map((c) => ({ kind: "context", footprint: c.footprint, height_m: c.height_m }));
+  const context = contextOf(layout, bounds.center, ctxR, 9000).map((c) => ({ kind: "context", footprint: c.footprint, height_m: c.height_m }));
   buildBuildings(context, ctx, 4);
   const geo = (b: GeoBuilder) => (b.empty ? null : b.build());
   return {
-    crop, rws, labels, holds, masts,
+    rws, labels, holds, masts,
     runway: geo(runway), shoulder: geo(shoulder), taxi: geo(taxi), apron: geo(apron),
     white: geo(white), yellow: geo(yellow), red: geo(red),
     roads: geo(roads), green: geo(green), water: geo(water), parking: geo(parking),
@@ -128,7 +116,7 @@ function useSurfaces() {
   return s;
 }
 
-export function Airfield({ data }: { data: AirfieldData }) {
+export function Airfield({ data, center }: { data: AirfieldData; center: P2 }) {
   const surf = useSurfaces();
   const mats = useMemo(() => {
     const std = (color: string, set: SurfaceSet | undefined, roughness: number, order: number, normalScale = 0.6) => layer(new THREE.MeshStandardMaterial({
@@ -156,13 +144,12 @@ export function Airfield({ data }: { data: AirfieldData }) {
   useEffect(() => () => Object.values(mats).forEach((m) => m.dispose()), [mats]);
 
   const lightMat = useMemo(() => airfieldLightMaterial(), []);
-  // the ground is a tile of the cropped rectangle, with a thin edge so it reads as a model of the airport
-  const { crop } = data;
   const groundGeo = useMemo(() => {
     const b = new GeoBuilder(110);
-    b.quad([crop.x0, crop.y0], [crop.x1, crop.y0], [crop.x1, crop.y1], [crop.x0, crop.y1], 0);
+    const R = 16000;
+    b.quad([center[0] - R, center[1] - R], [center[0] + R, center[1] - R], [center[0] + R, center[1] + R], [center[0] - R, center[1] + R], 0);
     return b.build();
-  }, [crop]);
+  }, [center]);
 
   // live state: wet pavement, runway closures, LVP stop bars, night gain
   useFrame(({ clock, size, camera }) => {
@@ -190,10 +177,6 @@ export function Airfield({ data }: { data: AirfieldData }) {
   return (
     <group>
       <mesh geometry={groundGeo} material={mats.ground} receiveShadow position={[0, -0.02, 0]} />
-      <mesh position={[(crop.x0 + crop.x1) / 2, -TILE_EDGE / 2 - 0.1, -(crop.y0 + crop.y1) / 2]}>
-        <boxGeometry args={[crop.x1 - crop.x0, TILE_EDGE, crop.y1 - crop.y0]} />
-        <meshStandardMaterial color="#9c7f57" roughness={1} />
-      </mesh>
       {data.green && <mesh geometry={data.green} material={mats.green} receiveShadow />}
       {data.water && <mesh geometry={data.water} material={mats.water} receiveShadow />}
       {data.parking && <mesh geometry={data.parking} material={mats.parking} receiveShadow />}
