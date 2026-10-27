@@ -26,7 +26,7 @@ function SceneContent({ rt, icao, labels }: { rt: Runtime; icao: string; labels:
   return (
     <>
       <Atmosphere rt={rt} icao={icao} />
-      {data && <Airfield data={data} center={bounds.center} />}
+      {data && <Airfield data={data} />}
       {data && <RunwayClosures rws={data.rws} />}
       <Landmarks icao={icao} />
       <StandStatus rt={rt} ap={ap} />
