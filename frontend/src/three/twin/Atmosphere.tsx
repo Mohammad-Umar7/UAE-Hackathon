@@ -92,7 +92,7 @@ export function Atmosphere({ rt, icao }: { rt: Runtime; icao: string }) {
       } else {
         // moonlight from the east-southeast, cool and dim
         L.position.copy(twinState.target).add(new THREE.Vector3(3000, 4200, 1500));
-        L.intensity = 0.32 * (1 - 0.6 * overcast);
+        L.intensity = 0.22 * (1 - 0.6 * overcast);
         L.color.set("#9fb2d8");
       }
       L.target.position.copy(twinState.target);
@@ -108,10 +108,10 @@ export function Atmosphere({ rt, icao }: { rt: Runtime; icao: string }) {
     if (hemi.current) {
       hemi.current.color.copy(SKY_DAY).lerp(SKY_NIGHT, night);
       hemi.current.groundColor.copy(GROUND_DAY).lerp(GROUND_NIGHT, night);
-      hemi.current.intensity = 0.4 * day + 0.55 * night + 2.5 * f.level;
+      hemi.current.intensity = 0.4 * day + 0.12 * night + 2.5 * f.level;
     }
-    if (amb.current) amb.current.intensity = 0.06 + 0.62 * night; // apron flood lighting fill at night
-    scene.environmentIntensity = (0.12 + 0.5 * day) * (1 - 0.45 * overcast);
+    if (amb.current) amb.current.intensity = 0.06 + 0.14 * night; // a little fill at night; apron floodlights do the rest
+    scene.environmentIntensity = (0.07 + 0.55 * day) * (1 - 0.45 * overcast);
 
     const sk = sky.current?.material as THREE.ShaderMaterial | undefined;
     if (sk?.uniforms) {
@@ -136,6 +136,7 @@ export function Atmosphere({ rt, icao }: { rt: Runtime; icao: string }) {
         shadow-mapSize={[4096, 4096]}
         shadow-bias={-0.00025}
         shadow-normalBias={0.8}
+        shadow-radius={3}
       />
       <Rain rt={rt} icao={icao} />
     </>
