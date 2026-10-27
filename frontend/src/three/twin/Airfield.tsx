@@ -166,9 +166,12 @@ export function Airfield({ data, center }: { data: AirfieldData; center: P2 }) {
     u.uScale.value = size.height / (2 * Math.tan(((camera as THREE.PerspectiveCamera).fov * Math.PI) / 360));
     const night = s.night;
     const base = 0.22 + 0.95 * night;
+    // runway edge and centreline LEDs stay readable by day, without the glare they have at night
+    const runway = 0.5 + 0.67 * night;
     const gains = u.uGroupGain.value as number[];
     LIGHT_GROUPS.forEach((g, i) => {
-      gains[i] = g === "stopbar" ? (s.lvp ? 1.3 : 0) : g === "apron" ? 0.15 + 1.3 * night : g === "approach" ? base * 1.2 : g === "papi" ? base * 1.4 : base;
+      gains[i] = g === "stopbar" ? (s.lvp ? 1.3 : 0) : g === "apron" ? 0.15 + 1.3 * night : g === "approach" ? base * 1.2 : g === "papi" ? base * 1.4
+        : g === "runway" ? runway : base;
     });
     const off = u.uRunwayOff.value as number[];
     data.rws.forEach((r, i) => { if (i < 4) off[i] = s.closedRunways.has(r.id) ? 1 : 0; });

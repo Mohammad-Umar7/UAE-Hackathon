@@ -356,6 +356,8 @@ export const LIGHT_GROUPS: LightGroup[] = ["runway", "approach", "taxi", "stopba
 const C = {
   white: [1.0, 0.92, 0.78], amber: [1.0, 0.62, 0.16], red: [1.0, 0.1, 0.06], green: [0.15, 1.0, 0.45], blue: [0.2, 0.42, 1.0],
   cool: [0.85, 0.92, 1.0], warm: [1.0, 0.78, 0.52],
+  /** runway LED strip: cool white at about half strength, so a dense row stays soft */
+  led: [0.5, 0.6, 0.7],
 };
 
 export function emptyLights(): LightSet { return { positions: [], colors: [], sizes: [], groups: [], phases: [], runway: [] }; }
@@ -377,6 +379,10 @@ export function buildRunwayLights(rws: RunwayGeom[], L: LightSet): void {
     for (let s = 0; s <= total + 0.1; s += 60) {
       const amber = s < 600 || s > total - 600;
       for (const side of [-1, 1]) light(L, add(add(rw.a, mul(u, s)), mul(n, side * (W / 2 + 1.5))), 0.6, amber ? C.amber : C.white, 2.2, "runway", -1, ri);
+    }
+    // a fine LED strip just inside each edge: dim on its own, it reads as a line of light from any distance
+    for (let s = 3; s < total; s += 6) {
+      for (const side of [-1, 1]) light(L, add(add(rw.a, mul(u, s)), mul(n, side * (W / 2 - 0.6))), 0.1, C.led, 1.8, "runway", -1, ri);
     }
     for (let s = 15; s < total; s += 15) {
       const fromEnd = Math.min(s, total - s);
