@@ -292,6 +292,7 @@ const CITIES: [string, number, number][] = [["Abu Dhabi", 24.4539, 54.3773], ["D
 function MapLabels({ rt, anchors }: { rt: Runtime; anchors: AnchorSet }) {
   useOps((s) => s.version);
   const { setAirport, setView } = useOps();
+  const expert = useOps((s) => s.detail === "expert");
   return (
     <>
       {CITIES.map(([n, la, lo]) => {
@@ -312,7 +313,9 @@ function MapLabels({ rt, anchors }: { rt: Runtime; anchors: AnchorSet }) {
                 <span className="text-[12px] font-semibold">{p.iata}</span>
                 <span className="muted text-[10.5px]">{p.shortName}</span>
               </div>
-              <div className="muted mono text-[10px]">{Math.round(sum.rate)}/{p.arrCapacity} arr/h · {sum.sample?.holding ?? 0} holding · {sum.sample?.waiting ?? 0} waiting</div>
+              <div className="muted mono text-[10px]">{expert
+                ? `${Math.round(sum.rate)}/${p.arrCapacity} arr/h · ${sum.sample?.holding ?? 0} holding · ${sum.sample?.waiting ?? 0} waiting`
+                : `${Math.round(sum.rate)} of ${p.arrCapacity} landings/h · ${sum.sample?.holding ?? 0} circling`}</div>
             </button>
           </Anchor>
         );
@@ -324,8 +327,8 @@ function MapLabels({ rt, anchors }: { rt: Runtime; anchors: AnchorSet }) {
         return (
           <Anchor key={`flow:${to}`} set={anchors} id={`flow:${to}`} pos={[x, 1.8, z]}>
             <div className="hud whitespace-nowrap border-l-[3px] px-2 py-1 text-[10.5px] leading-snug" style={{ borderLeftColor: flows[0].color, transform: FLOW_SHIFT[to] }}>
-              <div className="font-semibold">{total} diversion{total > 1 ? "s" : ""} into {p.iata} · {flows[0].status}</div>
-              {flows.map((a) => <div key={a.from} className="muted">{a.n} from {PROFILES[a.from].iata}</div>)}
+              <div className="font-semibold">{expert ? `${total} diversion${total > 1 ? "s" : ""} into ${p.iata} · ${flows[0].status}` : `${total} flight${total > 1 ? "s" : ""} sent to ${p.city} · ${flows[0].status}`}</div>
+              {flows.map((a) => <div key={a.from} className="muted">{a.n} from {expert ? PROFILES[a.from].iata : PROFILES[a.from].city}</div>)}
             </div>
           </Anchor>
         );
