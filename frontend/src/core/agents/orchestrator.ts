@@ -576,7 +576,7 @@ export class Orchestrator {
     this.host.hold("agents");
     const rows = p.plan.rows;
     const report = await this.tool("validation", "validate_plan", { proposal: `${p.id} v${p.version}`, stage: "pre-commit revalidation" }, wf.id, causedBy,
-      () => validatePlan(this.w, this.host.airports, p.plan.decisions, rows, p.t0),
+      () => validatePlan(this.w, this.host.airports, p.plan.decisions, rows, p.t0, true, 1),
       (r) => r.valid ? "Revalidated against current state: all hard constraints satisfied" : `${r.violations.length} violation(s): ${r.violations[0].detail}`,
       ["AUTHORISATION", "STAND_OVERLAP", "ARRIVAL_CAPACITY", "PHASE"]);
     if (!report.valid) {
@@ -614,7 +614,7 @@ export class Orchestrator {
     const p = this.openProposal();
     if (!p || p.status !== "PROPOSED" || this.pumping) return;
     const changes = diffSnapshot(p.snapshot, this.w);
-    const report = validatePlan(this.w, this.host.airports, p.plan.decisions, p.plan.rows, p.t0);
+    const report = validatePlan(this.w, this.host.airports, p.plan.decisions, p.plan.rows, p.t0, true, 1);
     const sig = `${p.id}${p.version}|${changes.map((c) => c.id).join(",")}|${report.valid}`;
     if (sig === this.lastStaleSig) return;
     this.lastStaleSig = sig;

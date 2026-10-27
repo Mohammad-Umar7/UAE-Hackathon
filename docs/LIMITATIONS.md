@@ -22,6 +22,8 @@ its models are simplified, so results are read in the right light.
   never issues clearances. Arrival management uses 15-minute capacity buckets and does not model wake-turbulence
   separation, approach procedures or airspace structure. A landing-sequence target fixes a flight's order and its
   latest landing time; the simulated arrival manager still lands it earlier when capacity, spacing and its stand allow.
+  A new plan is validated strictly against the 15-minute rates; while it awaits approval, one extra landing per bucket
+  caused by other flights being re-sequenced is tolerated, as an arrival manager would absorb it.
 * **Ground movement** follows the taxi graph with a nose-gear point-mass model (curvature-limited speeds, accelerations,
   pushback and tows). Taxiing aircraft are not deconflicted from each other on the ground.
 * **Turnarounds** are limited by minimum turnaround time, handling teams and ambulifts; individual ground vehicles

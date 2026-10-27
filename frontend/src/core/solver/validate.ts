@@ -84,8 +84,13 @@ function occupancy(w: World, ap: Registry, exclude: Set<string>, sharedOnly: boo
   return occ;
 }
 
+/**
+ * `capacitySlack`: landings per 15-minute bucket tolerated above the modelled rate. A new plan is checked
+ * strictly; while it awaits approval (and when it is committed) other flights keep being re-sequenced, and
+ * one extra landing in a bucket is absorbed by the arrival manager moving an aircraft into the next one.
+ */
 export function validatePlan(w: World, ap: Registry, decisions: Decision[], rows: PlanRow[] = [], t0?: number,
-  sharedOnly = true): ValidationReport {
+  sharedOnly = true, capacitySlack = 0): ValidationReport {
   const now = w.now;
   const checks: Record<string, number> = Object.fromEntries(CONSTRAINT_CATALOGUE.map(([c]) => [c, 0]));
   const violations: Violation[] = [];
@@ -229,7 +234,7 @@ export function validatePlan(w: World, ap: Registry, decisions: Decision[], rows
       const n = landings[icao].get(b) ?? 0;
       const c = bucketCapacity(w, ap[icao].profile, b, "arr", sharedOnly);
       checks.ARRIVAL_CAPACITY++;
-      if (n > c) violations.push({ code: "ARRIVAL_CAPACITY", visit: null, callsign: null,
+      if (n > c + capacitySlack) violations.push({ code: "ARRIVAL_CAPACITY", visit: null, callsign: null,
         detail: `${icao} ${fmtTime(b * BUCKET_S)}–${fmtTime((b + 1) * BUCKET_S)}: ${n} landings > modelled capacity ${c}` });
     }
   }
