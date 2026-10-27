@@ -39,13 +39,13 @@ export default function TwinView() {
         <Controls />
         <Details />
       </div>
-      <div className="pointer-events-none absolute bottom-3 left-3 flex flex-col gap-2">
+      <div className="pointer-events-none absolute bottom-3 left-3 flex w-[372px] flex-col items-start gap-2">
         <RunwayCard icao={airport} />
         <Legend />
       </div>
       <PlanBar icao={airport} />
-      <div className="pointer-events-none absolute bottom-1.5 right-3 text-[10px] text-white/45">
-        Map data © OpenStreetMap contributors (ODbL) · original 3D models · synthetic flights and fictional airlines
+      <div className="pointer-events-none absolute bottom-1.5 right-3 text-right text-[10px] leading-snug text-white/45">
+        Map data © OpenStreetMap contributors (ODbL)<br />original 3D models · synthetic flights and fictional airlines
       </div>
     </div>
   );
