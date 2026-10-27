@@ -23,7 +23,7 @@ const Presentation = dynamic(() => import("./presentation/Presentation"), { ssr:
 export function Shell() {
   const view = useOps((s) => s.view);
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-bg">
+    <div className="flex h-screen flex-col overflow-hidden">
       <TopBar />
       <StoryBar />
       <div className="flex min-h-0 flex-1">

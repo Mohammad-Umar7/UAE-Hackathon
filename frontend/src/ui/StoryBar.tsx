@@ -25,7 +25,7 @@ export function StoryBar() {
     else setView(g);
   };
   return (
-    <div className="flex h-[38px] shrink-0 items-center gap-2.5 border-b border-line px-4" style={{ background: t.bg }}>
+    <div className="glass flex h-[38px] shrink-0 items-center gap-2.5 border-b border-line px-4" style={{ background: t.bg }}>
       <Icon size={15} className={s.tone === "work" ? "animate-spin" : ""} style={{ color: t.color }} />
       <span className="eyebrow" style={{ color: t.color }}>Now</span>
       <p className="min-w-0 flex-1 truncate text-[13px] text-ink" title={s.text}>{s.text}</p>
