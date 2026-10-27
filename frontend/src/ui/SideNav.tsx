@@ -1,6 +1,6 @@
 "use client";
 
-import { Boxes, ChartColumnBig, CircleHelp, FlaskConical, HistoryIcon as History, LayoutDashboard, Network, SquareChartGantt, Vote } from "lucide-react";
+import { Boxes, ChartColumnBig, CircleHelp, FlaskConical, GitCompareArrows, HistoryIcon as History, LayoutDashboard, Network, SquareChartGantt, Vote } from "lucide-react";
 import { isOpen } from "@/core/approvals/workflow";
 import { useOps, useRuntime, type View } from "@/store/ops";
 
@@ -12,8 +12,9 @@ const MAIN: Item[] = [
   { id: "twin", label: "3D airport", icon: Boxes, hint: "Each airport in 3D, driven by the live simulation" },
   { id: "agents", label: "AI agents", icon: Network, hint: "What the seven agents did, step by step" },
   { id: "workbench", label: "Decision", icon: Vote, hint: "The recovery plan, what it changes, and the approvals it needs" },
-  { id: "evidence", label: "Results", icon: ChartColumnBig, hint: "The approved plan measured against doing nothing" },
+  { id: "evidence", label: "Before & after", icon: GitCompareArrows, hint: "The same evening without SKYPACT and with it, and how the agents helped" },
 ];
+const EVIDENCE_EXPERT: Item = { id: "evidence", label: "Evidence", icon: ChartColumnBig, hint: "Measured before/after, optimiser statistics, oversight figures and data provenance" };
 const MORE: Item[] = [
   { id: "timeline", label: "Gate plan", icon: SquareChartGantt, hint: "Which aircraft is at which gate, hour by hour" },
   { id: "lab", label: "Scenarios", icon: FlaskConical, hint: "Start another scenario or add a disruption yourself" },
@@ -41,7 +42,7 @@ export function SideNav() {
   };
   return (
     <nav className="flex w-[76px] shrink-0 flex-col items-stretch gap-0.5 border-r border-line bg-panel px-1.5 py-2">
-      {MAIN.map((i) => button(i))}
+      {MAIN.map((i) => button(i.id === "evidence" && detail === "expert" ? EVIDENCE_EXPERT : i))}
       <div className="mx-2 mb-1 mt-2 border-t border-line pt-1.5 text-center text-[9px] font-semibold uppercase tracking-wider text-faint">More</div>
       {MORE.map((i) => button(i, true))}
       <div className="mt-auto flex flex-col items-stretch gap-1.5 px-0.5 pb-1">

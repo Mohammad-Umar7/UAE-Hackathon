@@ -36,6 +36,9 @@ const POOL: Record<string, string> = { ambulift: "Wheelchair lifts", wb_handling
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString("en-GB")} ${n === 1 ? one : many}`;
 
+/** "Sharjah", "Sharjah or Dubai", "Sharjah, Dubai or Abu Dhabi". */
+export const listOr = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} or ${xs[xs.length - 1]}` : xs[0] ?? "");
+
 /** A short headline for an incident, without aviation jargon. */
 export function plainIncident(i: Incident): string {
   const at = city(i.airport);
@@ -70,7 +73,7 @@ export function planChanges(p: Proposal): string[] {
   const n = (a: string) => ds.filter((d) => d.action === a).length;
   const out: string[] = [];
   const divert = n("divert"), stands = n("assign_stand"), slots = n("landing_slot"), tows = n("tow"), open = n("unresolved");
-  if (divert) out.push(`${plural(divert, "flight")} land${divert === 1 ? "s" : ""} at a nearby airport instead (${[...new Set(ds.filter((d) => d.action === "divert").map((d) => city(d.to!)))].join(" or ")})`);
+  if (divert) out.push(`${plural(divert, "flight")} land${divert === 1 ? "s" : ""} at a nearby airport instead (${listOr([...new Set(ds.filter((d) => d.action === "divert").map((d) => city(d.to!)))])})`);
   if (stands) out.push(`${plural(stands, "aircraft", "aircraft")} ${stands === 1 ? "gets" : "get"} a different gate`);
   if (slots) out.push(`${plural(slots, "flight")} ${slots === 1 ? "gets" : "get"} a landing time, some held on the ground before take-off instead of circling`);
   if (tows) out.push(`${plural(tows, "broken-down aircraft", "broken-down aircraft")} ${tows === 1 ? "is" : "are"} towed away to free a gate`);
@@ -155,7 +158,7 @@ export function storyNow(rt: Runtime, role: string): StoryNow {
   const committed = props.find((p) => p.status === "COMMITTED");
   if (committed && rt.world.now - (committed.history[committed.history.length - 1]?.t ?? 0) < 45 * 60) {
     const fx = planEffects(committed).filter((e) => e.before > 0).map((e) => `${e.label.toLowerCase()} ${change(e)}%`).slice(0, 2).join(", ");
-    return { tone: "done", text: `The approved plan is running: aircraft are moving to new gates and landing times.${fx ? ` Expected against doing nothing: ${fx}.` : ""}`, cta: { label: "See the results", go: "evidence" } };
+    return { tone: "done", text: `The approved plan is running: aircraft are moving to new gates and landing times.${fx ? ` Expected against doing nothing: ${fx}.` : ""}`, cta: { label: "See before & after", go: "evidence" } };
   }
   if (incidents.length) return { tone: "alert", text: `${lead}The agents react as soon as the clock runs.`, cta: rt.running ? { label: "Watch the agents", go: "agents" } : { label: "Run the clock", go: "run" } };
   if (!rt.running && rt.world.now <= rt.scenario.start + 60) {
