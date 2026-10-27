@@ -46,13 +46,13 @@ export default function CommandView() {
       </div>
       <div className="scroll-y flex min-h-0 flex-col gap-3">
         {Object.keys(rt.airports).map((icao) => <AirportCard key={icao} icao={icao} />)}
-        <div className="panel overflow-hidden">
+        <div className="panel shrink-0 overflow-hidden">
           <div className="panel-h">
             <div className="panel-t">Recovery alerts</div>
             <button className="btn btn-sm" onClick={() => setView("workbench")}>Open workbench <ArrowUpRight size={12} /></button>
           </div>
           {pending.length === 0 && <div className="px-3 py-3 text-[12px] text-muted">No proposal awaiting approval.</div>}
-          {pending.map(([k, p]) => (
+          {pending.slice(0, 3).map(([k, p]) => (
             <button key={k} className="flex w-full items-start gap-2 border-b border-line px-3 py-2 text-left hover:bg-bg-2" onClick={() => { select({ selectedProposal: k }); setView("workbench"); }}>
               <span className={`pill ${STATUS_PILL[p.status]}`}>{p.status.toLowerCase()}</span>
               <span className="min-w-0 flex-1">
@@ -86,7 +86,7 @@ function AirportCard({ icao }: { icao: string }) {
   const hist = rt.samples.slice(-36).map((x) => x.airports[icao]?.holding ?? 0);
   const mx = Math.max(4, ...hist);
   return (
-    <button className="panel w-full p-3 text-left transition-shadow hover:shadow-[var(--shadow-2)]" onClick={() => { setAirport(icao); setView("twin"); }}>
+    <button className="panel w-full shrink-0 p-3 text-left transition-shadow hover:shadow-[var(--shadow-2)]" onClick={() => { setAirport(icao); setView("twin"); }}>
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -107,7 +107,10 @@ function AirportCard({ icao }: { icao: string }) {
       <div className="mt-2 flex items-end gap-2">
         <div className="flex items-center gap-1 text-[11px] text-muted"><WxIcon size={13} /> {wx ? `${wx.category} · vis ${wx.visibility >= 9999 ? "10 km+" : `${Math.round(wx.visibility)} m`}` : "—"}</div>
         <svg viewBox={`0 0 ${hist.length * 6} 20`} className="ml-auto h-5 w-32" preserveAspectRatio="none">
-          {hist.map((v, i) => <rect key={i} x={i * 6} y={20 - (20 * v) / mx} width={4.5} height={(20 * v) / mx} rx={1} fill={v ? "var(--amber)" : "var(--line-2)"} />)}
+          {hist.map((v, i) => {
+            const h = v ? Math.max(3, (20 * v) / mx) : 1.5; // zero keeps a faint track so the history reads as a chart
+            return <rect key={i} x={i * 6} y={20 - h} width={4.5} height={h} fill={v ? "var(--amber)" : "var(--line-2)"} />;
+          })}
         </svg>
         <span className="text-[10px] text-faint">holding, last 3 h</span>
       </div>
