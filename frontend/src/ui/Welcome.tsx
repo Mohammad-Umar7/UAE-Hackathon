@@ -34,7 +34,7 @@ export function Welcome() {
               Sharjah, plan a recovery when weather or an incident disrupts them, and ask the people in charge to approve it.
             </p>
           </div>
-          <button className="btn btn-ghost h-8 w-8 shrink-0 justify-center p-0" onClick={() => setWelcome(false)} aria-label="Close"><X size={16} /></button>
+          <button className="btn btn-ghost h-8 w-8 shrink-0 justify-center !px-0" onClick={() => setWelcome(false)} aria-label="Close"><X size={16} /></button>
         </div>
         <div className="eyebrow px-6 pt-3">The story you&apos;ll watch</div>
         <ol className="grid grid-cols-2 gap-3 px-6 pb-2 pt-2 md:grid-cols-4">

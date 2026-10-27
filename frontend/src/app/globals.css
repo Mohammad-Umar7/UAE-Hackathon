@@ -127,6 +127,7 @@ html, body {
   font-weight: 550; font-size: 12px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink);
   transition: background 0.12s, border-color 0.12s, color 0.12s; white-space: nowrap;
 }
+.btn > svg, .hud-btn > svg { flex-shrink: 0; } /* icons never squeeze in narrow buttons */
 .btn:hover { background: var(--bg-2); }
 .btn:disabled { opacity: 0.45; pointer-events: none; }
 .btn-primary { background: var(--navy); border-color: var(--navy); color: #fff; }
