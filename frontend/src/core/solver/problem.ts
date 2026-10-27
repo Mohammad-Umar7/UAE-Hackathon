@@ -312,6 +312,20 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
     }
   }
   for (const v of waiting) movable.push([v, "waiting for a stand on the ground"]);
+  // Stands currently assigned to other movable flights are not hard constraints (the optimiser may move
+  // those flights), but alternatives that are already spoken for rank lower, so the few alternatives a
+  // flight gets are ones it can actually use.
+  const soft = new Map<string, [number, number, string][]>();
+  for (const [v] of movable) {
+    const st = v.stand ? airports[v.airport].stands[v.stand] : undefined;
+    if (!st) continue;
+    const on = (v.eldt ?? v.eta ?? now) + st.taxiIn;
+    const k = `${v.airport}:${st.id}`;
+    if (!soft.has(k)) soft.set(k, []);
+    soft.get(k)!.push([rel(on, t0) - PRE, rel(v.dep ? Math.max(v.dep.sched, on + v.minTat) : on + 36000, t0) + POST, v.id]);
+  }
+  const softBusy = (a: string, s: string, x0: number, x1: number, self: string) =>
+    (soft.get(`${a}:${s}`) ?? []).reduce((sum, [p, q, id]) => sum + (id !== self && p < x1 && q > x0 ? Math.min(q, x1) - Math.max(p, x0) : 0), 0);
 
   // ---- flight variables -----------------------------------------------------------------------
   const flights: FlightVar[] = [];
@@ -366,7 +380,8 @@ export function buildProblem(w: World, airports: Registry, cfg: ProblemConfig = 
       // score over the whole stay (on-block to off-block) so pre-selected stands can actually host the turnaround
       const offEst = sobt !== null ? Math.max(sobt, on + tat) : on + 600;
       const busy = busyMinutes(v.airport, st.id, on - PRE, offEst + POST);
-      opts.push([busy * 4 + (busy > 0 ? 400 : 0) + pref + taxi + (o.current ? 0 : 3), o]);
+      const taken = softBusy(v.airport, st.id, on - PRE, offEst + POST, v.id);
+      opts.push([busy * 4 + (busy > 0 ? 400 : 0) + taken * 2 + (taken > 0 ? 200 : 0) + pref + taxi + (o.current ? 0 : 3), o]);
     }
     opts.sort((a, b) => a[0] - b[0] || (a[1].stand < b[1].stand ? -1 : 1));
     // flights whose current stand stays free need few alternatives; conflicted flights get the full set
