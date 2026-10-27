@@ -2,7 +2,7 @@
 
 import { Line, OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { PROFILES } from "@/core/airports/profiles";
 import { isOpen } from "@/core/approvals/workflow";
@@ -173,6 +173,14 @@ function Traffic({ rt }: { rt: Runtime }) {
     g.rotateX(-Math.PI / 2);
     return g;
   }, []);
+  // per-aircraft colours live in an instance-colour buffer created before the first draw, so the material is
+  // compiled with instance colours (the geometry has no vertex colours to multiply them with)
+  useLayoutEffect(() => {
+    const im = meshes.current!;
+    im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(300 * 3).fill(1), 3);
+    (im.material as THREE.Material).needsUpdate = true;
+  }, []);
+  const col = useMemo(() => ({ div: new THREE.Color("#e0a646"), app: new THREE.Color("#a9c4e6"), inb: new THREE.Color("#7f93a8") }), []);
   useFrame(({ clock }) => {
     const w = rt.world;
     let n = 0, h = 0;
@@ -192,7 +200,7 @@ function Traffic({ rt }: { rt: Runtime }) {
         tmp.scale.setScalar(1.5);
         tmp.updateMatrix();
         im.setMatrixAt(n, tmp.matrix);
-        im.setColorAt(n, new THREE.Color(v.divertedFrom ? "#e0a646" : v.phase === "APPROACH" ? "#a9c4e6" : "#7f93a8"));
+        im.setColorAt(n, v.divertedFrom ? col.div : v.phase === "APPROACH" ? col.app : col.inb);
         n++;
       } else if (v.phase === "HOLDING") {
         const k = (parseInt(v.id.replace(/\D/g, "").slice(-3) || "0", 10) % 7) / 7;
@@ -217,7 +225,7 @@ function Traffic({ rt }: { rt: Runtime }) {
   return (
     <group ref={group}>
       <instancedMesh ref={meshes} args={[geo, undefined, 300]}>
-        <meshBasicMaterial vertexColors toneMapped={false} />
+        <meshBasicMaterial toneMapped={false} />
       </instancedMesh>
       <instancedMesh ref={holdMesh} args={[geo, undefined, 200]}>
         <meshBasicMaterial color="#e0a646" toneMapped={false} />
