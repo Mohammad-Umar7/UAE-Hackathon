@@ -6,7 +6,7 @@
  * without every required approval *and* a passing re-validation at commit time.
  */
 
-import type { Decision } from "../sim/engine";
+import { ACTIVATION_LEAD_S, type Decision } from "../sim/engine";
 import type { PlanResult, VariantId } from "../solver/milp";
 import type { Forbidden, Snapshot } from "../solver/problem";
 import type { Projection } from "../solver/evaluate";
@@ -105,19 +105,21 @@ export function requiredApprovals(plan: PlanResult, world: World, modes: Record<
   return slots;
 }
 
-/** Earliest operational deadline in the plan (e.g. a diversion that must be decided before fuel runs out). */
+/** Earliest operational deadline still ahead in the plan: a diversion that must be decided before minimum
+ *  fuel, a ground delay that must reach the crew before take-off, or a landing slot that must reach the
+ *  approach controller 15 minutes ahead. Moments already behind the clock bind nothing and are skipped. */
 export function decisionDeadline(plan: PlanResult, world: World): { t: number; note: string } | null {
   let best: { t: number; note: string } | null = null;
+  const consider = (t: number, note: string) => { if (t >= world.now && (!best || t < best.t)) best = { t, note }; };
   for (const d of plan.decisions) {
     const v = world.visits[d.visit];
     if (!v || v.eta === null) continue;
     if (d.action === "divert" && v.fuelEndurance !== null && (v.phase === "INBOUND" || v.phase === "HOLDING")) {
-      const t = v.eta + v.fuelEndurance - 10 * 60;
-      if (!best || t < best.t) best = { t, note: `${callsignOf(v)} must divert before minimum fuel` };
+      consider(v.eta + v.fuelEndurance - 10 * 60, `${callsignOf(v)} must divert before minimum fuel`);
     }
     if (d.action === "landing_slot" && d.eldt) {
-      const t = d.eldt - 15 * 60;
-      if (!best || t < best.t) best = { t, note: `${callsignOf(v)} landing slot` };
+      if (d.ground_delay && v.phase === "SCHEDULED") consider(v.eta - ACTIVATION_LEAD_S, `${callsignOf(v)} departs without its ground delay`);
+      else consider(d.eldt - 15 * 60, `${callsignOf(v)} landing slot`);
     }
   }
   return best;
