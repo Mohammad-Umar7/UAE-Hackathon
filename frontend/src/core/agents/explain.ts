@@ -46,9 +46,13 @@ export function explainDecision(d: Decision, w: World, ap: Registry): DecisionEx
   switch (d.action) {
     case "divert": {
       const st = ap[d.to!]?.stands[d.stand!];
+      // flights still on the ground at their origin have no holding-fuel limit; their home window is two hours
+      const cannot = d.hold_limit != null
+        ? `cannot be landed at ${d.airport} within its ${d.hold_limit}-min holding fuel window`
+        : `has not departed yet and cannot be landed at ${d.airport} within two hours of its estimate`;
       return {
         ...base, headline: `Divert to ${d.to} · stand ${d.stand}`,
-        why: `${d.callsign} (${what}) cannot be landed at ${d.airport} within its ${d.hold_limit ?? "—"}-min holding fuel window under ${rateAt(w, d.airport)}; ${d.to} accepts it on ${st?.contact ? "contact" : "remote"} stand ${d.stand} (max ${st?.maxWingspan.toFixed(0)} m span), landing ${fmtTime(d.eldt)}.`,
+        why: `${d.callsign} (${what}) ${cannot} under ${rateAt(w, d.airport)}; ${d.to} accepts it on ${st?.contact ? "contact" : "remote"} stand ${d.stand} (max ${st?.maxWingspan.toFixed(0)} m span), landing ${fmtTime(d.eldt)}.`,
         constraints: ["FUEL", "ARRIVAL_CAPACITY", "DIVERSION_ELIGIBILITY", "DIVERSION_ACCEPTANCE", ...(d.needs_ambulift ? ["ACCESSIBILITY"] : [])],
       };
     }
@@ -57,7 +61,7 @@ export function explainDecision(d: Decision, w: World, ap: Registry): DecisionEx
         ...base, headline: `Land ${fmtTime(d.eldt)}${d.holding_min ? ` · +${d.holding_min} min ${d.ground_delay ? "ground delay" : "holding"}` : ""}`,
         why: d.ground_delay
           ? `${d.callsign} has not departed its origin yet: absorbing ${d.holding_min} min on the ground avoids airborne holding at ${d.airport} (${rateAt(w, d.airport)}).`
-          : `Sequenced within the modelled arrival rate at ${d.airport} (${rateAt(w, d.airport)}); holding stays within the ${d.hold_limit ?? "—"}-min fuel endurance.`,
+          : `Sequenced within the modelled arrival rate at ${d.airport} (${rateAt(w, d.airport)})${d.hold_limit != null ? `; holding stays within the ${d.hold_limit}-min fuel endurance` : ""}.`,
         constraints: ["ARRIVAL_CAPACITY", ...(d.ground_delay ? [] : ["FUEL"])],
       };
     case "assign_stand": {
