@@ -30,6 +30,10 @@ interface OpsState {
   overlays: Overlays;
   camera: CameraMode;
   presentation: { active: boolean; step: number };
+  /** simple: plain-language views for a first-time audience; expert: every number, log and table */
+  detail: "simple" | "expert";
+  /** the welcome card that explains the story (shown on start, reopened from the top bar) */
+  welcome: boolean;
   toasts: { id: number; tone: "info" | "ok" | "warn" | "bad"; text: string }[];
   attach(rt: Runtime, sources: Record<string, "osm" | "fixture">): void;
   setView(v: View): void;
@@ -41,6 +45,8 @@ interface OpsState {
   setOverlay<K extends keyof Overlays>(k: K, v: Overlays[K]): void;
   setCamera(c: CameraMode): void;
   setPresentation(p: Partial<OpsState["presentation"]>): void;
+  setDetail(d: OpsState["detail"]): void;
+  setWelcome(on: boolean): void;
   toast(text: string, tone?: OpsState["toasts"][number]["tone"]): void;
 }
 
@@ -62,6 +68,9 @@ export const useOps = create<OpsState>((set, get) => ({
   overlays: { labels: true, stands: true, taxiways: false, weather: true, routes: true, lighting: "auto" },
   camera: "strategic",
   presentation: { active: false, step: 0 },
+  detail: "simple",
+  // "?intro=0" skips the welcome card (screenshots, rehearsals)
+  welcome: typeof window === "undefined" || !/[?&]intro=0/.test(window.location.search),
   toasts: [],
   attach(rt, sources) {
     set({ runtime: rt, sources });
@@ -84,6 +93,8 @@ export const useOps = create<OpsState>((set, get) => ({
   setOverlay: (k, v) => set({ overlays: { ...get().overlays, [k]: v } }),
   setCamera: (camera) => set({ camera }),
   setPresentation: (p) => set({ presentation: { ...get().presentation, ...p } }),
+  setDetail: (detail) => set({ detail }),
+  setWelcome: (welcome) => set({ welcome }),
   toast(text, tone = "info") {
     const id = ++toastSeq;
     set({ toasts: [...get().toasts.slice(-3), { id, tone, text }] });

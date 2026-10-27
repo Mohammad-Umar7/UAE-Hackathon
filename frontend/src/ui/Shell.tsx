@@ -3,7 +3,9 @@
 import dynamic from "next/dynamic";
 import { useOps } from "@/store/ops";
 import { SideNav } from "./SideNav";
+import { StoryBar } from "./StoryBar";
 import { TopBar } from "./TopBar";
+import { Welcome } from "./Welcome";
 import { Toasts } from "./common/Toasts";
 import { Inspector } from "./agents/Inspector";
 
@@ -22,6 +24,7 @@ export function Shell() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-bg">
       <TopBar />
+      <StoryBar />
       <div className="flex min-h-0 flex-1">
         <SideNav />
         <main className="relative min-w-0 flex-1">
@@ -37,6 +40,7 @@ export function Shell() {
       </div>
       <Inspector />
       <Presentation />
+      <Welcome />
       <Toasts />
     </div>
   );
