@@ -72,7 +72,7 @@ export function TopBar() {
       <div className="flex items-center gap-2">
         <span className={`pill ${rt.llm?.available ? "pill-teal" : "pill-gray"}`} title={rt.llm?.available ? `Optional local model for briefings (${rt.llm.model}); optimisation, validation and approvals are deterministic` : "No local language model detected — deterministic agents (fully functional)"}>
           {rt.llm?.available ? <Cpu size={12} /> : <Bot size={12} />}
-          {rt.llm?.available ? `Agents · local LLM ${rt.llm.model}` : "Agents · deterministic"}
+          {rt.llm?.available ? "Agents · local LLM" : "Agents · deterministic"}
         </span>
         <button className={`btn h-8 ${presentation.active ? "btn-primary" : ""}`} onClick={() => setPresentation({ active: !presentation.active, step: presentation.active ? presentation.step : 0 })}>
           <Presentation size={14} /> Present
@@ -82,12 +82,17 @@ export function TopBar() {
         </button>
         <div className="relative" ref={ref}>
           <button className="btn h-9 gap-2 pl-1.5 pr-2" onClick={() => setRoleOpen((o) => !o)}>
-            <span className="grid h-6 min-w-6 place-items-center rounded-md bg-navy px-1 text-[10px] font-bold text-white">{r.initials}</span>
+            <span className="relative grid h-6 min-w-6 place-items-center rounded-md bg-navy px-1 text-[10px] font-bold text-white">
+              {r.initials}
+              {myPending.length > 0 && (
+                <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--amber)] px-1 text-[9.5px] font-bold text-white ring-2 ring-[var(--panel)]"
+                  title={`${myPending.length} approval${myPending.length > 1 ? "s" : ""} waiting for you`}>{myPending.length}</span>
+              )}
+            </span>
             <span className="max-w-[210px] text-left leading-tight">
               <span className="block truncate text-[11.5px] font-semibold">{r.title}</span>
               <span className="block truncate text-[10.5px] text-muted">{r.person} · simulated user</span>
             </span>
-            {myPending.length > 0 && <span className="pill pill-amber">{myPending.length} to decide</span>}
             <ChevronDown size={13} className="text-muted" />
           </button>
           {roleOpen && (
@@ -124,9 +129,9 @@ export function TopBar() {
 function ClockState({ held, running, speed, comp }: { held: boolean; running: boolean; speed: number; comp: string | null }) {
   if (held) {
     return (
-      <span className="pill pill-amber" title="The simulation clock is held while agents compute, so results stay deterministic">
+      <span className="pill pill-amber max-w-[270px]" title="The simulation clock is held while agents compute, so results stay deterministic">
         <span className="relative mr-0.5 inline-block h-2 w-2"><span className="absolute inset-0 rounded-full bg-[var(--amber)]" style={{ animation: "pulse-ring 1.2s ease-out infinite" }} /><span className="absolute inset-0 rounded-full bg-[var(--amber)]" /></span>
-        Clock held · {comp ?? "agents coordinating"}
+        <span className="truncate">Clock held · {comp ?? "agents coordinating"}</span>
       </span>
     );
   }
