@@ -355,6 +355,7 @@ function PlanBar({ icao }: { icao: string }) {
   const count = (a: string) => here.filter((d) => d.action === a).length;
   const done = p.approvals.filter((a) => a.decision !== "PENDING").length;
   const expert = useOps.getState().detail === "expert";
+  if (useOps.getState().presentation.active) return null; // the guided demo panel sits in the same place
   const city = PROFILES[icao].city;
   return (
     <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2">

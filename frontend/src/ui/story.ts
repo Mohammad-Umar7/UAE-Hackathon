@@ -166,9 +166,11 @@ export function storyNow(rt: Runtime, role: string): StoryNow {
 
 /** A workflow's name in plain words: the first disruption it was opened for ("Thick fog at Abu Dhabi"). */
 export function workflowName(rt: Runtime, wf: Workflow): string {
-  const notice = rt.orchestrator.messages.find((m) => m.thread === wf.id && m.type === "DisruptionNotice");
-  const first = (notice?.payload.incidents as Incident[] | undefined)?.[0];
-  return first ? plainIncident(first) : wf.title;
+  const rank = { severe: 0, high: 1, moderate: 2, low: 3 } as const;
+  const incs = rt.orchestrator.messages.filter((m) => m.thread === wf.id && m.type === "DisruptionNotice")
+    .flatMap((m) => (m.payload.incidents as Incident[] | undefined) ?? []);
+  const worst = [...incs].sort((a, b) => rank[a.severity] - rank[b.severity])[0];
+  return worst ? plainIncident(worst) : wf.title;
 }
 
 export interface StoryStep { id: string; t: number; color: string; who: string; text: string; tone?: "bad" | "good"; n: number; from: NodeId; nodes: NodeId[] }
@@ -202,7 +204,11 @@ function stepOf(m: AgentMessage): { key: string; who: string; color: string; tex
   switch (m.type) {
     case "DisruptionNotice": {
       const incs = (p.incidents as Incident[] | undefined) ?? [];
-      return { key: `${m.type}${m.id}`, ...agent("weather"), text: `Spotted a problem: ${incs.length ? incs.map(plainIncident).join(", ") : m.summary}.`, tone: "bad" };
+      if (incs.length) return { key: `${m.type}${m.id}`, ...agent("weather"), text: `Spotted a problem: ${incs.map(plainIncident).join(", ")}.`, tone: "bad" };
+      // weather trend notices ("OMAA: conditions IMC → LVP, visibility 800 → 400 m (trend watch)")
+      const trend = /^(\w{4}): conditions \w+ → \w+, visibility (\d+) → (\d+) m/.exec(m.summary);
+      return { key: `${m.type}${m.id}`, ...agent("weather"), tone: "bad",
+        text: trend ? `The weather at ${city(trend[1])} is getting worse: visibility down from ${trend[2]} to ${trend[3]} metres.` : `Spotted a problem: ${m.summary}.` };
     }
     case "ImpactAssessment": {
       const pr = p.projection as { conflicts: number; fuelDiversions: number; holding: number } | undefined;

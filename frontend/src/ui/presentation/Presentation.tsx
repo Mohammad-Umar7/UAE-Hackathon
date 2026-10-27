@@ -200,7 +200,7 @@ export default function Presentation() {
           <div className="ml-auto flex gap-1.5">
             <button className="hud-btn" disabled={presentation.step === 0} onClick={() => go(presentation.step - 1)}><ArrowLeft size={13} /> Back</button>
             {step.approve ? (
-              <button className="hud-btn" data-on="true" onClick={approveNow}><ShieldCheck size={13} /> Approve as National Supervisor</button>
+              <button className="hud-btn" data-on="true" onClick={approveNow}><ShieldCheck size={13} /> Approve the plan</button>
             ) : (
               <button className="hud-btn" data-on="true" onClick={() => (last ? exit() : go(presentation.step + 1))}>{last ? "Finish" : "Next"} {!last && <ArrowRight size={13} />}</button>
             )}

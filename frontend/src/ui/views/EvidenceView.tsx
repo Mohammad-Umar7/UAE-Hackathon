@@ -88,7 +88,7 @@ export default function EvidenceView() {
                 return (
                   <div key={k}>
                     <div className="mb-1 flex items-center text-[12px]"><span className="font-medium">{label}</span>
-                      <Change base={vals[0]} plan={vals[2]} /></div>
+                      <Change base={vals[0]} plan={vals[2]} plain={!expert} /></div>
                     {(expert ? ["No coordinated action", "Local-only reassignment", "SKYPACT plan"] : ["Doing nothing", "Each airport on its own", "With SKYPACT"]).map((n, i) => (
                       <div key={n} className="flex items-center gap-2 py-0.5">
                         <span className="w-[150px] text-[11px] text-muted">{n}</span>
@@ -195,13 +195,14 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "te
 }
 
 /** Plan vs no action for a lower-is-better metric: "−55 % lower" in teal, "+4 % higher" in amber. */
-function Change({ base, plan }: { base: number; plan: number }) {
-  if (!base) return <span className="ml-auto text-[11px] text-muted">{plan ? "new vs no action" : "same as no action"}</span>;
+function Change({ base, plan, plain }: { base: number; plan: number; plain?: boolean }) {
+  const ref = plain ? "doing nothing" : "no action";
+  if (!base) return <span className="ml-auto text-[11px] text-muted">{plan ? `new vs ${ref}` : `same as ${ref}`}</span>;
   const pct = Math.round((100 * (plan - base)) / base);
-  if (pct === 0) return <span className="ml-auto text-[11px] text-muted">same as no action</span>;
+  if (pct === 0) return <span className="ml-auto text-[11px] text-muted">same as {ref}</span>;
   return (
     <span className={`ml-auto text-[11px] font-semibold ${pct < 0 ? "text-[var(--teal)]" : "text-[var(--amber)]"}`}>
-      {pct < 0 ? `−${Math.abs(pct)} % lower` : `+${pct} % higher`} than no action
+      {pct < 0 ? `−${Math.abs(pct)} % lower` : `+${pct} % higher`} than {ref}
     </span>
   );
 }
