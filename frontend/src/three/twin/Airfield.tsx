@@ -285,8 +285,14 @@ function FloodPools({ data }: { data: AirfieldData }) {
     const m = layer(new THREE.MeshBasicMaterial({
       map: poolTexture(), color: "#ffe2b8", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
     }), 10);
+    // added light fades out in fog; mixing it towards the fog colour (the default) leaves grey blobs on the apron
+    m.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace("#include <fog_fragment>",
+        THREE.ShaderChunk.fog_fragment.replace("mix( gl_FragColor.rgb, fogColor, fogFactor )", "gl_FragColor.rgb * ( 1.0 - 0.85 * fogFactor )"));
+    };
+    m.customProgramCacheKey = () => "flood-pool";
     return { geo: g, mat: m as THREE.MeshBasicMaterial };
   }, [data]);
-  useFrame(() => { mat.opacity = (0.5 + 0.25 * twinState.scatter) * twinState.night; mat.visible = twinState.night > 0.05; });
+  useFrame(() => { mat.opacity = (0.42 + 0.18 * twinState.scatter) * twinState.night; mat.visible = twinState.night > 0.05; });
   return <mesh geometry={geo} material={mat} renderOrder={3} />;
 }
