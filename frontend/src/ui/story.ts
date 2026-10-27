@@ -142,8 +142,8 @@ export function storyNow(rt: Runtime, role: string): StoryNow {
   const lead = incidents[0] ? `${plainIncident(incidents[0])}. ` : "";
   if (o.computing || rt.held) {
     const what = o.computing ? TOOL_WORDS[o.computing.tool] ?? "working" : "coordinating";
-    const who = o.computing ? `The ${PLAIN_AGENT[o.computing.agent].toLowerCase()}` : "The agents";
-    return { tone: "work", text: `${lead}${who} is ${what} — the clock waits while the agents think.`, cta: { label: "Watch the agents", go: "agents" } };
+    const who = o.computing ? `The ${PLAIN_AGENT[o.computing.agent].toLowerCase()} is` : "The agents are";
+    return { tone: "work", text: `${lead}${who} ${what} — the clock waits while the agents think.`, cta: { label: "Watch the agents", go: "agents" } };
   }
   if (open) {
     const a = approvalState(open, role);
