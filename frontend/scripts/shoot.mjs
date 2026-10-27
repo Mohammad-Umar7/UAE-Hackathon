@@ -37,6 +37,7 @@ const browser = await puppeteer.launch({
   headless: true,
   args: ["--ignore-gpu-blocklist", "--enable-gpu", "--use-angle=default", "--enable-unsafe-swiftshader", `--window-size=${W},${H}`],
   defaultViewport: { width: W, height: H, deviceScaleFactor: 1 },
+  protocolTimeout: 600000, // a shot may run the scenario for minutes (agents solving in the page)
 });
 try {
   const page = await browser.newPage();
