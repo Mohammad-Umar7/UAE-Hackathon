@@ -297,8 +297,13 @@ export function buildModel(pb: Problem, variant: VariantId, exclude: Set<string>
   for (const ids of groups) {
     if (ids.length < 2) continue;
     const starts = [...new Set(ids.map((i) => cols[i].start!))].sort((a, b) => a - b);
-    for (const tau of starts) {
+    for (let si = 0; si < starts.length; si++) {
+      const tau = starts[si];
       const active = ids.filter((i) => cols[i].start! <= tau && tau < cols[i].end!);
+      // only maximal cliques: when every option active here is still active at the next start, that row
+      // implies this one (same feasible set, far fewer rows)
+      const next = starts[si + 1];
+      if (next !== undefined && active.every((i) => cols[i].end! > next)) continue;
       // planned options exclude each other; unresolved flights' current intervals exclude planned options,
       // but two unresolved flights already in conflict are left as they are (that is why they are unresolved)
       const planned = active.filter((i) => cols[i].kind !== "u");
@@ -372,10 +377,14 @@ export function buildModel(pb: Problem, variant: VariantId, exclude: Set<string>
       // grid — a grid can miss a two-minute overlap between consecutive turnarounds
       const outStarts = span === "wbSpan" ? pb.wb[icao]?.out.map(([s0]) => s0) ?? [] : pb.ambulift[icao]?.out.map(([s0]) => s0) ?? [];
       const taus = [...new Set([...ids.map((i) => cols[i][span]![0]), ...outStarts])].sort((a, b) => a - b);
-      for (const tau of taus) {
+      for (let ti = 0; ti < taus.length; ti++) {
+        const tau = taus[ti];
         const active = ids.filter((i) => cols[i][span]![0] <= tau && tau < cols[i][span]![1]);
         if (!active.length) continue;
         const cap = Math.max(0, capOf(icao, tau));
+        // implied by the next row when everything active here is still active there with no more capacity
+        const next = taus[ti + 1];
+        if (next !== undefined && active.every((i) => cols[i][span]![1] > next) && Math.max(0, capOf(icao, next)) <= cap) continue;
         const nFlights = new Set(active.map((i) => cols[i].fi)).size;
         if (nFlights <= cap) continue;
         const key = `${active.join(",")}|${cap}`;
