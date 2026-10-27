@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Bloom, BrightnessContrast, EffectComposer, HueSaturation, N8AO, SMAA, ToneMapping, Vignette } from "@react-three/postprocessing";
-import { ToneMappingMode, type BloomEffect } from "postprocessing";
+import { ToneMappingMode, type BloomEffect, type BrightnessContrastEffect } from "postprocessing";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { Runtime } from "@/core/runtime";
@@ -16,6 +16,7 @@ import { layoutBounds } from "./geometry";
 import { Labels, Picker } from "./Labels";
 import { Landmarks, useReplacedBuildings } from "./Landmarks";
 import { PlanPreview, Routes, RunwayClosures, SelectionRing, StandStatus } from "./Overlays";
+import { RunwayGlow } from "./RunwayGlow";
 import { twinState } from "./state";
 
 function SceneContent({ rt, icao, labels }: { rt: Runtime; icao: string; labels: React.RefObject<HTMLCanvasElement | null> }) {
@@ -28,6 +29,7 @@ function SceneContent({ rt, icao, labels }: { rt: Runtime; icao: string; labels:
       <Atmosphere rt={rt} icao={icao} />
       {data && <Airfield data={data} center={bounds.center} />}
       {data && <RunwayClosures rws={data.rws} />}
+      {data && <RunwayGlow rws={data.rws} />}
       <Landmarks icao={icao} />
       <StandStatus rt={rt} ap={ap} />
       <Routes ap={ap} />
@@ -45,18 +47,21 @@ function SceneContent({ rt, icao, labels }: { rt: Runtime; icao: string; labels:
 
 function Effects() {
   const bloom = useRef<BloomEffect>(null);
+  const grade = useRef<BrightnessContrastEffect>(null);
   useFrame(() => {
     if (bloom.current) bloom.current.intensity = 0.35 + 1.25 * twinState.night;
+    // a slight lift by day only: at night it would grey the blacks the lights stand out against
+    if (grade.current) grade.current.brightness = 0.03 * (1 - twinState.night);
   });
   return (
-    <EffectComposer multisampling={0} enableNormalPass={false}>
+    <EffectComposer multisampling={4} enableNormalPass={false}>
       <N8AO halfRes aoRadius={9} distanceFalloff={1.2} intensity={3.4} quality="medium" />
       <Bloom ref={bloom} luminanceThreshold={0.95} luminanceSmoothing={0.15} mipmapBlur intensity={0.6} radius={0.7} />
       <SMAA />
       {/* filmic contrast and colour; a light touch of saturation keeps sand, grass and liveries vivid */}
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
       <HueSaturation saturation={0.12} />
-      <BrightnessContrast brightness={0.03} contrast={0.06} />
+      <BrightnessContrast ref={grade} brightness={0.03} contrast={0.06} />
       <Vignette offset={0.38} darkness={0.28} />
     </EffectComposer>
   );

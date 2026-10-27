@@ -167,10 +167,10 @@ export function Airfield({ data, center }: { data: AirfieldData; center: P2 }) {
     const night = s.night;
     const base = 0.22 + 0.95 * night;
     // runway edge and centreline LEDs stay readable by day, without the glare they have at night
-    const runway = 0.5 + 0.67 * night;
+    const runway = Math.max(0.5 + 0.8 * night, s.lvp ? 1.35 : 0);
     const gains = u.uGroupGain.value as number[];
     LIGHT_GROUPS.forEach((g, i) => {
-      gains[i] = g === "stopbar" ? (s.lvp ? 1.3 : 0) : g === "apron" ? 0.15 + 1.3 * night : g === "approach" ? base * 1.2 : g === "papi" ? base * 1.4
+      gains[i] = g === "stopbar" ? (s.lvp ? 1.3 : 0) : g === "apron" ? 0.15 + 1.3 * night : g === "approach" ? Math.max(base * 1.3, s.lvp ? 1.4 : 0) : g === "papi" ? base * 1.4
         : g === "runway" ? runway : base;
     });
     const off = u.uRunwayOff.value as number[];

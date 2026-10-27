@@ -44,7 +44,7 @@ const fragment = /* glsl */ `
 `;
 
 function baseUniforms() {
-  return THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uScale: { value: 800 }, uMinPx: { value: 2 }, uTime: { value: 0 }, uScatter: { value: 0 } }]);
+  return THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uScale: { value: 800 }, uMinPx: { value: 2.6 }, uTime: { value: 0 }, uScatter: { value: 0 } }]);
 }
 
 /** Static airfield lights; gain per group and flashing computed on the GPU. */
@@ -74,6 +74,9 @@ export function airfieldLightMaterial(): THREE.ShaderMaterial {
         }
         vGain = gain;
         vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+        // the paved layers are pulled towards the camera (polygon offset) and would hide lights set into them:
+        // move each light a little along its view ray, which changes its depth but not where it appears
+        mvPosition.xyz *= 0.996;
         gl_Position = projectionMatrix * mvPosition;
         gl_PointSize = max( uMinPx, size * ( 1.0 + 2.5 * uScatter ) * uScale / max( 1.0, - mvPosition.z ) );
         gl_PointSize = min( gl_PointSize, 64.0 );

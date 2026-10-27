@@ -378,7 +378,7 @@ export function buildRunwayLights(rws: RunwayGeom[], L: LightSet): void {
     const u = norm(sub(rw.b, rw.a)), n = perp(u);
     for (let s = 0; s <= total + 0.1; s += 60) {
       const amber = s < 600 || s > total - 600;
-      for (const side of [-1, 1]) light(L, add(add(rw.a, mul(u, s)), mul(n, side * (W / 2 + 1.5))), 0.6, amber ? C.amber : C.white, 2.2, "runway", -1, ri);
+      for (const side of [-1, 1]) light(L, add(add(rw.a, mul(u, s)), mul(n, side * (W / 2 + 1.5))), 0.6, amber ? C.amber : C.white, 3.4, "runway", -1, ri);
     }
     // a fine LED strip just inside each edge: dim on its own, it reads as a line of light from any distance
     for (let s = 3; s < total; s += 6) {
@@ -387,13 +387,13 @@ export function buildRunwayLights(rws: RunwayGeom[], L: LightSet): void {
     for (let s = 15; s < total; s += 15) {
       const fromEnd = Math.min(s, total - s);
       const col = fromEnd < 300 ? C.red : fromEnd < 900 ? ((s / 15) % 2 ? C.red : C.white) : C.white;
-      light(L, add(rw.a, mul(u, s)), 0.15, col, 1.4, "runway", -1, ri);
+      light(L, add(rw.a, mul(u, s)), 0.15, col, 2.1, "runway", -1, ri);
     }
     for (const end of rw.ends) {
       const E = end.at, d = end.dir, nn = perp(d);
       for (let x = -W / 2; x <= W / 2 + 0.01; x += 3) {
-        light(L, add(add(E, mul(d, 1)), mul(nn, x)), 0.3, C.green, 1.7, "runway", -1, ri);
-        light(L, add(sub(end.pave, mul(d, 1.5)), mul(nn, x)), 0.3, C.red, 1.5, "runway", -1, ri);
+        light(L, add(add(E, mul(d, 1)), mul(nn, x)), 0.3, C.green, 2.6, "runway", -1, ri);
+        light(L, add(sub(end.pave, mul(d, 1.5)), mul(nn, x)), 0.3, C.red, 2.3, "runway", -1, ri);
       }
       if (end.displaced > 40) for (const side of [-1, 1]) for (let k = 0; k < 5; k++) {
         light(L, add(E, mul(nn, side * (W / 2 + 2 + k * 3))), 0.4, C.green, 1.8, "runway", -1, ri); // wing bars
@@ -406,8 +406,8 @@ export function buildRunwayLights(rws: RunwayGeom[], L: LightSet): void {
       for (let s = 30; s <= 900; s += 30) {
         const base = sub(E, mul(d, s));
         const hgt = 0.8 + s * 0.004;
-        for (let k = -2; k <= 2; k++) light(L, add(base, mul(nn, k * 1.05)), hgt, C.white, 1.9, "approach", -1, ri);
-        if (s > 300) light(L, base, hgt + 0.6, [1.0, 1.0, 1.0], 3.2, "approach", (900 - s) / 900, ri);
+        for (let k = -2; k <= 2; k++) light(L, add(base, mul(nn, k * 1.05)), hgt, C.white, 2.6, "approach", -1, ri);
+        if (s > 300) light(L, base, hgt + 0.6, [1.0, 1.0, 1.0], 5.5, "approach", (900 - s) / 900, ri);
         if (s <= 270) for (const side of [-1, 1]) for (let k = 0; k < 3; k++) light(L, add(base, mul(nn, side * (9 + k * 1.5))), hgt, C.red, 1.5, "approach", -1, ri);
       }
       for (let x = -15; x <= 15; x += 1.5) light(L, add(sub(E, mul(d, 300)), mul(nn, x)), 2.0, C.white, 1.8, "approach", -1, ri);
