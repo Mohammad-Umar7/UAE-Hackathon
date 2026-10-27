@@ -38,6 +38,8 @@ interface Step {
   done?: string | ((rt: Runtime) => string);
   enter?: (rt: Runtime) => void;
   approve?: boolean;
+  /** the page narrates this step itself: the panel shrinks to a slim see-through bar */
+  compact?: boolean;
 }
 
 const fogActive = (rt: Runtime) => Object.values(rt.world.incidents).some((i) => i.airport === "OMAA" && i.type === "FOG" && i.status === "active");
@@ -79,7 +81,7 @@ const NIGHTFALL: Step[] = [
     body: "In fog, planes must land further apart: Abu Dhabi can now land 12 planes an hour instead of 30, so arriving aircraft start circling while they wait.",
   },
   {
-    id: "agents", title: "Watch the agents handle it", view: "agents", speed: 15, enter: followMain,
+    id: "agents", title: "Watch the agents handle it", view: "agents", speed: 40, compact: true, enter: followMain,
     // wait for the agents and for the camera to finish telling it (or for the presenter to stop following)
     until: (rt) => planReady(rt, fogStart(rt), true) && (useOps.getState().followAt?.done ?? true),
     waiting: "The agents are working; the camera follows each one as it acts…", done: "The desks have answered. Two people are still to decide.",
@@ -144,7 +146,7 @@ function scenarioSteps(rt: Runtime, story: string): Step[] {
       body: text?.intro ?? rt.scenario.summary,
     },
     {
-      id: "agents", title: "Watch the agents handle it", view: "agents", speed: 15, enter: followMain,
+      id: "agents", title: "Watch the agents handle it", view: "agents", speed: 40, compact: true, enter: followMain,
       until: (r) => planReady(r, since) && (useOps.getState().followAt?.done ?? true),
       waiting: "The agents are working; the camera follows each one as it acts…", done: "Everyone except you has answered.",
       body: AGENTS_BODY,
@@ -273,11 +275,36 @@ export default function Presentation() {
   };
 
   const last = presentation.step === steps.length - 1;
+  const statusLine = step.until && (
+    <span className={`flex min-w-0 items-center gap-1.5 text-[11.5px] ${status === "waiting" ? "text-[#e0a646]" : "text-[#7fd1bf]"}`}>
+      {status === "waiting" ? <Loader2 size={13} className="shrink-0 animate-spin" /> : <Check size={13} className="shrink-0" />}
+      <span className="truncate">{status === "waiting" ? step.waiting : typeof step.done === "function" ? step.done(runtime) : step.done}</span>
+    </span>
+  );
+  const nextButton = step.approve
+    ? <button className="hud-btn" data-on="true" onClick={approveNow}><ShieldCheck size={13} /> Approve the plan</button>
+    : <button className="hud-btn" data-on="true" onClick={() => (last ? exit() : go(presentation.step + 1))}>{last ? "Finish" : "Next"} {!last && <ArrowRight size={13} />}</button>;
+  if (step.compact) {
+    return (
+      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+        <div className="hud pointer-events-auto flex w-[min(760px,100%)] items-center gap-3 rounded-full py-1.5 pl-2 pr-1.5" style={{ background: "rgba(12, 17, 25, 0.58)" }}>
+          <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-[12px] font-semibold">{presentation.step + 1}</div>
+          <div className="shrink-0 text-[13px] font-semibold tracking-tight">{step.title}</div>
+          {statusLine}
+          <div className="ml-auto flex shrink-0 gap-1.5">
+            <button className="hud-btn !px-2" disabled={presentation.step === 0} onClick={() => go(presentation.step - 1)} aria-label="Back"><ArrowLeft size={13} /></button>
+            {nextButton}
+            <button className="hud-btn !px-1.5" onClick={exit} aria-label="Exit presentation" title="Exit (Esc)"><X size={13} /></button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <>
     {nightfall && step.id === "approve" && <PhoneApproval rt={runtime} />}
     <div className="pointer-events-none fixed inset-x-0 bottom-5 z-50 flex justify-center px-4">
-      <div className="hud pointer-events-auto w-[min(720px,100%)] overflow-hidden shadow-[0_18px_60px_rgba(0,0,0,0.45)]">
+      <div className="hud pointer-events-auto w-[min(720px,100%)] overflow-hidden shadow-[0_18px_60px_rgba(0,0,0,0.35)]" style={{ background: "rgba(12, 17, 25, 0.66)" }}>
         <div className="h-[3px] bg-white/10"><div className="h-full bg-[#4fb8a4] transition-all duration-500" style={{ width: `${((presentation.step + 1) / steps.length) * 100}%` }} /></div>
         <div className="flex items-start gap-3 px-4 pb-3 pt-3">
           <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[12px] font-semibold">{presentation.step + 1}</div>
@@ -287,12 +314,7 @@ export default function Presentation() {
               <span className="mono ml-auto text-[11px] text-white/50">{clock} GST · synthetic day</span>
             </div>
             <p className="mt-1 text-[12.5px] leading-relaxed text-white/80">{step.body}</p>
-            {step.until && (
-              <div className="mt-2 flex items-center gap-1.5 text-[11.5px]">
-                {status === "waiting" ? <Loader2 size={13} className="animate-spin text-[#e0a646]" /> : <Check size={13} className="text-[#4fb8a4]" />}
-                <span className={status === "waiting" ? "text-[#e0a646]" : "text-[#7fd1bf]"}>{status === "waiting" ? step.waiting : typeof step.done === "function" ? step.done(runtime) : step.done}</span>
-              </div>
-            )}
+            {statusLine && <div className="mt-2">{statusLine}</div>}
           </div>
           <button className="hud-btn !px-1.5" onClick={exit} aria-label="Exit presentation" title="Exit (Esc)"><X size={13} /></button>
         </div>
@@ -307,11 +329,7 @@ export default function Presentation() {
           <span className="text-[10.5px] text-white/40">← → to navigate · Esc to exit · you can take over at any time</span>
           <div className="ml-auto flex gap-1.5">
             <button className="hud-btn" disabled={presentation.step === 0} onClick={() => go(presentation.step - 1)}><ArrowLeft size={13} /> Back</button>
-            {step.approve ? (
-              <button className="hud-btn" data-on="true" onClick={approveNow}><ShieldCheck size={13} /> Approve the plan</button>
-            ) : (
-              <button className="hud-btn" data-on="true" onClick={() => (last ? exit() : go(presentation.step + 1))}>{last ? "Finish" : "Next"} {!last && <ArrowRight size={13} />}</button>
-            )}
+            {nextButton}
           </div>
         </div>
       </div>
