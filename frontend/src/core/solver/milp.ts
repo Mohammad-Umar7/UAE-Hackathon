@@ -70,6 +70,8 @@ interface Col {
 export interface PlanRow {
   visit: string; callsign: string; airline: string; type: string; home: string; pax: number; prm: number;
   E: number; sibt: number; sobt: number | null; currentStand: string | null; currentEldt: number | null;
+  /** minimum turnaround in minutes as the optimiser used it (a diverted aircraft's visit has its own) */
+  tat: number;
   holdLimit: number | null; reason: string; airborne: boolean; restricted: boolean;
   option: "home" | "divert" | "unresolved"; stand?: string; to?: string; L?: number; onBlock?: number;
   arrDelay?: number; depDelay?: number; hold?: number; groundWait?: number; changed?: boolean; needsAmbulift?: boolean; stay?: number;
@@ -462,7 +464,7 @@ function extract(pb: Problem, model: Model, val: (n: string) => boolean): Pick<P
     const c = chosenByFlight.get(fi);
     const base: PlanRow = {
       visit: f.visit, callsign: f.callsign, airline: f.airline, type: f.type, home: f.home, pax: f.pax, prm: f.prm, E: f.E,
-      sibt: f.sibt, sobt: f.sobt, currentStand: f.currentStand, currentEldt: f.currentEldt, holdLimit: f.holdLimit, reason: f.reason,
+      sibt: f.sibt, sobt: f.sobt, tat: f.tat, currentStand: f.currentStand, currentEldt: f.currentEldt, holdLimit: f.holdLimit, reason: f.reason,
       airborne: f.airborne, restricted: f.restricted, option: "unresolved",
     };
     if (f.prm) k.prmTotal++;

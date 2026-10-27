@@ -70,7 +70,7 @@ function airportController(icao: string, p: Proposal, w: World, ap: Registry): S
     const t = AIRCRAFT[r.type as keyof typeof AIRCRAFT];
     if (!t?.widebody) continue;
     if (r.option === "home" && r.home === icao && r.onBlock !== undefined) {
-      spans.push({ d: null, s: p.t0 + r.onBlock * 60, e: p.t0 + (r.onBlock + t.minTurnaroundMin) * 60 });
+      spans.push({ d: null, s: p.t0 + r.onBlock * 60, e: p.t0 + (r.onBlock + r.tat) * 60 });
     } else if (r.option === "divert" && r.to === icao && r.L !== undefined) {
       const d = diversionsIn.find((x) => x.visit === r.visit);
       // whole-minute taxi time, exactly as the optimiser and the validator compute on-block
@@ -79,7 +79,8 @@ function airportController(icao: string, p: Proposal, w: World, ap: Registry): S
     }
   }
   if (spans.some((x) => x.d)) {
-    const committed = wideBodyTurnarounds(w, ap, icao, new Set(p.plan.rows.filter((r) => r.option !== "unresolved").map((r) => r.visit)));
+    // unresolved flights await a human decision and are not counted (as in the optimiser and the validator)
+    const committed = wideBodyTurnarounds(w, ap, icao, new Set(p.plan.rows.map((r) => r.visit)));
     spans.sort((a, b) => a.s - b.s);
     const accepted: { s: number; e: number }[] = [];
     const excess: (typeof diversionsIn)[number][] = [];

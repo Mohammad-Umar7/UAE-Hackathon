@@ -241,7 +241,7 @@ export function validatePlan(w: World, ap: Registry, decisions: Decision[], rows
       const t = AIRCRAFT[r.type as keyof typeof AIRCRAFT];
       if (!t?.widebody || r.option === "unresolved") continue;
       if (r.option === "home" && r.onBlock !== undefined) {
-        spans.push({ icao: r.home, s: base + r.onBlock * 60, e: base + (r.onBlock + t.minTurnaroundMin) * 60, d: r });
+        spans.push({ icao: r.home, s: base + r.onBlock * 60, e: base + (r.onBlock + r.tat) * 60, d: r });
       } else if (r.option === "divert" && r.L !== undefined && r.to) {
         const on = base + r.L * 60 + Math.ceil((ap[r.to]?.stands[r.stand ?? ""]?.taxiIn ?? 420) / 60) * 60;
         spans.push({ icao: r.to, s: on, e: on + 50 * 60, d: r });
@@ -249,7 +249,9 @@ export function validatePlan(w: World, ap: Registry, decisions: Decision[], rows
     }
     for (const icao of new Set(spans.map((x) => x.icao))) {
       const mine = spans.filter((x) => x.icao === icao).sort((a, b) => a.s - b.s);
-      const committed = wideBodyTurnarounds(w, ap, icao, planVisits);
+      // unresolved flights await a human decision: like their landings, their turnarounds are not counted
+      // (the optimiser does not count them either)
+      const committed = wideBodyTurnarounds(w, ap, icao, new Set([...planVisits, ...unresolvedVisits]));
       for (const sp of mine) {
         checks.HANDLING++;
         const busy = committed.filter(([s0, e0]) => s0 <= sp.s && sp.s < e0).length + mine.filter((o) => o.s <= sp.s && sp.s < o.e).length;
