@@ -1,0 +1,40 @@
+<template>
+  <style>
+
+#root { position: absolute; inset: 0; overflow: hidden; background: #0b1017; font-family: "Inter", sans-serif; }
+.cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+.cam video { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; }
+.spot { position: absolute; }
+.spot .in { position: absolute; inset: 0; border-radius: 14px; box-shadow: 0 0 0 4px #FFC24B, 0 0 0 4000px rgba(6, 10, 16, 0.5); }
+.ring .in { border-radius: 14px; box-shadow: 0 0 0 4px #FFC24B, 0 0 26px 6px rgba(255, 194, 75, 0.35); }
+.tag { position: absolute; white-space: nowrap; background: #FFC24B; color: #10151c; font-weight: 700; font-size: 30px;
+       letter-spacing: -0.01em; padding: 9px 16px; border-radius: 9px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
+.callout { position: absolute; width: 640px; padding: 26px 30px 28px; border-radius: 16px; background: rgba(11, 16, 23, 0.96);
+           border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45); color: #e9edf2; }
+.callout .big { font-size: 64px; font-weight: 800; letter-spacing: -0.03em; color: #FFC24B; line-height: 1.02; }
+.callout .small { margin-top: 10px; font-size: 28px; line-height: 1.32; color: #cfd6df; }
+.cursor { position: absolute; left: 0; top: 0; width: 46px; height: 46px; }
+.cursor .ripple { position: absolute; left: -28px; top: -28px; width: 56px; height: 56px; border-radius: 50%; border: 4px solid #FFC24B; }
+
+  </style>
+  <div id="root" data-composition-id="s3" data-width="1920" data-height="1080">
+    <div id="s3-cam" class="cam"><video id="s3-v" class="clip" data-start="0" data-duration="22.6" src="assets/clips/s3.mp4" muted playsinline data-track-index="0"></video><div id="s3-sp0" class="clip" data-start="6.9" data-duration="3.3" data-track-index="2" data-layout-allow-overlap data-layout-allow-occlusion style="position:absolute; inset:0;"><div class="spot" style="left:172px; top:207px; width:318px; height:42px;"><div class="in" id="s3-sp0-in"></div></div><div class="tag" id="s3-sp0-tag" style="left:172px; top:265px;">If nobody acts</div></div><div id="s3-sp1" class="clip" data-start="11.7" data-duration="1.8" data-track-index="3" data-layout-allow-overlap data-layout-allow-occlusion style="position:absolute; inset:0;"><div class="spot" style="left:172px; top:207px; width:1016px; height:42px;"><div class="in" id="s3-sp1-in"></div></div><div class="tag" id="s3-sp1-tag" style="left:172px; top:265px;">The plan against doing nothing</div></div><div id="s3-sp2" class="clip" data-start="15.0" data-duration="3.5" data-track-index="4" data-layout-allow-overlap data-layout-allow-occlusion style="position:absolute; inset:0;"><div class="spot" style="left:172px; top:207px; width:322px; height:42px;"><div class="in" id="s3-sp2-in"></div></div><div class="tag" id="s3-sp2-tag" style="left:172px; top:265px;">Independent safety check</div></div></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#s3-sp0-in", {opacity: 0, scale: 1.06}, {opacity: 1, scale: 1, duration: 0.45, ease: "expo.out"}, 6.9);
+    tl.to("#s3-sp0-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 9.93);
+    tl.fromTo("#s3-sp0-tag", {opacity: 0, y: 8}, {opacity: 1, y: 0, duration: 0.35, ease: "expo.out"}, 7.02);
+    tl.to("#s3-sp0-tag", {opacity: 0, duration: 0.2, ease: "power2.in"}, 9.98);
+    tl.fromTo("#s3-sp1-in", {opacity: 0, scale: 1.06}, {opacity: 1, scale: 1, duration: 0.45, ease: "expo.out"}, 11.7);
+    tl.to("#s3-sp1-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 13.23);
+    tl.fromTo("#s3-sp1-tag", {opacity: 0, y: 8}, {opacity: 1, y: 0, duration: 0.35, ease: "expo.out"}, 11.82);
+    tl.to("#s3-sp1-tag", {opacity: 0, duration: 0.2, ease: "power2.in"}, 13.28);
+    tl.fromTo("#s3-sp2-in", {opacity: 0, scale: 1.06}, {opacity: 1, scale: 1, duration: 0.45, ease: "expo.out"}, 15.0);
+    tl.to("#s3-sp2-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 18.23);
+    tl.fromTo("#s3-sp2-tag", {opacity: 0, y: 8}, {opacity: 1, y: 0, duration: 0.35, ease: "expo.out"}, 15.12);
+    tl.to("#s3-sp2-tag", {opacity: 0, duration: 0.2, ease: "power2.in"}, 18.28);
+    tl.set("#s3-cam", {scale: 1, x: 0, y: 0}, 0);
+    window.__timelines["s3"] = tl;
+  </script>
+</template>

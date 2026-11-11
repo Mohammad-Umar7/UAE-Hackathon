@@ -1,0 +1,7 @@
+# Large or generated media stay out of git: the footage is rebuilt by build/build.py from the raw takes,
+# and the finished film is shared as a file, not committed.
+assets/clips/
+renders/
+.hyperframes/
+node_modules/
+build/check.json

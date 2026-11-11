@@ -1,0 +1,46 @@
+<template>
+  <style>
+
+#root { position: absolute; inset: 0; overflow: hidden; background: #0b1017; font-family: "Inter", sans-serif; }
+.cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+.cam video { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; }
+.spot { position: absolute; }
+.spot .in { position: absolute; inset: 0; border-radius: 14px; box-shadow: 0 0 0 4px #FFC24B, 0 0 0 4000px rgba(6, 10, 16, 0.5); }
+.ring .in { border-radius: 14px; box-shadow: 0 0 0 4px #FFC24B, 0 0 26px 6px rgba(255, 194, 75, 0.35); }
+.tag { position: absolute; white-space: nowrap; background: #FFC24B; color: #10151c; font-weight: 700; font-size: 30px;
+       letter-spacing: -0.01em; padding: 9px 16px; border-radius: 9px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
+.callout { position: absolute; width: 640px; padding: 26px 30px 28px; border-radius: 16px; background: rgba(11, 16, 23, 0.96);
+           border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45); color: #e9edf2; }
+.callout .big { font-size: 64px; font-weight: 800; letter-spacing: -0.03em; color: #FFC24B; line-height: 1.02; }
+.callout .small { margin-top: 10px; font-size: 28px; line-height: 1.32; color: #cfd6df; }
+.cursor { position: absolute; left: 0; top: 0; width: 46px; height: 46px; }
+.cursor .ripple { position: absolute; left: -28px; top: -28px; width: 56px; height: 56px; border-radius: 50%; border: 4px solid #FFC24B; }
+
+  </style>
+  <div id="root" data-composition-id="s7" data-width="1920" data-height="1080">
+    <div id="s7-cam" class="cam"><video id="s7-v" class="clip" data-start="0" data-duration="14.0" src="assets/clips/s7.mp4" muted playsinline data-track-index="0"></video><div id="s7-sp0" class="clip" data-start="4.0" data-duration="4.0" data-track-index="2" data-layout-allow-overlap data-layout-allow-occlusion style="position:absolute; inset:0;"><div class="spot" style="left:322px; top:328px; width:1368px; height:70px;"><div class="in" id="s7-sp0-in"></div></div><div class="tag" id="s7-sp0-tag" style="left:322px; top:414px;">Re-run after approval: 31 → 5 low-fuel diversions</div></div><div id="s7-sp1" class="clip" data-start="8.4" data-duration="2.0" data-track-index="3" data-layout-allow-overlap data-layout-allow-occlusion style="position:absolute; inset:0;"><div class="spot" style="left:1450px; top:372px; width:458px; height:240px;"><div class="in" id="s7-sp1-in"></div></div><div class="tag" id="s7-sp1-tag" style="right:12px; top:628px;">Every human decision, recorded</div></div><div id="s7-sp2" class="clip" data-start="10.6" data-duration="3.2" data-track-index="4" data-layout-allow-overlap data-layout-allow-occlusion style="position:absolute; inset:0;"><div class="spot" style="left:104px; top:192px; width:1804px; height:176px;"><div class="in" id="s7-sp2-in"></div></div><div class="tag" id="s7-sp2-tag" style="left:104px; top:384px;">Replays the evening exactly</div></div></div>
+    <div id="s7-co0" class="clip" data-start="0.3" data-duration="3.5" data-track-index="10" style="position:absolute; inset:0;"><div class="callout" id="s7-co0-in" style="right:84px; bottom:170px;"><div class="big">18.2%</div><div class="small">of UAE GDP comes from aviation and the tourism it brings · IATA, 2025</div></div></div>
+    <div id="s7-co1" class="clip" data-start="4.1" data-duration="3.9" data-track-index="11" style="position:absolute; inset:0;"><div class="callout" id="s7-co1-in" style="right:84px; bottom:170px;"><div class="big">Tens of thousands of USD</div><div class="small">what a single diversion can cost an airline (industry estimates)</div></div></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#s7-sp0-in", {opacity: 0, scale: 1.06}, {opacity: 1, scale: 1, duration: 0.45, ease: "expo.out"}, 4.0);
+    tl.to("#s7-sp0-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 7.73);
+    tl.fromTo("#s7-sp0-tag", {opacity: 0, y: 8}, {opacity: 1, y: 0, duration: 0.35, ease: "expo.out"}, 4.12);
+    tl.to("#s7-sp0-tag", {opacity: 0, duration: 0.2, ease: "power2.in"}, 7.78);
+    tl.fromTo("#s7-sp1-in", {opacity: 0, scale: 1.06}, {opacity: 1, scale: 1, duration: 0.45, ease: "expo.out"}, 8.4);
+    tl.to("#s7-sp1-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 10.13);
+    tl.fromTo("#s7-sp1-tag", {opacity: 0, y: 8}, {opacity: 1, y: 0, duration: 0.35, ease: "expo.out"}, 8.52);
+    tl.to("#s7-sp1-tag", {opacity: 0, duration: 0.2, ease: "power2.in"}, 10.18);
+    tl.fromTo("#s7-sp2-in", {opacity: 0, scale: 1.06}, {opacity: 1, scale: 1, duration: 0.45, ease: "expo.out"}, 10.6);
+    tl.to("#s7-sp2-in", {opacity: 0, duration: 0.25, ease: "power2.in"}, 13.53);
+    tl.fromTo("#s7-sp2-tag", {opacity: 0, y: 8}, {opacity: 1, y: 0, duration: 0.35, ease: "expo.out"}, 10.72);
+    tl.to("#s7-sp2-tag", {opacity: 0, duration: 0.2, ease: "power2.in"}, 13.58);
+    tl.set("#s7-cam", {scale: 1, x: 0, y: 0}, 0);
+    tl.fromTo("#s7-co0-in", {opacity: 0, y: 14, filter: "blur(6px)"}, {opacity: 1, y: 0, filter: "blur(0px)", duration: 0.45, ease: "expo.out"}, 0.3);
+    tl.to("#s7-co0-in", {opacity: 0, filter: "blur(6px)", duration: 0.25, ease: "power2.in"}, 3.53);
+    tl.fromTo("#s7-co1-in", {opacity: 0, y: 14, filter: "blur(6px)"}, {opacity: 1, y: 0, filter: "blur(0px)", duration: 0.45, ease: "expo.out"}, 4.1);
+    tl.to("#s7-co1-in", {opacity: 0, filter: "blur(6px)", duration: 0.25, ease: "power2.in"}, 7.73);
+    window.__timelines["s7"] = tl;
+  </script>
+</template>

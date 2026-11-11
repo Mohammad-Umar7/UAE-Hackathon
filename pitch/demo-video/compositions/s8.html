@@ -1,0 +1,51 @@
+<template>
+  <style>
+
+#root { position: absolute; inset: 0; overflow: hidden; background: #0b1017; font-family: "Inter", sans-serif; }
+.cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+.cam video { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; }
+.spot { position: absolute; }
+.spot .in { position: absolute; inset: 0; border-radius: 14px; box-shadow: 0 0 0 4px #FFC24B, 0 0 0 4000px rgba(6, 10, 16, 0.5); }
+.ring .in { border-radius: 14px; box-shadow: 0 0 0 4px #FFC24B, 0 0 26px 6px rgba(255, 194, 75, 0.35); }
+.tag { position: absolute; white-space: nowrap; background: #FFC24B; color: #10151c; font-weight: 700; font-size: 30px;
+       letter-spacing: -0.01em; padding: 9px 16px; border-radius: 9px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
+.callout { position: absolute; width: 640px; padding: 26px 30px 28px; border-radius: 16px; background: rgba(11, 16, 23, 0.96);
+           border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45); color: #e9edf2; }
+.callout .big { font-size: 64px; font-weight: 800; letter-spacing: -0.03em; color: #FFC24B; line-height: 1.02; }
+.callout .small { margin-top: 10px; font-size: 28px; line-height: 1.32; color: #cfd6df; }
+.cursor { position: absolute; left: 0; top: 0; width: 46px; height: 46px; }
+.cursor .ripple { position: absolute; left: -28px; top: -28px; width: 56px; height: 56px; border-radius: 50%; border: 4px solid #FFC24B; }
+
+.end-scrim { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8, 12, 18, 0.92) 0%, rgba(8, 12, 18, 0.78) 42%, rgba(8, 12, 18, 0.15) 75%, rgba(8, 12, 18, 0) 100%); }
+.end { position: absolute; left: 150px; top: 250px; width: 1300px; color: #f2f5f8; }
+.end .mark { display: flex; align-items: center; gap: 26px; }
+.end .mark img { width: 112px; height: 112px; border-radius: 26px; }
+.end .word { font-size: 112px; font-weight: 800; letter-spacing: -0.035em; line-height: 1; }
+.end .line { margin-top: 44px; white-space: nowrap; font-size: 52px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
+.end .line b { color: #FFC24B; font-weight: 700; }
+.end .next { margin-top: 30px; font-size: 32px; color: #c9d1db; }
+.meta { position: absolute; left: 150px; bottom: 74px; font-size: 28px; color: #aab4c1; font-family: "Inter", sans-serif; }
+
+  </style>
+  <div id="root" data-composition-id="s8" data-width="1920" data-height="1080">
+    <div id="s8-cam" class="cam"><video id="s8-v" class="clip" data-start="0" data-duration="12.4" src="assets/clips/s8.mp4" muted playsinline data-track-index="0"></video></div>
+    <div id="s8-scrim" class="clip" data-start="0" data-duration="12.4" data-track-index="20" style="position:absolute; inset:0;"><div class="end-scrim" id="s8-scrim-in"></div></div>
+    <div id="s8-mark" class="clip" data-start="0.4" data-duration="12.0" data-track-index="21" style="position:absolute; inset:0;">
+      <div class="end"><div class="mark"><img id="s8-logo" src="assets/img/skypact-logo.png" alt="SKYPACT logo"/><div class="word" id="s8-word">SKYPACT</div></div>
+      <div class="line" id="s8-line">Three airports. One plan. <b>People in charge.</b></div>
+      <div class="next" id="s8-next">Next: a 90-day shadow pilot on one airport pair</div></div>
+      <div class="meta" id="s8-meta">Live demo · uae-hackathon.vercel.app · simulated evening on real airport layouts</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.set("#s8-cam", {scale: 1, x: 0, y: 0}, 0);
+    tl.fromTo("#s8-scrim-in", {opacity: 0}, {opacity: 1, duration: 0.8, ease: "power2.inOut"}, 0);
+    tl.fromTo("#s8-logo", {opacity: 0, scale: 0.7, rotation: -12}, {opacity: 1, scale: 1, rotation: 0, duration: 0.7, ease: "back.out(1.6)"}, 0.5);
+    tl.fromTo("#s8-word", {opacity: 0, clipPath: "inset(0 100% 0 0)"}, {opacity: 1, clipPath: "inset(0 0% 0 0)", duration: 0.6, ease: "power3.out"}, 0.75);
+    tl.fromTo("#s8-line", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.35, ease: "power3.out"}, 1.7);
+    tl.fromTo("#s8-next", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.3, ease: "power3.out"}, 4.9);
+    tl.fromTo("#s8-meta", {opacity: 0}, {opacity: 1, duration: 0.4, ease: "power2.out"}, 6.6);
+    window.__timelines["s8"] = tl;
+  </script>
+</template>

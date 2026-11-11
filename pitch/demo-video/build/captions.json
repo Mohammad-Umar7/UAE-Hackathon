@@ -1,0 +1,594 @@
+[
+ {
+  "start": 0.396,
+  "end": 1.384,
+  "words": [
+   "Last",
+   "November,"
+  ]
+ },
+ {
+  "start": 1.404,
+  "end": 4.016,
+  "words": [
+   "fog",
+   "diverted",
+   "nineteen",
+   "Dubai-bound",
+   "flights"
+  ]
+ },
+ {
+  "start": 4.036,
+  "end": 5.326,
+  "words": [
+   "in",
+   "a",
+   "single",
+   "morning."
+  ]
+ },
+ {
+  "start": 5.346,
+  "end": 6.252,
+  "words": [
+   "Abu",
+   "Dhabi,"
+  ]
+ },
+ {
+  "start": 6.272,
+  "end": 7.501,
+  "words": [
+   "Dubai",
+   "and",
+   "Sharjah",
+   "are"
+  ]
+ },
+ {
+  "start": 7.521,
+  "end": 9.208,
+  "words": [
+   "each",
+   "other's",
+   "backup",
+   "airports,"
+  ]
+ },
+ {
+  "start": 9.228,
+  "end": 11.433,
+  "words": [
+   "yet",
+   "each",
+   "one",
+   "still",
+   "decides",
+   "alone."
+  ]
+ },
+ {
+  "start": 12.346,
+  "end": 13.622,
+  "words": [
+   "This",
+   "is",
+   "SKYPACT."
+  ]
+ },
+ {
+  "start": 13.642,
+  "end": 14.536,
+  "words": [
+   "Six",
+   "p.m.:"
+  ]
+ },
+ {
+  "start": 14.556,
+  "end": 16.771,
+  "words": [
+   "thick",
+   "fog",
+   "rolls",
+   "into",
+   "Abu",
+   "Dhabi."
+  ]
+ },
+ {
+  "start": 16.791,
+  "end": 18.177,
+  "words": [
+   "Landings",
+   "drop",
+   "from",
+   "thirty"
+  ]
+ },
+ {
+  "start": 18.197,
+  "end": 19.343,
+  "words": [
+   "an",
+   "hour",
+   "to",
+   "twelve,"
+  ]
+ },
+ {
+  "start": 19.363,
+  "end": 20.811,
+  "words": [
+   "and",
+   "planes",
+   "start",
+   "circling."
+  ]
+ },
+ {
+  "start": 23.258,
+  "end": 25.255,
+  "words": [
+   "Seven",
+   "AI",
+   "agents",
+   "take",
+   "over."
+  ]
+ },
+ {
+  "start": 25.275,
+  "end": 27.214,
+  "words": [
+   "The",
+   "weather",
+   "agent",
+   "raises",
+   "the",
+   "alarm."
+  ]
+ },
+ {
+  "start": 27.234,
+  "end": 28.597,
+  "words": [
+   "The",
+   "airport",
+   "agent",
+   "simulates"
+  ]
+ },
+ {
+  "start": 28.617,
+  "end": 29.931,
+  "words": [
+   "the",
+   "next",
+   "four",
+   "hours:"
+  ]
+ },
+ {
+  "start": 29.951,
+  "end": 31.601,
+  "words": [
+   "twenty-nine",
+   "flights",
+   "would",
+   "run",
+   "low"
+  ]
+ },
+ {
+  "start": 31.621,
+  "end": 33.32,
+  "words": [
+   "on",
+   "fuel",
+   "and",
+   "divert."
+  ]
+ },
+ {
+  "start": 33.34,
+  "end": 34.907,
+  "words": [
+   "The",
+   "planning",
+   "agent's",
+   "optimiser"
+  ]
+ },
+ {
+  "start": 34.927,
+  "end": 36.59,
+  "words": [
+   "builds",
+   "a",
+   "recovery",
+   "plan,"
+  ]
+ },
+ {
+  "start": 36.61,
+  "end": 37.912,
+  "words": [
+   "and",
+   "a",
+   "separate",
+   "safety",
+   "agent"
+  ]
+ },
+ {
+  "start": 37.932,
+  "end": 39.787,
+  "words": [
+   "re-checks",
+   "six",
+   "hundred",
+   "and",
+   "fifty-one"
+  ]
+ },
+ {
+  "start": 39.807,
+  "end": 41.723,
+  "words": [
+   "rules",
+   "before",
+   "anyone",
+   "sees",
+   "it."
+  ]
+ },
+ {
+  "start": 45.958,
+  "end": 46.862,
+  "words": [
+   "The",
+   "same",
+   "evening,"
+  ]
+ },
+ {
+  "start": 46.882,
+  "end": 48.268,
+  "words": [
+   "simulated",
+   "twice."
+  ]
+ },
+ {
+  "start": 48.288,
+  "end": 49.782,
+  "words": [
+   "Low-fuel",
+   "diversions",
+   "fall",
+   "from"
+  ]
+ },
+ {
+  "start": 49.802,
+  "end": 51.201,
+  "words": [
+   "twenty-nine",
+   "to",
+   "five."
+  ]
+ },
+ {
+  "start": 51.221,
+  "end": 53.34,
+  "words": [
+   "Circling",
+   "drops",
+   "sixty",
+   "percent."
+  ]
+ },
+ {
+  "start": 53.36,
+  "end": 55.071,
+  "words": [
+   "Gate",
+   "clashes",
+   "disappear."
+  ]
+ },
+ {
+  "start": 55.091,
+  "end": 56.886,
+  "words": [
+   "Take",
+   "one",
+   "flight",
+   "from",
+   "Manchester:"
+  ]
+ },
+ {
+  "start": 56.906,
+  "end": 57.979,
+  "words": [
+   "without",
+   "SKYPACT,"
+  ]
+ },
+ {
+  "start": 57.999,
+  "end": 59.638,
+  "words": [
+   "it",
+   "circles",
+   "for",
+   "half",
+   "an",
+   "hour"
+  ]
+ },
+ {
+  "start": 59.658,
+  "end": 61.381,
+  "words": [
+   "and",
+   "diverts",
+   "on",
+   "low",
+   "fuel."
+  ]
+ },
+ {
+  "start": 61.401,
+  "end": 61.97,
+  "words": [
+   "With",
+   "it,"
+  ]
+ },
+ {
+  "start": 61.99,
+  "end": 63.232,
+  "words": [
+   "it",
+   "lands",
+   "in",
+   "Sharjah,"
+  ]
+ },
+ {
+  "start": 63.252,
+  "end": 65.0,
+  "words": [
+   "its",
+   "gate",
+   "already",
+   "reserved."
+  ]
+ },
+ {
+  "start": 69.058,
+  "end": 71.2,
+  "words": [
+   "But",
+   "nothing",
+   "runs",
+   "until",
+   "people",
+   "agree."
+  ]
+ },
+ {
+  "start": 71.22,
+  "end": 73.087,
+  "words": [
+   "Sharjah's",
+   "duty",
+   "manager",
+   "approves",
+   "from"
+  ]
+ },
+ {
+  "start": 73.107,
+  "end": 74.397,
+  "words": [
+   "a",
+   "phone",
+   "on",
+   "the",
+   "apron,"
+  ]
+ },
+ {
+  "start": 74.417,
+  "end": 75.791,
+  "words": [
+   "and",
+   "the",
+   "national",
+   "supervisor"
+  ]
+ },
+ {
+  "start": 75.811,
+  "end": 77.353,
+  "words": [
+   "gives",
+   "the",
+   "final",
+   "yes."
+  ]
+ },
+ {
+  "start": 77.373,
+  "end": 79.687,
+  "words": [
+   "SKYPACT",
+   "never",
+   "instructs",
+   "pilots."
+  ]
+ },
+ {
+  "start": 80.958,
+  "end": 82.258,
+  "words": [
+   "The",
+   "plan",
+   "goes",
+   "live:"
+  ]
+ },
+ {
+  "start": 82.278,
+  "end": 83.665,
+  "words": [
+   "nine",
+   "flights",
+   "to",
+   "Sharjah,"
+  ]
+ },
+ {
+  "start": 83.685,
+  "end": 84.734,
+  "words": [
+   "four",
+   "to",
+   "Dubai,"
+  ]
+ },
+ {
+  "start": 84.754,
+  "end": 85.709,
+  "words": [
+   "gates",
+   "waiting."
+  ]
+ },
+ {
+  "start": 85.766,
+  "end": 87.21,
+  "words": [
+   "Fog",
+   "to",
+   "approved",
+   "plan:"
+  ]
+ },
+ {
+  "start": 87.23,
+  "end": 88.496,
+  "words": [
+   "under",
+   "six",
+   "minutes."
+  ]
+ },
+ {
+  "start": 88.516,
+  "end": 89.963,
+  "words": [
+   "If",
+   "anything",
+   "changes,"
+  ]
+ },
+ {
+  "start": 89.983,
+  "end": 91.874,
+  "words": [
+   "it's",
+   "withdrawn",
+   "and",
+   "re-planned,"
+  ]
+ },
+ {
+  "start": 91.894,
+  "end": 93.365,
+  "words": [
+   "never",
+   "followed",
+   "blindly."
+  ]
+ },
+ {
+  "start": 93.946,
+  "end": 96.136,
+  "words": [
+   "Aviation",
+   "supports",
+   "eighteen",
+   "percent"
+  ]
+ },
+ {
+  "start": 96.156,
+  "end": 97.602,
+  "words": [
+   "of",
+   "the",
+   "UAE's",
+   "economy,"
+  ]
+ },
+ {
+  "start": 97.622,
+  "end": 99.188,
+  "words": [
+   "and",
+   "one",
+   "avoided",
+   "diversion",
+   "can"
+  ]
+ },
+ {
+  "start": 99.208,
+  "end": 100.559,
+  "words": [
+   "save",
+   "an",
+   "airline",
+   "tens",
+   "of"
+  ]
+ },
+ {
+  "start": 100.579,
+  "end": 101.953,
+  "words": [
+   "thousands",
+   "of",
+   "dollars."
+  ]
+ },
+ {
+  "start": 101.973,
+  "end": 104.705,
+  "words": [
+   "Every",
+   "decision",
+   "is",
+   "logged",
+   "and",
+   "replayable,"
+  ]
+ },
+ {
+  "start": 104.725,
+  "end": 106.546,
+  "words": [
+   "and",
+   "it",
+   "all",
+   "runs",
+   "on-premises."
+  ]
+ }
+]
