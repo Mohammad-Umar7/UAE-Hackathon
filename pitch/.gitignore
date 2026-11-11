@@ -1,0 +1,2 @@
+# Rendered films are shared as files, not committed (80+ MB).
+*.mp4
